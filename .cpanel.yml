@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home2/atest8a6/public_html/inventory/
+    - /bin/cp -R * $DEPLOYPATH

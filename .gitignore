@@ -1,0 +1,14 @@
+(
+echo .env
+echo config.php
+echo dbconn.php
+echo *.log
+echo logs/
+echo tmp/
+echo temp/
+echo cache/
+echo .vscode/
+echo .idea/
+echo .DS_Store
+echo Thumbs.db
+) 

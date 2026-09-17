@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home2/atest8a6/labtest02.site/
+    - /bin/cp -R * $DEPLOYPATH

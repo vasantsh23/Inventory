@@ -1,25 +1,4 @@
 <?php
-/**
- * config.php
- * Central configuration.
- *
- * NOTE on this shared-hosting (BigRock/cPanel) version:
- * cPanel shared hosting typically has no clean way to set real server
- * environment variables for PHP, so this file falls back to hardcoded
- * values below when getenv() returns nothing. That is a deliberate
- * trade-off for this hosting environment — see the warnings inline.
- *
- * IMPORTANT — DO THIS BEFORE DEPLOYING:
- *   1. Change the MySQL user's password in cPanel > MySQL Databases,
- *      then put the NEW password in DB_PASS below. The old password
- *      that was previously in this file must be treated as compromised
- *      and must not be reused.
- *   2. Keep this file OUTSIDE the public web root if your hosting plan
- *      allows it, or at minimum block direct HTTP access to it via
- *      .htaccess (see note at bottom of this file).
- *   3. Do not commit this file (with real values) to a public repo.
- */
-
 declare(strict_types=1);
 
 // ---- Force HTTPS in production -------------------------------------------
@@ -125,14 +104,3 @@ function asset_url_versioned(string $path): string
     return $version !== false ? $url . '?v=' . $version : $url;
 }
 
-// ---- Protecting this file on shared hosting --------------------------------
-// Add this to a .htaccess file in the SAME folder as config.php so it
-// can never be requested directly over HTTP:
-//
-//   <Files "config.php">
-//       Require all denied
-//   </Files>
-//
-// (Apache 2.4+ / cPanel default). This matters more on shared hosting
-// because config.php can't be moved above the web root the way it
-// could on a VPS.

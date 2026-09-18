@@ -212,13 +212,6 @@ require_once __DIR__ . '/../../includes/header.php';
                 </div>
             </div>
 
-            <div class="ds-section ds-stockno-section">
-                <h2 class="ds-section-title">Stock No</h2>
-                <input type="text" class="ds-range-input ds-stockno-input" name="f[stockno_search]"
-                       placeholder="e.g. 20596 24583 26676 (separate multiple with a space)"
-                       value="<?= e((string)($priorFilters['stockno_search'] ?? '')) ?>">
-            </div>
-
             <?php if ($sections === [] && $advancedSections === []): ?>
                 <div class="panel">
                     <p class="panel-desc">No filters are currently active. An administrator can enable filter fields from the Diamond Search Fields table, and add options to the relevant lookup tables (Shape, Color, Clarity, Cut, Polish, Symmetry, Fluorescence, Lab).</p>

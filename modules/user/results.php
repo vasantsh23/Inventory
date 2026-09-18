@@ -48,21 +48,6 @@ if (in_array('hold', get_maindata_columns(), true)) {
     $where = "($where) AND (`hold` IS NULL OR `hold` != 'yes')";
 }
 
-// TEMPORARY DIAGNOSTIC — remove once the Stock No search issue is
-// resolved. Visit this page with ?debug_stockno=1 appended to see
-// exactly what's stored in the session and what SQL actually runs.
-if (($_GET['debug_stockno'] ?? '') === '1') {
-    echo '<pre style="background:#111;color:#0f0;padding:16px;font-size:13px;white-space:pre-wrap;">';
-    echo "SESSION filters:\n" . htmlspecialchars(print_r($filters, true)) . "\n";
-    echo "Generated WHERE:\n" . htmlspecialchars($where) . "\n\n";
-    echo "Params:\n" . htmlspecialchars(print_r($params, true)) . "\n";
-    $debugStmt = get_db()->prepare("SELECT COUNT(*) AS c FROM maindata WHERE $where");
-    $debugStmt->execute($params);
-    echo "Row count with this WHERE+params: " . (int)$debugStmt->fetch()['c'] . "\n";
-    echo '</pre>';
-    exit;
-}
-
 $columns = get_results_columns();
 $appliedFilters = build_applied_filters_summary($filters);
 

@@ -982,7 +982,6 @@ input[type="radio"]:checked::after {
 .ds-checkbox-row input[type="checkbox"] { cursor: pointer; }
 
 .ds-range-row { display: flex; align-items: center; gap: 10px; max-width: 320px; width: 100%; }
-.ds-stockno-input { max-width: 560px; width: 100%; }
 .ds-range-input {
     flex: 1;
     min-width: 0;

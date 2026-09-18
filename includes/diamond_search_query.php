@@ -402,7 +402,7 @@ function build_applied_filters_summary(array $filters): array
     // matches what was really searched for.
     $stockNoRaw = trim((string)($filters['stockno_search'] ?? ''), " \t\n\r\0\x0B\"'");
     if ($stockNoRaw !== '') {
-        $summary[] = ['label' => 'Stock No', 'value' => $stockNoRaw];
+        $summary[] = ['label' => 'Stock No [MARKER-9284]', 'value' => $stockNoRaw];
     }
 
     foreach ($sections as $section) {

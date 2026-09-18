@@ -23,6 +23,8 @@ const CRUD_TABLES = [
     'rsetup'         => 'Results/View Cart Display Settings',
     'uploadref'      => 'Upload Field Mapping',
     'fancy'          => 'Fancy Color Reference',
+    'fancycolor'     => 'Nat Fancy Color Options',
+    'fancyint'       => 'Nat Fancy Color Intensity Options',
     'path'           => 'File Paths',
     'timings'        => 'Business Hours',
     'font_and_color' => 'Fonts & Colors',
@@ -349,6 +351,12 @@ const CRUD_COLUMN_OVERRIDES = [
             'options' => ['yes' => 'Yes — require login', 'no' => 'No — go straight to Diamond Search'],
             'hint' => 'If set to No, the "Inventory" link on the home page skips login entirely and goes straight into the user module (public browsing). Admin/Super Admin logins are unaffected — once this is No, the admin login page is no longer linked anywhere on the public site, so log in directly at yoursite.com/login.php.',
         ],
+        'Fancyfilter' => [
+            'type' => 'select',
+            'label' => 'Nat Fancy Color Filter',
+            'options' => ['no' => 'No', 'yes' => 'Yes'],
+            'hint' => 'If Yes, Diamond Search shows dedicated "Nat Fancy Color" and "Nat Fancy Color Intensity" pill rows after the Color section (sourced from the Nat Fancy Color / Intensity Options tables), and the plain "Fancy" pill is removed from Color.',
+        ],
     ],
     'path' => [
         'id' => ['type' => 'readonly'],
@@ -456,6 +464,14 @@ const CRUD_COLUMN_OVERRIDES = [
         'description'  => ['label' => 'Description', 'hint' => 'The full text to match against a diamond\'s Color value during CSV import, e.g. "Fancy Intense Yellow".'],
         'abbreviation' => ['label' => 'Abbreviation', 'hint' => 'Short code stored in maindata.fancy_short when this description matches, e.g. "FIY".'],
     ],
+    'fancycolor' => [
+        'id'        => ['type' => 'readonly'],
+        'fncycolor' => ['label' => 'Nat Fancy Color', 'hint' => 'e.g. "Yellow", "Pink", "Blue". Shown as a pill on Diamond Search when Fancyfilter is enabled in Site Setup.'],
+    ],
+    'fancyint' => [
+        'id'      => ['type' => 'readonly'],
+        'fncyint' => ['label' => 'Nat Fancy Color Intensity', 'hint' => 'e.g. "Fancy", "Fancy Intense", "Fancy Vivid". Shown as a pill on Diamond Search when Fancyfilter is enabled in Site Setup.'],
+    ],
     'memo' => [
         'id' => ['type' => 'readonly'],
         'company' => ['label' => 'Company (masthead + "Firm" name)'],
@@ -557,6 +573,8 @@ const CRUD_LIST_COLUMNS = [
     'path'           => ['id', 'description', 'path'],
     'uploadref'      => ['id', 'colname', 'excolname', 'active'],
     'fancy'          => ['id', 'color', 'intensity', 'description', 'abbreviation'],
+    'fancycolor'     => ['id', 'fncycolor'],
+    'fancyint'       => ['id', 'fncyint'],
     'timings'        => ['id', 'Day', 'start time1', 'end time1', 'holiday'],
     'font_and_color' => ['id', 'font type-1', 'forecolor-1', 'backcolor-1'],
     'upload'         => ['id', 'API', 'API link', 'Excel', 'CSV'],

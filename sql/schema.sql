@@ -876,3 +876,32 @@ UPDATE maindata SET hold = 'no' WHERE hold IS NULL OR hold = '';
 -- — activate it so it appears as a selectable pill in Diamond Search.
 UPDATE `color` SET active = 'yes' WHERE `color` = 'Fancy';
 
+-- ------------------------------------------------------------
+-- FANCYCOLOR / FANCYINT: reference lookup tables for the "Nat
+-- Fancy Color" / "Nat Fancy Color Intensity" pill selectors shown
+-- on Diamond Search when setup.Fancyfilter = 'yes'.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS fancycolor (
+    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    fncycolor VARCHAR(100) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS fancyint (
+    id      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    fncyint VARCHAR(100) NOT NULL
+) ENGINE=InnoDB;
+
+-- setup.Fancyfilter: 'yes' switches Diamond Search's Color section
+-- from a plain "Fancy" pill to the two dedicated Nat Fancy
+-- Color / Intensity pill rows sourced from the tables above.
+ALTER TABLE setup ADD COLUMN Fancyfilter VARCHAR(10) NOT NULL DEFAULT 'no';
+
+-- NatFancyColor / NatFancyColorIntensity already existed as active,
+-- plain generic-text search fields in diamond_search — deactivated
+-- here since their visibility is now driven entirely by
+-- setup.Fancyfilter instead, and they're rendered as lookup-backed
+-- pill rows (sourced from fancycolor/fancyint) rather than a plain
+-- text box.
+UPDATE diamond_search SET active = 'no' WHERE fldname IN ('NatFancyColor', 'NatFancyColorIntensity');
+UPDATE adv_filter SET active = 'no' WHERE fldname IN ('NatFancyColor', 'NatFancyColorIntensity');
+

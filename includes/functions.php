@@ -158,6 +158,8 @@ function ds_lookup_map(): array
         'Shape'                 => ['table' => 'shape', 'label' => 'Display _nm', 'match' => 'shape', 'hasActive' => true, 'orderCol' => 'order', 'image' => 'imgpath'],
         'Weight'                => ['table' => 'size', 'label' => 'sizedesc', 'hasActive' => false, 'orderCol' => 'sizefr'],
         'Color'                 => ['table' => 'color', 'label' => 'color', 'match' => 'color', 'hasActive' => true, 'orderCol' => 'id'],
+        'NatFancyColor'         => ['table' => 'fancycolor', 'label' => 'fncycolor', 'match' => 'fncycolor', 'hasActive' => false, 'orderCol' => 'fncycolor'],
+        'NatFancyColorIntensity' => ['table' => 'fancyint', 'label' => 'fncyint', 'match' => 'fncyint', 'hasActive' => false, 'orderCol' => 'fncyint'],
         'Clarity'               => ['table' => 'clarity', 'label' => 'clarity', 'match' => 'clarity', 'hasActive' => true, 'orderCol' => 'id'],
         'CutGrade'              => ['table' => 'cut', 'label' => 'cut', 'match' => 'cut', 'hasActive' => true, 'orderCol' => 'order'],
         'Polish'                => ['table' => 'polish', 'label' => 'pol', 'match' => 'pol', 'hasActive' => true, 'orderCol' => 'order'],

@@ -94,6 +94,49 @@
             advancedToggleBtn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
         });
     }
+    // "Fancy" is a special Color selection — choosing it disables
+    // every other filter on the page (matching the backend, which
+    // then searches purely by fancy = 'yes' and ignores everything
+    // else). Re-checked on load too, in case "Fancy" was already
+    // selected via a restored prior search ("Back to Search").
+    var colorSection = form.querySelector('.ds-section[data-field="Color"]');
+    var fancyInput = colorSection ? colorSection.querySelector('input[type=checkbox][value="Fancy"]') : null;
+
+    function applyFancyMode() {
+        var isFancy = !!(fancyInput && fancyInput.checked);
+
+        // Every other pill within the Color section itself — Fancy is
+        // exclusive even among the other color options.
+        if (colorSection) {
+            colorSection.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+                if (cb === fancyInput) {
+                    return;
+                }
+                cb.disabled = isFancy;
+                var label = cb.closest('.ds-pill');
+                if (label) {
+                    label.classList.toggle('ds-pill-disabled', isFancy);
+                }
+            });
+        }
+
+        // Every field in every OTHER filter section.
+        form.querySelectorAll('.ds-section').forEach(function (section) {
+            if (section === colorSection) {
+                return;
+            }
+            section.querySelectorAll('input, select, button, textarea').forEach(function (el) {
+                el.disabled = isFancy;
+            });
+            section.classList.toggle('ds-section-disabled', isFancy);
+        });
+    }
+
+    if (fancyInput) {
+        fancyInput.addEventListener('change', applyFancyMode);
+        applyFancyMode();
+    }
+
     // Stepper +/- buttons next to range inputs (Price, Amount, Carat,
     // etc.) — nudge the adjacent number input up/down by its step.
     form.addEventListener('click', function (e) {

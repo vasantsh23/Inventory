@@ -94,7 +94,7 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
 {
     $fld = $section['fldname'];
     ?>
-    <div class="ds-section">
+    <div class="ds-section" data-field="<?= e($fld) ?>">
         <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
 
         <?php if ($section['kind'] === 'checkbox'): ?>

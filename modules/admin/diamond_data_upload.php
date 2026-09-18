@@ -8,10 +8,11 @@ require_module_access('admin');
 /**
  * Runs the actual CSV import: matches header names against the
  * uploadref table (active rows only), inserts into maindata using
- * only the matched columns, and skips any row whose mapped Color
- * value contains "fancy" (case-insensitive) — fancy-colored diamonds
- * are graded/priced completely differently and are intentionally
- * excluded from this import.
+ * only the matched columns. Any row whose mapped Color value
+ * contains "fancy" (case-insensitive) is marked fancy = 'yes', and
+ * its fancy_short is looked up by matching that Color value against
+ * the fancy table's description column — on a match, fancy_short is
+ * set to that row's abbreviation.
  */
 function process_diamond_upload(string $csvPath, string $mode): array
 {
@@ -31,6 +32,14 @@ function process_diamond_upload(string $csvPath, string $mode): array
         throw new RuntimeException(
             'No active Upload Field Mapping entries have a CSV Header Name set — configure at least one under Admin → Upload Field Mapping before importing.'
         );
+    }
+
+    // description (lowercased, trimmed) => abbreviation, for deriving
+    // fancy_short below.
+    $fancyLookup = [];
+    $fancyStmt = get_db()->query("SELECT description, abbreviation FROM fancy WHERE description != ''");
+    foreach ($fancyStmt->fetchAll() as $row) {
+        $fancyLookup[strtolower(trim((string)$row['description']))] = (string)$row['abbreviation'];
     }
 
     $fh = fopen($csvPath, 'r');
@@ -76,12 +85,11 @@ function process_diamond_upload(string $csvPath, string $mode): array
     }
     $colorIdx = $colToIndex['Color'] ?? $colToIndex['color'] ?? null;
 
-    // totamt and Measurements can be computed from other mapped
-    // fields when blank/zero (see the row loop below) — make sure
-    // both are in the insert's column list even if the CSV doesn't
-    // map either of them directly, so a computed value has somewhere
-    // to go.
-    foreach (['totamt', 'Measurements'] as $computedCol) {
+    // totamt, Measurements, fancy and fancy_short can all be computed
+    // from other mapped fields (see the row loop below) — make sure
+    // each is in the insert's column list even if the CSV doesn't map
+    // it directly, so a computed value has somewhere to go.
+    foreach (['totamt', 'Measurements', 'fancy', 'fancy_short'] as $computedCol) {
         if (in_array($computedCol, $validCols, true) && !in_array($computedCol, $mappedCols, true)) {
             $mappedCols[] = $computedCol;
         }
@@ -97,7 +105,8 @@ function process_diamond_upload(string $csvPath, string $mode): array
     $insertStmt = $db->prepare("INSERT INTO maindata ($colList) VALUES ($placeholders)");
 
     $inserted = 0;
-    $skippedFancy = 0;
+    $fancyMarked = 0;
+    $fancyMatched = 0;
     $skippedErrors = 0;
     $errors = [];
     $rowNum = 1; // the header row itself was line 1
@@ -110,11 +119,6 @@ function process_diamond_upload(string $csvPath, string $mode): array
                 continue; // a blank line in the file
             }
 
-            if ($colorIdx !== null && isset($row[$colorIdx]) && stripos((string)$row[$colorIdx], 'fancy') !== false) {
-                $skippedFancy++;
-                continue;
-            }
-
             // Build [colname => value] first (rather than going
             // straight to the positional $values array) so the
             // computed-fallback fields below can look up other
@@ -123,6 +127,31 @@ function process_diamond_upload(string $csvPath, string $mode): array
             foreach ($colToIndex as $col => $srcIdx) {
                 $val = isset($row[$srcIdx]) ? trim((string)$row[$srcIdx]) : '';
                 $rowValues[$col] = $val === '' ? null : $val;
+            }
+
+            // fancy / fancy_short: a fancy-colored row is no longer
+            // skipped — it's imported and flagged instead. fancy_short
+            // comes from matching this row's Color value against the
+            // fancy table's description column (case-insensitive).
+            // fancy is NOT NULL DEFAULT 'no' — since this insert always
+            // specifies every mapped column explicitly (bypassing the
+            // column's own default for anything left unset), a
+            // non-fancy row needs 'no' set here explicitly too.
+            if (in_array('fancy', $mappedCols, true)) {
+                $colorVal = $colorIdx !== null && isset($row[$colorIdx]) ? (string)$row[$colorIdx] : '';
+                if (stripos($colorVal, 'fancy') !== false) {
+                    $rowValues['fancy'] = 'yes';
+                    $fancyMarked++;
+                    if (in_array('fancy_short', $mappedCols, true)) {
+                        $match = $fancyLookup[strtolower(trim($colorVal))] ?? null;
+                        if ($match !== null) {
+                            $rowValues['fancy_short'] = $match;
+                            $fancyMatched++;
+                        }
+                    }
+                } else {
+                    $rowValues['fancy'] = 'no';
+                }
             }
 
             // totamt: if blank or zero, compute as Weight * Price —
@@ -180,7 +209,8 @@ function process_diamond_upload(string $csvPath, string $mode): array
         'mode' => $mode,
         'mapped_columns' => $mappedCols,
         'inserted' => $inserted,
-        'skipped_fancy' => $skippedFancy,
+        'fancy_marked' => $fancyMarked,
+        'fancy_matched' => $fancyMatched,
         'skipped_errors' => $skippedErrors,
         'errors' => $errors,
     ];
@@ -218,7 +248,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $pageTitle = 'Diamond Data Upload';
 $pageSubtitle = '';
 $activeNav = 'diamond_data_upload';
-$dashActionsHtml = '<a class="btn" href="' . e(asset_url('/modules/admin/table_view.php?table=uploadref')) . '">Upload Field Mapping</a>';
+$dashActionsHtml = '<a class="btn" href="' . e(asset_url('/modules/admin/table_view.php?table=uploadref')) . '">Upload Field Mapping</a> '
+    . '<a class="btn" href="' . e(asset_url('/modules/admin/table_view.php?table=fancy')) . '">Fancy Color Reference</a>';
 
 require_once __DIR__ . '/../../includes/admin_header.php';
 ?>
@@ -229,7 +260,8 @@ require_once __DIR__ . '/../../includes/admin_header.php';
     <?php if ($stats !== null): ?>
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value"><?= (int)$stats['inserted'] ?></div><div class="stat-label">Rows inserted</div></div>
-            <div class="stat-card"><div class="stat-value"><?= (int)$stats['skipped_fancy'] ?></div><div class="stat-label">Skipped (Fancy color)</div></div>
+            <div class="stat-card"><div class="stat-value"><?= (int)$stats['fancy_marked'] ?></div><div class="stat-label">Marked Fancy</div></div>
+            <div class="stat-card"><div class="stat-value"><?= (int)$stats['fancy_matched'] ?></div><div class="stat-label">Fancy Short matched</div></div>
             <div class="stat-card"><div class="stat-value"><?= (int)$stats['skipped_errors'] ?></div><div class="stat-label">Skipped (errors)</div></div>
         </div>
         <p class="panel-desc">
@@ -255,7 +287,10 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             <a href="<?= e(asset_url('/modules/admin/table_view.php?table=uploadref')) ?>">Upload Field Mapping</a>'s
             "CSV Header Name" entries to decide which <code>maindata</code> field each column populates —
             any header that doesn't match an active mapping is ignored. Rows whose Color value contains
-            "Fancy" are always skipped (fancy-colored diamonds aren't imported by this program).
+            "Fancy" are imported with <code>fancy</code> set to Yes, and <code>fancy_short</code> looked up
+            by matching that Color value against
+            <a href="<?= e(asset_url('/modules/admin/table_view.php?table=fancy')) ?>">Fancy Color Reference</a>'s
+            Description column.
             If Total Amount is blank or zero, it's computed as Weight &times; Price. If Measurements is
             blank, it's derived as Length x Width x Height from those three fields.
         </p>

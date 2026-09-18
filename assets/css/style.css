@@ -805,6 +805,8 @@ table.data-table tr:last-child td { border-bottom: none; }
 }
 
 .ds-section { margin-bottom: 34px; }
+.ds-section-disabled { opacity: 0.4; pointer-events: none; }
+.ds-pill-disabled { opacity: 0.4; pointer-events: none; }
 .ds-section-title {
     font-size: 0.78rem;
     font-weight: 700;

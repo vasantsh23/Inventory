@@ -20,6 +20,16 @@ require_once __DIR__ . '/functions.php'; // get_maindata_columns(), get_maindata
 function build_maindata_search_where(array $filters): array
 {
     $validCols = get_maindata_columns();
+
+    // "Fancy" is a special Color selection — when chosen it replaces
+    // every other filter entirely (matching the page's own JS, which
+    // disables every other field the moment Fancy is selected): the
+    // search becomes fancy = 'yes' and nothing else.
+    $selectedColors = $filters['Color'] ?? [];
+    if (is_array($selectedColors) && in_array('Fancy', $selectedColors, true) && in_array('fancy', $validCols, true)) {
+        return ['`fancy` = :fancyval', [':fancyval' => 'yes']];
+    }
+
     $lookupMap = ds_lookup_map();
     $checkboxMap = ds_checkbox_map();
     $rangeMap = ds_range_map();

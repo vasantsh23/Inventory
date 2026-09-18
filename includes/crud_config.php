@@ -22,6 +22,7 @@ const CRUD_TABLES = [
     'setup'          => 'Site Setup',
     'rsetup'         => 'Results/View Cart Display Settings',
     'uploadref'      => 'Upload Field Mapping',
+    'fancy'          => 'Fancy Color Reference',
     'path'           => 'File Paths',
     'timings'        => 'Business Hours',
     'font_and_color' => 'Fonts & Colors',
@@ -396,6 +397,10 @@ const CRUD_COLUMN_OVERRIDES = [
         // `id` is intentionally left without an override: it is NOT
         // auto-increment (ids come from your data source), so it must
         // stay an editable required field on both add and edit.
+        'fancy'       => ['type' => 'select', 'label' => 'Fancy', 'options' => ['no' => 'No', 'yes' => 'Yes'], 'hint' => 'Set automatically by Diamond Data Upload when a row\'s Color contains "Fancy".'],
+        'fancy_short' => ['label' => 'Fancy Short', 'hint' => 'Auto-populated from the Fancy Color Reference table during upload — leave blank to let it derive automatically.'],
+        'hold'        => ['type' => 'select', 'label' => 'Hold', 'options' => ['no' => 'No', 'yes' => 'Yes']],
+        'memo'        => ['type' => 'select', 'label' => 'Memo', 'options' => ['no' => 'No', 'yes' => 'Yes']],
     ],
     'diamond_search' => [
         'id'     => ['type' => 'readonly'],
@@ -443,6 +448,13 @@ const CRUD_COLUMN_OVERRIDES = [
         'colname'   => ['type' => 'maindata_column_select', 'label' => 'Maindata Column'],
         'excolname' => ['label' => 'CSV Header Name', 'hint' => 'The exact column header your supplier\'s CSV file uses for this field.'],
         'active'    => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No']],
+    ],
+    'fancy' => [
+        'id'           => ['type' => 'readonly'],
+        'color'        => ['label' => 'Color', 'hint' => 'The fancy color name, e.g. "Yellow", "Pink".'],
+        'intensity'    => ['label' => 'Intensity', 'hint' => 'e.g. "Fancy", "Fancy Intense", "Fancy Vivid".'],
+        'description'  => ['label' => 'Description', 'hint' => 'The full text to match against a diamond\'s Color value during CSV import, e.g. "Fancy Intense Yellow".'],
+        'abbreviation' => ['label' => 'Abbreviation', 'hint' => 'Short code stored in maindata.fancy_short when this description matches, e.g. "FIY".'],
     ],
     'memo' => [
         'id' => ['type' => 'readonly'],
@@ -544,6 +556,7 @@ const CRUD_LIST_COLUMNS = [
     'setup'          => ['id', 'company', 'Page title', 'emailid1', 'telno-1'],
     'path'           => ['id', 'description', 'path'],
     'uploadref'      => ['id', 'colname', 'excolname', 'active'],
+    'fancy'          => ['id', 'color', 'intensity', 'description', 'abbreviation'],
     'timings'        => ['id', 'Day', 'start time1', 'end time1', 'holiday'],
     'font_and_color' => ['id', 'font type-1', 'forecolor-1', 'backcolor-1'],
     'upload'         => ['id', 'API', 'API link', 'Excel', 'CSV'],

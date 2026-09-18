@@ -818,6 +818,20 @@ table.data-table tr:last-child td { border-bottom: none; }
 }
 .ds-empty-note { color: var(--text-low); font-size: 0.85rem; }
 
+.ds-section-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.ds-section-heading-row .ds-section-title { margin-bottom: 0; }
+.ds-section-reset-btn {
+    background: none;
+    border: none;
+    color: var(--accent-a);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+.ds-section-reset-btn:hover { opacity: 0.8; }
+
 .ds-visually-hidden-input {
     position: absolute;
     width: 1px; height: 1px;
@@ -968,6 +982,7 @@ input[type="radio"]:checked::after {
 .ds-checkbox-row input[type="checkbox"] { cursor: pointer; }
 
 .ds-range-row { display: flex; align-items: center; gap: 10px; max-width: 320px; width: 100%; }
+.ds-stockno-input { max-width: 560px; width: 100%; }
 .ds-range-input {
     flex: 1;
     min-width: 0;

@@ -95,7 +95,14 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
     $fld = $section['fldname'];
     ?>
     <div class="ds-section" data-field="<?= e($fld) ?>">
-        <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
+        <?php if ($fld === 'Weight'): ?>
+            <div class="ds-section-heading-row">
+                <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
+                <button type="button" class="ds-section-reset-btn" id="dsCaratResetBtn">Reset</button>
+            </div>
+        <?php else: ?>
+            <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
+        <?php endif; ?>
 
         <?php if ($section['kind'] === 'checkbox'): ?>
             <label class="ds-checkbox-row">
@@ -203,6 +210,13 @@ require_once __DIR__ . '/../../includes/header.php';
                     <button type="button" class="btn" id="dsResetBtn">Reset</button>
                     <button type="submit" class="btn btn-accent">Search</button>
                 </div>
+            </div>
+
+            <div class="ds-section ds-stockno-section">
+                <h2 class="ds-section-title">Stock No</h2>
+                <input type="text" class="ds-range-input ds-stockno-input" name="f[stockno_search]"
+                       placeholder="e.g. 20596 24583 26676 (separate multiple with a space)"
+                       value="<?= e((string)($priorFilters['stockno_search'] ?? '')) ?>">
             </div>
 
             <?php if ($sections === [] && $advancedSections === []): ?>

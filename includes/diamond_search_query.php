@@ -28,6 +28,24 @@ function build_maindata_search_where(array $filters): array
     $params = [];
     $pIndex = 0;
 
+    // --- Stock No quick search: multiple values separated by
+    //     whitespace, matched exactly (case-sensitive as stored). ---
+    if (in_array('StockNo', $validCols, true)) {
+        $stockNoRaw = trim((string)($filters['stockno_search'] ?? ''));
+        if ($stockNoRaw !== '') {
+            $stockNos = array_values(array_unique(array_filter(preg_split('/\s+/', $stockNoRaw))));
+            if ($stockNos !== []) {
+                $inKeys = [];
+                foreach ($stockNos as $val) {
+                    $key = ':p' . $pIndex++;
+                    $inKeys[] = $key;
+                    $params[$key] = $val;
+                }
+                $clauses[] = '`StockNo` IN (' . implode(', ', $inKeys) . ')';
+            }
+        }
+    }
+
     // --- Lookup-backed sections (Shape, Color, Clarity, Cut, Polish,
     //     Symmetry, Fluorescence, Lab, Location, Availability, Weight) ---
     foreach ($lookupMap as $fldname => $def) {
@@ -371,6 +389,13 @@ function build_applied_filters_summary(array $filters): array
         }
     }
     $summary = [];
+
+    // Stock No quick search isn't part of the configurable sections —
+    // add its own tag directly when present.
+    $stockNoRaw = trim((string)($filters['stockno_search'] ?? ''));
+    if ($stockNoRaw !== '') {
+        $summary[] = ['label' => 'Stock No', 'value' => $stockNoRaw];
+    }
 
     foreach ($sections as $section) {
         $fld = $section['fldname'];

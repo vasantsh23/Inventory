@@ -66,7 +66,7 @@
                 cb.checked = (cb.value === '__ALL__');
                 setSelectedClass(cb);
             });
-            form.querySelectorAll('input[type=number]').forEach(function (inp) {
+            form.querySelectorAll('input[type=number], input[type=text]').forEach(function (inp) {
                 inp.value = '';
             });
             if (advancedPanel) {
@@ -75,6 +75,26 @@
             if (advancedToggleBtn) {
                 advancedToggleBtn.setAttribute('aria-expanded', 'false');
             }
+        });
+    }
+
+    // "Reset" next to the Carat heading clears only that section
+    // (pills + the manual From/To range) — everything else on the
+    // page is left exactly as it was.
+    var caratResetBtn = document.getElementById('dsCaratResetBtn');
+    if (caratResetBtn) {
+        caratResetBtn.addEventListener('click', function () {
+            var weightSection = form.querySelector('.ds-section[data-field="Weight"]');
+            if (!weightSection) {
+                return;
+            }
+            weightSection.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+                cb.checked = false;
+                setSelectedClass(cb);
+            });
+            weightSection.querySelectorAll('input[type=number]').forEach(function (inp) {
+                inp.value = '';
+            });
         });
     }
 

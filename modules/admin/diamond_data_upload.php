@@ -228,7 +228,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                 <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
             </div>
 
-            <button type="submit" class="btn btn-primary" id="diamondUploadSubmitBtn">Upload</button>
+            <button type="submit" class="btn btn-accent" id="diamondUploadSubmitBtn" style="justify-self: start; align-self: start;">Upload</button>
         </form>
     </div>
 

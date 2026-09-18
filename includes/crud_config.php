@@ -21,10 +21,7 @@ const CRUD_TABLES = [
     'user_types'     => 'User Types',
     'setup'          => 'Site Setup',
     'rsetup'         => 'Results/View Cart Display Settings',
-<<<<<<< HEAD
     'uploadref'      => 'Upload Field Mapping',
-=======
->>>>>>> 6c80fa6d4f8fbd6bed0b28df715056898608f570
     'path'           => 'File Paths',
     'timings'        => 'Business Hours',
     'font_and_color' => 'Fonts & Colors',
@@ -441,15 +438,12 @@ const CRUD_COLUMN_OVERRIDES = [
         'sortfld6'   => ['type' => 'maindata_column_select', 'label' => 'Sort Field 6'],
         'sortorder6' => ['type' => 'select', 'label' => 'Sort Order 6', 'options' => ['A' => 'Ascending', 'D' => 'Descending']],
     ],
-<<<<<<< HEAD
     'uploadref' => [
         'id'        => ['type' => 'readonly'],
         'colname'   => ['type' => 'maindata_column_select', 'label' => 'Maindata Column'],
         'excolname' => ['label' => 'CSV Header Name', 'hint' => 'The exact column header your supplier\'s CSV file uses for this field.'],
         'active'    => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No']],
     ],
-=======
->>>>>>> 6c80fa6d4f8fbd6bed0b28df715056898608f570
     'memo' => [
         'id' => ['type' => 'readonly'],
         'company' => ['label' => 'Company (masthead + "Firm" name)'],
@@ -549,10 +543,7 @@ const CRUD_LIST_COLUMNS = [
     'user_types'     => ['id', 'usertype', 'level'],
     'setup'          => ['id', 'company', 'Page title', 'emailid1', 'telno-1'],
     'path'           => ['id', 'description', 'path'],
-<<<<<<< HEAD
     'uploadref'      => ['id', 'colname', 'excolname', 'active'],
-=======
->>>>>>> 6c80fa6d4f8fbd6bed0b28df715056898608f570
     'timings'        => ['id', 'Day', 'start time1', 'end time1', 'holiday'],
     'font_and_color' => ['id', 'font type-1', 'forecolor-1', 'backcolor-1'],
     'upload'         => ['id', 'API', 'API link', 'Excel', 'CSV'],

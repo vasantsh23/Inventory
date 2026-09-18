@@ -303,6 +303,25 @@ CREATE TABLE IF NOT EXISTS maindata (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB;
 
+-- ------------------------------------------------------------
+-- UPLOADREF table: maps an external CSV file's column names
+-- (excolname) to the maindata column they populate (colname), for
+-- the Diamond Data Upload program. Pre-populated with every maindata
+-- field; excolname is left blank for the admin to fill in.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS uploadref (
+    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    colname   VARCHAR(100) NOT NULL,
+    excolname VARCHAR(150) NOT NULL DEFAULT '',
+    active    VARCHAR(10)  NOT NULL DEFAULT 'yes'
+) ENGINE=InnoDB;
+
+INSERT INTO uploadref (colname, excolname, active)
+SELECT COLUMN_NAME, '', 'yes'
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'maindata'
+ORDER BY ORDINAL_POSITION;
+
 CREATE TABLE IF NOT EXISTS diamond_search (
     id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     colname  VARCHAR(255) NOT NULL,

@@ -20,16 +20,6 @@ require_once __DIR__ . '/functions.php'; // get_maindata_columns(), get_maindata
 function build_maindata_search_where(array $filters): array
 {
     $validCols = get_maindata_columns();
-
-    // "Fancy" is a special Color selection — when chosen it replaces
-    // every other filter entirely (matching the page's own JS, which
-    // disables every other field the moment Fancy is selected): the
-    // search becomes fancy = 'yes' and nothing else.
-    $selectedColors = $filters['Color'] ?? [];
-    if (is_array($selectedColors) && in_array('Fancy', $selectedColors, true) && in_array('fancy', $validCols, true)) {
-        return ['`fancy` = :fancyval', [':fancyval' => 'yes']];
-    }
-
     $lookupMap = ds_lookup_map();
     $checkboxMap = ds_checkbox_map();
     $rangeMap = ds_range_map();
@@ -75,6 +65,32 @@ function build_maindata_search_where(array $filters): array
             continue;
         }
 
+        // Color is special-cased ahead of the normal matching below:
+        // "Fancy" replaces Color matching with fancy = 'yes' (and
+        // takes priority over anything else selected here, matching
+        // the page's own JS which disables the other color pills the
+        // moment Fancy is chosen — every OTHER filter section still
+        // applies normally, this only replaces the Color criterion
+        // itself); "Others" replaces the normal "not in the lookup
+        // table" exclusion with the specific srtcol = 35 AND
+        // fancy = 'no' condition requested for this field.
+        if ($fldname === 'Color') {
+            if (in_array('Fancy', $selected, true) && in_array('fancy', $validCols, true)) {
+                $key = ':p' . $pIndex++;
+                $clauses[] = "`fancy` = $key";
+                $params[$key] = 'yes';
+                continue;
+            }
+            if (in_array('__OTHERS__', $selected, true) && in_array('srtcol', $validCols, true) && in_array('fancy', $validCols, true)) {
+                $srtcolKey = ':p' . $pIndex++;
+                $fancyKey = ':p' . $pIndex++;
+                $clauses[] = "(`srtcol` = $srtcolKey AND `fancy` = $fancyKey)";
+                $params[$srtcolKey] = 35;
+                $params[$fancyKey] = 'no';
+                continue;
+            }
+        }
+
         $isShapeOrColor = in_array($fldname, ['Shape', 'Color'], true);
         $othersSelected = $isShapeOrColor && in_array('__OTHERS__', $selected, true);
         $specificValues = array_filter($selected, fn($v) => $v !== '__OTHERS__' && $v !== '__ALL__');
@@ -91,7 +107,10 @@ function build_maindata_search_where(array $filters): array
         }
         if ($othersSelected) {
             // "Others" = not present in the corresponding lookup table
-            // (Shape -> shape.shape, Color -> color.color).
+            // (Shape -> shape.shape, Color -> color.color). Color's
+            // own "Others" is handled above instead — this remains
+            // for Shape (and any other future lookup field that gets
+            // an "Others" option).
             $lookupTable = $def['table'];
             $lookupCol = $def['match'];
             $orParts[] = "`$fldname` NOT IN (SELECT `$lookupCol` FROM `$lookupTable`)";

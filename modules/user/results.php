@@ -41,6 +41,12 @@ if (!is_array($filters)) {
     $filters = [];
 }
 [$where, $params] = build_maindata_search_where($filters);
+// Diamonds on hold are never shown in search results — checked
+// against the real column list first since older databases may not
+// have run the hold-related migration yet.
+if (in_array('hold', get_maindata_columns(), true)) {
+    $where = "($where) AND (`hold` IS NULL OR `hold` != 'yes')";
+}
 $columns = get_results_columns();
 $appliedFilters = build_applied_filters_summary($filters);
 

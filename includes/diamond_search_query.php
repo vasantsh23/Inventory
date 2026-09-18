@@ -29,11 +29,17 @@ function build_maindata_search_where(array $filters): array
     $pIndex = 0;
 
     // --- Stock No quick search: multiple values separated by
-    //     whitespace, matched exactly (case-sensitive as stored). ---
+    //     whitespace, matched exactly (case-sensitive as stored).
+    //     Surrounding quote characters are stripped — both from the
+    //     whole entry ("26676 22950" typed as one quoted phrase) and
+    //     from each individual token, since either is a natural thing
+    //     to type and neither should silently break the match. ---
     if (in_array('StockNo', $validCols, true)) {
-        $stockNoRaw = trim((string)($filters['stockno_search'] ?? ''));
+        $stockNoRaw = trim((string)($filters['stockno_search'] ?? ''), " \t\n\r\0\x0B\"'");
         if ($stockNoRaw !== '') {
-            $stockNos = array_values(array_unique(array_filter(preg_split('/\s+/', $stockNoRaw))));
+            $stockNos = preg_split('/\s+/', $stockNoRaw);
+            $stockNos = array_map(fn($v) => trim($v, "\"'"), $stockNos);
+            $stockNos = array_values(array_unique(array_filter($stockNos, fn($v) => $v !== '')));
             if ($stockNos !== []) {
                 $inKeys = [];
                 foreach ($stockNos as $val) {
@@ -391,8 +397,10 @@ function build_applied_filters_summary(array $filters): array
     $summary = [];
 
     // Stock No quick search isn't part of the configurable sections —
-    // add its own tag directly when present.
-    $stockNoRaw = trim((string)($filters['stockno_search'] ?? ''));
+    // add its own tag directly when present. Trimmed the same way as
+    // the actual search logic above, so the displayed tag always
+    // matches what was really searched for.
+    $stockNoRaw = trim((string)($filters['stockno_search'] ?? ''), " \t\n\r\0\x0B\"'");
     if ($stockNoRaw !== '') {
         $summary[] = ['label' => 'Stock No', 'value' => $stockNoRaw];
     }

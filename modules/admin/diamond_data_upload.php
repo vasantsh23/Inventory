@@ -76,6 +76,17 @@ function process_diamond_upload(string $csvPath, string $mode): array
     }
     $colorIdx = $colToIndex['Color'] ?? $colToIndex['color'] ?? null;
 
+    // totamt and Measurements can be computed from other mapped
+    // fields when blank/zero (see the row loop below) — make sure
+    // both are in the insert's column list even if the CSV doesn't
+    // map either of them directly, so a computed value has somewhere
+    // to go.
+    foreach (['totamt', 'Measurements'] as $computedCol) {
+        if (in_array($computedCol, $validCols, true) && !in_array($computedCol, $mappedCols, true)) {
+            $mappedCols[] = $computedCol;
+        }
+    }
+
     $db = get_db();
     if ($mode === 'replace') {
         $db->exec('DELETE FROM maindata');
@@ -104,11 +115,47 @@ function process_diamond_upload(string $csvPath, string $mode): array
                 continue;
             }
 
+            // Build [colname => value] first (rather than going
+            // straight to the positional $values array) so the
+            // computed-fallback fields below can look up other
+            // mapped values by name, regardless of column order.
+            $rowValues = [];
+            foreach ($colToIndex as $col => $srcIdx) {
+                $val = isset($row[$srcIdx]) ? trim((string)$row[$srcIdx]) : '';
+                $rowValues[$col] = $val === '' ? null : $val;
+            }
+
+            // totamt: if blank or zero, compute as Weight * Price —
+            // only when both of those are themselves mapped and numeric.
+            if (in_array('totamt', $mappedCols, true)) {
+                $totamt = $rowValues['totamt'] ?? null;
+                if (($totamt === null || (float)$totamt === 0.0)
+                    && isset($rowValues['Weight'], $rowValues['Price'])
+                    && is_numeric($rowValues['Weight']) && is_numeric($rowValues['Price'])
+                ) {
+                    $rowValues['totamt'] = (string)((float)$rowValues['Weight'] * (float)$rowValues['Price']);
+                }
+            }
+
+            // Measurements: if blank, derive "length x width x height"
+            // from those three fields — only when all three are mapped
+            // and numeric.
+            if (in_array('Measurements', $mappedCols, true)) {
+                $meas = $rowValues['Measurements'] ?? null;
+                if (($meas === null || trim((string)$meas) === '')
+                    && isset($rowValues['length'], $rowValues['width'], $rowValues['height'])
+                    && is_numeric($rowValues['length']) && is_numeric($rowValues['width']) && is_numeric($rowValues['height'])
+                ) {
+                    $rowValues['Measurements'] = sprintf(
+                        '%.2f x %.2f x %.2f',
+                        (float)$rowValues['length'], (float)$rowValues['width'], (float)$rowValues['height']
+                    );
+                }
+            }
+
             $values = [];
             foreach ($mappedCols as $col) {
-                $srcIdx = $colToIndex[$col];
-                $val = isset($row[$srcIdx]) ? trim((string)$row[$srcIdx]) : '';
-                $values[] = $val === '' ? null : $val;
+                $values[] = $rowValues[$col] ?? null;
             }
 
             try {
@@ -209,6 +256,8 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             "CSV Header Name" entries to decide which <code>maindata</code> field each column populates —
             any header that doesn't match an active mapping is ignored. Rows whose Color value contains
             "Fancy" are always skipped (fancy-colored diamonds aren't imported by this program).
+            If Total Amount is blank or zero, it's computed as Weight &times; Price. If Measurements is
+            blank, it's derived as Length x Width x Height from those three fields.
         </p>
         <form method="post" enctype="multipart/form-data" class="crud-form" id="diamondUploadForm">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -230,7 +279,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                 <p id="csvFileNameDisplay" style="margin-top:6px; font-size:0.85rem; color: var(--content-fg, var(--text-mid));">No file chosen</p>
             </div>
 
-            <button type="submit" class="btn btn-accent" id="diamondUploadSubmitBtn" style="justify-self: start; align-self: start;">Upload</button>
+            <button type="submit" class="btn btn-accent" id="diamondUploadSubmitBtn" style="grid-column: 1 / -1; justify-self: start;">Upload</button>
         </form>
     </div>
 

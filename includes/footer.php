@@ -18,7 +18,7 @@ $setup = $setup ?? (function_exists('get_setup') ? (get_setup() ?? []) : []);
                 <a href="mailto:<?= e($email) ?>"><?= e($email) ?></a>
             </p>
         <?php endif; ?>
-        <p class="footer-copy">&copy; <?= date('Y') ?> <?= e($setup['company'] ?? APP_NAME) ?>. All rights reserved.</p>
+        <p class="footer-copy">&copy; <?= date('Y') ?> <?= e($setup['company'] ?? APP_NAME) ?>. All rights reserved. <span class="footer-version"><?= e(APP_VERSION) ?></span></p>
     </div>
 </footer>
 </body>

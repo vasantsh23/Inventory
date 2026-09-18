@@ -849,6 +849,39 @@ input[type="checkbox"]:not(.ds-visually-hidden-input):checked::after {
     transform: rotate(45deg);
 }
 
+/* Same universal, unambiguous treatment for radio buttons — an
+   unmistakable filled dot when selected, distinct from native
+   browser radio styling which can look nearly identical in both
+   states depending on OS/browser color-scheme rendering. */
+input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 17px;
+    height: 17px;
+    border: 1.5px solid #4a4a4a;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    position: relative;
+    margin: 0;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+input[type="radio"]:checked {
+    border-color: #000000;
+    border-width: 2px;
+}
+input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #000000;
+}
+
 .ds-pill-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .ds-pill {
     display: inline-flex;

@@ -221,11 +221,13 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                 <label style="font-weight:400; display:block;">
                     <input type="radio" name="upload_mode" value="add" id="uploadModeAdd" checked> Add data — append these records to what's already there
                 </label>
+                <p id="uploadModeIndicator" style="margin-top:8px; font-size:0.85rem; color: var(--content-fg, var(--text-mid));"></p>
             </div>
 
             <div class="form-group">
                 <label for="csv_file">CSV File</label>
                 <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
+                <p id="csvFileNameDisplay" style="margin-top:6px; font-size:0.85rem; color: var(--content-fg, var(--text-mid));">No file chosen</p>
             </div>
 
             <button type="submit" class="btn btn-accent" id="diamondUploadSubmitBtn" style="justify-self: start; align-self: start;">Upload</button>

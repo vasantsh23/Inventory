@@ -9,6 +9,96 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/db.php';
 
+/**
+ * Shared pagination control for every paginated table (Results,
+ * Customer List, Admin > table_view.php, ...). Renders: « Prev, a
+ * window of page numbers around the current page (with first/last
+ * page + "…" gaps when the total is large), Next ».
+ *
+ * @param int      $page        Current page (1-based).
+ * @param int      $totalPages  Total number of pages.
+ * @param callable $urlFor      fn(int $page): string — builds the href for a given page number.
+ */
+function render_pagination(int $page, int $totalPages, callable $urlFor): void
+{
+    if ($totalPages <= 1) {
+        return;
+    }
+
+    // Which page numbers to show as actual links: the first page,
+    // the last page, and a small window around the current page.
+    // Everything else collapses into a "…" gap.
+    $window = 2;
+    $show = [1, $totalPages];
+    for ($p = $page - $window; $p <= $page + $window; $p++) {
+        if ($p >= 1 && $p <= $totalPages) {
+            $show[] = $p;
+        }
+    }
+    $show = array_unique($show);
+    sort($show);
+
+    echo '<div class="pagination">';
+
+    echo $page > 1
+        ? '<a class="pagination-nav" href="' . e($urlFor($page - 1)) . '" aria-label="Previous page">&laquo; Prev</a>'
+        : '<span class="pagination-nav is-disabled" aria-disabled="true">&laquo; Prev</span>';
+
+    $prevShown = 0;
+    foreach ($show as $p) {
+        if ($prevShown !== 0 && $p - $prevShown > 1) {
+            echo '<span class="pagination-ellipsis">&hellip;</span>';
+        }
+        echo $p === $page
+            ? '<span class="current">' . $p . '</span>'
+            : '<a href="' . e($urlFor($p)) . '">' . $p . '</a>';
+        $prevShown = $p;
+    }
+
+    echo $page < $totalPages
+        ? '<a class="pagination-nav" href="' . e($urlFor($page + 1)) . '" aria-label="Next page">Next &raquo;</a>'
+        : '<span class="pagination-nav is-disabled" aria-disabled="true">Next &raquo;</span>';
+
+    echo '</div>';
+}
+
+/**
+ * The choices offered by the "Rows per page" dropdown on paginated
+ * user-facing tables (Results, View Cart). Kept as one shared list so
+ * every such table offers the same options.
+ */
+function rows_per_page_choices(): array
+{
+    return [25, 50, 100, 250];
+}
+
+/**
+ * Resolve how many rows to show per page for a given $sessionKey:
+ * an explicit ?per_page= on this request wins (and is remembered in
+ * the session so it "sticks" across subsequent plain page reloads /
+ * pagination clicks that don't repeat the query param); otherwise the
+ * previously remembered value is used; otherwise $default. Always
+ * clamped to rows_per_page_choices() so an edited/garbage URL can't
+ * force an arbitrarily large page size.
+ */
+function resolve_per_page(string $sessionKey, int $default = 100): int
+{
+    $choices = rows_per_page_choices();
+
+    $requested = $_GET['per_page'] ?? null;
+    if ($requested !== null && in_array((int)$requested, $choices, true)) {
+        $_SESSION[$sessionKey] = (int)$requested;
+        return (int)$requested;
+    }
+
+    $remembered = $_SESSION[$sessionKey] ?? null;
+    if ($remembered !== null && in_array((int)$remembered, $choices, true)) {
+        return (int)$remembered;
+    }
+
+    return in_array($default, $choices, true) ? $default : $choices[0];
+}
+
 /** The real, current column names of `maindata` — the only names ever used as SQL identifiers here. */
 function get_maindata_columns(): array
 {

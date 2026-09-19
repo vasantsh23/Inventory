@@ -102,7 +102,7 @@ if (($_GET['export'] ?? '') === 'xlsx_selected') {
 
 // ---- Normal paginated HTML view ----
 $page = max(1, (int)($_GET['page'] ?? 1));
-$perPage = 25;
+$perPage = resolve_per_page('ds_results_per_page', 100);
 $offset = ($page - 1) * $perPage;
 
 $total = 0;
@@ -279,17 +279,17 @@ require_once __DIR__ . '/../../includes/header.php';
                 </table>
             </div>
 
-            <?php if ($totalPages > 1): ?>
-                <div class="pagination">
-                    <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-                        <?php if ($p === $page): ?>
-                            <span class="current"><?= $p ?></span>
-                        <?php else: ?>
-                            <a href="?page=<?= e((string)$p) ?>"><?= $p ?></a>
-                        <?php endif; ?>
-                    <?php endfor; ?>
+            <div class="results-pagination-row">
+                <div class="rows-per-page">
+                    <label for="perPageSelect">Rows per page:</label>
+                    <select id="perPageSelect" onchange="location.href = '?per_page=' + this.value + '&page=1'">
+                        <?php foreach (rows_per_page_choices() as $opt): ?>
+                            <option value="<?= (int)$opt ?>" <?= $perPage === $opt ? 'selected' : '' ?>><?= (int)$opt ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
-            <?php endif; ?>
+                <?php render_pagination($page, $totalPages, fn($p) => '?page=' . $p); ?>
+            </div>
         <?php endif; ?>
     </section>
 

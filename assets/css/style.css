@@ -491,10 +491,15 @@ table.data-table tr:last-child td { border-bottom: none; }
 
 .row-actions { display: flex; gap: 6px; white-space: nowrap; }
 
-.pagination { display: flex; gap: 6px; margin-top: 16px; justify-content: flex-end; align-items: center; font-size: 0.85rem; color: var(--text-mid); }
+.pagination { display: flex; gap: 6px; margin-top: 0; justify-content: flex-end; align-items: center; font-size: 0.85rem; color: var(--text-mid); }
 .pagination a, .pagination span { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--panel-border); color: var(--text-mid); }
 .pagination a:hover { border-color: var(--panel-border-hover); color: var(--text-hi); }
 .pagination .current { background: var(--accent-gradient); color: #fff; border: none; }
+.pagination-nav.is-disabled { opacity: 0.45; cursor: default; }
+.pagination-ellipsis { padding: 6px 4px; border: none; color: var(--text-mid); }
+.results-pagination-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; justify-content: space-between; margin-top: 16px; }
+.rows-per-page { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-mid); }
+.rows-per-page select { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--panel-border); color: var(--text-hi); background: var(--panel-bg, #fff); }
 
 /* Forms (CRUD add/edit) */
 .crud-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 20px; }

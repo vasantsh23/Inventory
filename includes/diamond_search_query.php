@@ -65,32 +65,6 @@ function build_maindata_search_where(array $filters): array
             continue;
         }
 
-        // Color is special-cased ahead of the normal matching below:
-        // "Fancy" replaces Color matching with fancy = 'yes' (and
-        // takes priority over anything else selected here, matching
-        // the page's own JS which disables the other color pills the
-        // moment Fancy is chosen — every OTHER filter section still
-        // applies normally, this only replaces the Color criterion
-        // itself); "Others" replaces the normal "not in the lookup
-        // table" exclusion with the specific srtcol = 35 AND
-        // fancy = 'no' condition requested for this field.
-        if ($fldname === 'Color') {
-            if (in_array('Fancy', $selected, true) && in_array('fancy', $validCols, true)) {
-                $key = ':p' . $pIndex++;
-                $clauses[] = "`fancy` = $key";
-                $params[$key] = 'yes';
-                continue;
-            }
-            if (in_array('__OTHERS__', $selected, true) && in_array('srtcol', $validCols, true) && in_array('fancy', $validCols, true)) {
-                $srtcolKey = ':p' . $pIndex++;
-                $fancyKey = ':p' . $pIndex++;
-                $clauses[] = "(`srtcol` = $srtcolKey AND `fancy` = $fancyKey)";
-                $params[$srtcolKey] = 35;
-                $params[$fancyKey] = 'no';
-                continue;
-            }
-        }
-
         $isShapeOrColor = in_array($fldname, ['Shape', 'Color'], true);
         $othersSelected = $isShapeOrColor && in_array('__OTHERS__', $selected, true);
         $specificValues = array_filter($selected, fn($v) => $v !== '__OTHERS__' && $v !== '__ALL__');
@@ -107,10 +81,7 @@ function build_maindata_search_where(array $filters): array
         }
         if ($othersSelected) {
             // "Others" = not present in the corresponding lookup table
-            // (Shape -> shape.shape, Color -> color.color). Color's
-            // own "Others" is handled above instead — this remains
-            // for Shape (and any other future lookup field that gets
-            // an "Others" option).
+            // (Shape -> shape.shape, Color -> color.color).
             $lookupTable = $def['table'];
             $lookupCol = $def['match'];
             $orParts[] = "`$fldname` NOT IN (SELECT `$lookupCol` FROM `$lookupTable`)";
@@ -199,32 +170,9 @@ function build_maindata_search_where(array $filters): array
         } elseif ($section['kind'] === 'generic_text' && in_array($fldname, $validCols, true)) {
             $text = trim((string)($filters[$fldname . '_text'] ?? ''));
             if ($text !== '') {
-                if ($fldname === 'StockNo') {
-                    // Stock No supports multiple values separated by
-                    // whitespace, matched exactly — not a partial
-                    // "contains" match like every other generic text
-                    // field below. Surrounding quote characters are
-                    // stripped from both the whole entry and each
-                    // individual token, since typing the search
-                    // wrapped in quotes is a natural thing to do.
-                    $stockNoRaw = trim($text, " \t\n\r\0\x0B\"'");
-                    $stockNos = preg_split('/\s+/', $stockNoRaw);
-                    $stockNos = array_map(fn($v) => trim($v, "\"'"), $stockNos);
-                    $stockNos = array_values(array_unique(array_filter($stockNos, fn($v) => $v !== '')));
-                    if ($stockNos !== []) {
-                        $inKeys = [];
-                        foreach ($stockNos as $val) {
-                            $key = ':p' . $pIndex++;
-                            $inKeys[] = $key;
-                            $params[$key] = $val;
-                        }
-                        $clauses[] = "`$fldname` IN (" . implode(', ', $inKeys) . ')';
-                    }
-                } else {
-                    $key = ':p' . $pIndex++;
-                    $clauses[] = "`$fldname` LIKE $key";
-                    $params[$key] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $text) . '%';
-                }
+                $key = ':p' . $pIndex++;
+                $clauses[] = "`$fldname` LIKE $key";
+                $params[$key] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $text) . '%';
             }
         }
     }

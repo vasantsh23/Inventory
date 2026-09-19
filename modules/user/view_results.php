@@ -80,7 +80,12 @@ if ($emailid !== '' && $columns !== []) {
             $headers = array_map(fn($c) => $c['label'], $columns);
             $exportRows = [];
             foreach ($stmt->fetchAll() as $row) {
-                $exportRows[] = array_map(fn($c) => (string)($row[$c['field']] ?? ''), $columns);
+                $exportRows[] = array_map(
+                    fn($c) => $c['field'] === 'totamt'
+                        ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
+                        : (string)($row[$c['field']] ?? ''),
+                    $columns
+                );
             }
             XlsxWriter::download('cart-' . date('Ymd-His') . '.xlsx', $headers, $exportRows);
         }
@@ -195,6 +200,10 @@ require_once __DIR__ . '/../../includes/header.php';
                                     <?php elseif ($col['field'] === 'Measurements'): ?>
                                         <td data-label="<?= e($col['label']) ?>">
                                             <?= e(format_measurements_display($row['Measurements'] ?? null)) ?>
+                                        </td>
+                                    <?php elseif ($col['field'] === 'totamt'): ?>
+                                        <td data-label="<?= e($col['label']) ?>">
+                                            <?= e(number_format(ds_display_amount($row['totamt'] ?? 0), 2)) ?>
                                         </td>
                                     <?php else: ?>
                                         <td data-label="<?= e($col['label']) ?>">

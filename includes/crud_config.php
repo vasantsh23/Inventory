@@ -22,13 +22,11 @@ const CRUD_TABLES = [
     'setup'          => 'Site Setup',
     'rsetup'         => 'Results/View Cart Display Settings',
     'uploadref'      => 'Upload Field Mapping',
-    'fancy'          => 'Fancy Color Reference',
-    'fancycolor'     => 'Nat Fancy Color Options',
-    'fancyint'       => 'Nat Fancy Color Intensity Options',
     'path'           => 'File Paths',
     'timings'        => 'Business Hours',
     'font_and_color' => 'Fonts & Colors',
     'upload'         => 'API / Upload Config',
+    'rounding_rules' => 'Amount Rounding Rules',
     'maindata'       => 'Main Data',
     'diamond_search' => 'Diamond Search Fields',
     'results'        => 'Results',
@@ -351,12 +349,6 @@ const CRUD_COLUMN_OVERRIDES = [
             'options' => ['yes' => 'Yes — require login', 'no' => 'No — go straight to Diamond Search'],
             'hint' => 'If set to No, the "Inventory" link on the home page skips login entirely and goes straight into the user module (public browsing). Admin/Super Admin logins are unaffected — once this is No, the admin login page is no longer linked anywhere on the public site, so log in directly at yoursite.com/login.php.',
         ],
-        'Fancyfilter' => [
-            'type' => 'select',
-            'label' => 'Nat Fancy Color Filter',
-            'options' => ['no' => 'No', 'yes' => 'Yes'],
-            'hint' => 'If Yes, Diamond Search shows dedicated "Nat Fancy Color" and "Nat Fancy Color Intensity" pill rows after the Color section (sourced from the Nat Fancy Color / Intensity Options tables), and the plain "Fancy" pill is removed from Color.',
-        ],
     ],
     'path' => [
         'id' => ['type' => 'readonly'],
@@ -405,10 +397,6 @@ const CRUD_COLUMN_OVERRIDES = [
         // `id` is intentionally left without an override: it is NOT
         // auto-increment (ids come from your data source), so it must
         // stay an editable required field on both add and edit.
-        'fancy'       => ['type' => 'select', 'label' => 'Fancy', 'options' => ['no' => 'No', 'yes' => 'Yes'], 'hint' => 'Set automatically by Diamond Data Upload when a row\'s Color contains "Fancy".'],
-        'fancy_short' => ['label' => 'Fancy Short', 'hint' => 'Auto-populated from the Fancy Color Reference table during upload — leave blank to let it derive automatically.'],
-        'hold'        => ['type' => 'select', 'label' => 'Hold', 'options' => ['no' => 'No', 'yes' => 'Yes']],
-        'memo'        => ['type' => 'select', 'label' => 'Memo', 'options' => ['no' => 'No', 'yes' => 'Yes']],
     ],
     'diamond_search' => [
         'id'     => ['type' => 'readonly'],
@@ -457,20 +445,19 @@ const CRUD_COLUMN_OVERRIDES = [
         'excolname' => ['label' => 'CSV Header Name', 'hint' => 'The exact column header your supplier\'s CSV file uses for this field.'],
         'active'    => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No']],
     ],
-    'fancy' => [
-        'id'           => ['type' => 'readonly'],
-        'color'        => ['label' => 'Color', 'hint' => 'The fancy color name, e.g. "Yellow", "Pink".'],
-        'intensity'    => ['label' => 'Intensity', 'hint' => 'e.g. "Fancy", "Fancy Intense", "Fancy Vivid".'],
-        'description'  => ['label' => 'Description', 'hint' => 'The full text to match against a diamond\'s Color value during CSV import, e.g. "Fancy Intense Yellow".'],
-        'abbreviation' => ['label' => 'Abbreviation', 'hint' => 'Short code stored in maindata.fancy_short when this description matches, e.g. "FIY".'],
-    ],
-    'fancycolor' => [
-        'id'        => ['type' => 'readonly'],
-        'fncycolor' => ['label' => 'Nat Fancy Color', 'hint' => 'e.g. "Yellow", "Pink", "Blue". Shown as a pill on Diamond Search when Fancyfilter is enabled in Site Setup.'],
-    ],
-    'fancyint' => [
-        'id'      => ['type' => 'readonly'],
-        'fncyint' => ['label' => 'Nat Fancy Color Intensity', 'hint' => 'e.g. "Fancy", "Fancy Intense", "Fancy Vivid". Shown as a pill on Diamond Search when Fancyfilter is enabled in Site Setup.'],
+    'rounding_rules' => [
+        'id'         => ['type' => 'readonly'],
+        'rule_name'  => ['label' => 'Rule Name'],
+        'method'     => ['type' => 'select', 'label' => 'Method', 'options' => [
+                            'ceil_whole', 'round_whole', 'floor_whole',
+                            'nearest_increment', 'ceil_increment', 'floor_increment', 'none',
+                         ],
+                          'hint' => 'The actual math for each of these lives in includes/functions.php\'s round_amount_apply() — adding a genuinely new method (not just a new increment) needs a small code change there, then a new row here referencing it.'],
+        'increment'  => ['label' => 'Increment', 'hint' => 'Only used by the "...increment" methods, e.g. 0.05 for nearest/round-up/round-down to 5 cents, 0.10 for 10 cents, 1 for whole dollars. Ignored by every other method.'],
+        'active'     => ['type' => 'select', 'label' => 'Active', 'options' => ['no', 'yes'],
+                          'hint' => 'Exactly one row should be "yes" — that\'s the rule actually used to round Amount (totamt) on Results and View Cart. If more than one is "yes", the lowest id wins; if none are, it safely falls back to "Round up to next whole dollar".'],
+        'description' => ['type' => 'textarea', 'label' => 'Description'],
+        'sort_order'  => ['label' => 'Sort Order'],
     ],
     'memo' => [
         'id' => ['type' => 'readonly'],
@@ -572,9 +559,7 @@ const CRUD_LIST_COLUMNS = [
     'setup'          => ['id', 'company', 'Page title', 'emailid1', 'telno-1'],
     'path'           => ['id', 'description', 'path'],
     'uploadref'      => ['id', 'colname', 'excolname', 'active'],
-    'fancy'          => ['id', 'color', 'intensity', 'description', 'abbreviation'],
-    'fancycolor'     => ['id', 'fncycolor'],
-    'fancyint'       => ['id', 'fncyint'],
+    'rounding_rules' => ['id', 'rule_name', 'method', 'increment', 'active', 'sort_order'],
     'timings'        => ['id', 'Day', 'start time1', 'end time1', 'holiday'],
     'font_and_color' => ['id', 'font type-1', 'forecolor-1', 'backcolor-1'],
     'upload'         => ['id', 'API', 'API link', 'Excel', 'CSV'],

@@ -31,61 +31,6 @@ function ds_option_submit_value(array $section, array $opt): string
 
 $sections = get_diamond_search_sections();
 $advancedSections = get_diamond_search_sections('adv_filter');
-
-// Nat Fancy Color mode: setup.Fancyfilter = 'yes' replaces the plain
-// "Fancy" pill in Color with two dedicated pill rows — Nat Fancy
-// Color and Nat Fancy Color Intensity — sourced from the fancycolor
-// / fancyint reference tables (ordered alphabetically, as requested)
-// and inserted directly after Color.
-$setup = get_setup() ?? [];
-$fancyfilterOn = strtolower(trim((string)($setup['Fancyfilter'] ?? 'no'))) === 'yes';
-if ($fancyfilterOn) {
-    $colorIndex = null;
-    foreach ($sections as $i => $sec) {
-        if ($sec['fldname'] === 'Color') {
-            $colorIndex = $i;
-            // Remove the plain "Fancy" pill from Color's own options
-            // — the dedicated rows below replace it in this mode.
-            $sections[$i]['options'] = array_values(array_filter(
-                $sec['options'],
-                fn($opt) => strcasecmp((string)$opt['label'], 'Fancy') !== 0
-            ));
-            break;
-        }
-    }
-
-    $fancyColorRows = get_db()->query('SELECT id, fncycolor FROM fancycolor ORDER BY fncycolor ASC')->fetchAll();
-    $fancyIntRows = get_db()->query('SELECT id, fncyint FROM fancyint ORDER BY fncyint ASC')->fetchAll();
-
-    $newSections = [
-        [
-            'kind' => 'pill',
-            'fldname' => 'NatFancyColor',
-            'label' => 'Nat Fancy Color',
-            'options' => array_map(
-                fn($row) => ['id' => $row['id'], 'label' => (string)$row['fncycolor'], 'value' => (string)$row['fncycolor']],
-                $fancyColorRows
-            ),
-        ],
-        [
-            'kind' => 'pill',
-            'fldname' => 'NatFancyColorIntensity',
-            'label' => 'Nat Fancy Color Intensity',
-            'options' => array_map(
-                fn($row) => ['id' => $row['id'], 'label' => (string)$row['fncyint'], 'value' => (string)$row['fncyint']],
-                $fancyIntRows
-            ),
-        ],
-    ];
-
-    if ($colorIndex !== null) {
-        array_splice($sections, $colorIndex + 1, 0, $newSections);
-    } else {
-        // No active Color section to anchor after — append at the end
-        // rather than silently dropping these.
-        array_push($sections, ...$newSections);
-    }
-}
 // A field already shown in the main search must not also render in
 // the Advanced panel — duplicate `name` attributes on two different
 // inputs breaks form submission (the browser/PHP only keeps one of
@@ -149,15 +94,8 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
 {
     $fld = $section['fldname'];
     ?>
-    <div class="ds-section" data-field="<?= e($fld) ?>">
-        <?php if ($fld === 'Weight'): ?>
-            <div class="ds-section-heading-row">
-                <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
-                <button type="button" class="ds-section-reset-btn" id="dsCaratResetBtn">Reset</button>
-            </div>
-        <?php else: ?>
-            <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
-        <?php endif; ?>
+    <div class="ds-section">
+        <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
 
         <?php if ($section['kind'] === 'checkbox'): ?>
             <label class="ds-checkbox-row">

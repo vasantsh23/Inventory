@@ -41,13 +41,6 @@ if (!is_array($filters)) {
     $filters = [];
 }
 [$where, $params] = build_maindata_search_where($filters);
-// Diamonds on hold are never shown in search results — checked
-// against the real column list first since older databases may not
-// have run the hold-related migration yet.
-if (in_array('hold', get_maindata_columns(), true)) {
-    $where = "($where) AND (`hold` IS NULL OR `hold` != 'yes')";
-}
-
 $columns = get_results_columns();
 $appliedFilters = build_applied_filters_summary($filters);
 
@@ -63,7 +56,12 @@ if (($_GET['export'] ?? '') === 'xlsx') {
     $headers = array_map(fn($c) => $c['label'], $columns);
     $rows = [];
     foreach ($stmt->fetchAll() as $row) {
-        $rows[] = array_map(fn($c) => (string)($row[$c['field']] ?? ''), $columns);
+        $rows[] = array_map(
+            fn($c) => $c['field'] === 'totamt'
+                ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
+                : (string)($row[$c['field']] ?? ''),
+            $columns
+        );
     }
     XlsxWriter::download('diamond-search-results-' . date('Ymd-His') . '.xlsx', $headers, $rows);
 }
@@ -92,7 +90,12 @@ if (($_GET['export'] ?? '') === 'xlsx_selected') {
     $headers = array_map(fn($c) => $c['label'], $columns);
     $rows = [];
     foreach ($stmt->fetchAll() as $row) {
-        $rows[] = array_map(fn($c) => (string)($row[$c['field']] ?? ''), $columns);
+        $rows[] = array_map(
+            fn($c) => $c['field'] === 'totamt'
+                ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
+                : (string)($row[$c['field']] ?? ''),
+            $columns
+        );
     }
     XlsxWriter::download('diamond-search-selected-' . date('Ymd-His') . '.xlsx', $headers, $rows);
 }
@@ -259,6 +262,10 @@ require_once __DIR__ . '/../../includes/header.php';
                                     <?php elseif ($col['field'] === 'Measurements'): ?>
                                         <td data-label="<?= e($col['label']) ?>">
                                             <?= e(format_measurements_display($row['Measurements'] ?? null)) ?>
+                                        </td>
+                                    <?php elseif ($col['field'] === 'totamt'): ?>
+                                        <td data-label="<?= e($col['label']) ?>">
+                                            <?= e(number_format(ds_display_amount($row['totamt'] ?? 0), 2)) ?>
                                         </td>
                                     <?php else: ?>
                                         <td data-label="<?= e($col['label']) ?>">

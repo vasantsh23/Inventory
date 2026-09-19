@@ -66,7 +66,7 @@
                 cb.checked = (cb.value === '__ALL__');
                 setSelectedClass(cb);
             });
-            form.querySelectorAll('input[type=number], input[type=text]').forEach(function (inp) {
+            form.querySelectorAll('input[type=number]').forEach(function (inp) {
                 inp.value = '';
             });
             if (advancedPanel) {
@@ -75,26 +75,6 @@
             if (advancedToggleBtn) {
                 advancedToggleBtn.setAttribute('aria-expanded', 'false');
             }
-        });
-    }
-
-    // "Reset" next to the Carat heading clears only that section
-    // (pills + the manual From/To range) — everything else on the
-    // page is left exactly as it was.
-    var caratResetBtn = document.getElementById('dsCaratResetBtn');
-    if (caratResetBtn) {
-        caratResetBtn.addEventListener('click', function () {
-            var weightSection = form.querySelector('.ds-section[data-field="Weight"]');
-            if (!weightSection) {
-                return;
-            }
-            weightSection.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
-                cb.checked = false;
-                setSelectedClass(cb);
-            });
-            weightSection.querySelectorAll('input[type=number]').forEach(function (inp) {
-                inp.value = '';
-            });
         });
     }
 
@@ -114,40 +94,6 @@
             advancedToggleBtn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
         });
     }
-    // "Fancy" is a special Color selection — choosing it disables
-    // every OTHER color option (including "Others"), but every other
-    // filter section (Shape, Clarity, etc.) stays fully active and
-    // can still be combined with it. Re-checked on load too, in case
-    // "Fancy" was already selected via a restored prior search
-    // ("Back to Search").
-    var colorSection = form.querySelector('.ds-section[data-field="Color"]');
-    var fancyInput = colorSection ? colorSection.querySelector('input[type=checkbox][value="Fancy"]') : null;
-
-    function applyFancyMode() {
-        var isFancy = !!(fancyInput && fancyInput.checked);
-
-        // Every other pill within the Color section itself — Fancy is
-        // exclusive among the color options, but nothing outside this
-        // section is touched.
-        if (colorSection) {
-            colorSection.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
-                if (cb === fancyInput) {
-                    return;
-                }
-                cb.disabled = isFancy;
-                var label = cb.closest('.ds-pill');
-                if (label) {
-                    label.classList.toggle('ds-pill-disabled', isFancy);
-                }
-            });
-        }
-    }
-
-    if (fancyInput) {
-        fancyInput.addEventListener('change', applyFancyMode);
-        applyFancyMode();
-    }
-
     // Stepper +/- buttons next to range inputs (Price, Amount, Carat,
     // etc.) — nudge the adjacent number input up/down by its step.
     form.addEventListener('click', function (e) {

@@ -24,6 +24,81 @@ function get_maindata_columns(): array
     return $cols;
 }
 
+/**
+ * Registry of rounding methods `rounding_rules.method` can select.
+ * Adding a genuinely new rounding ALGORITHM (not just a different
+ * increment for an existing one, like "10 cents" instead of "5
+ * cents" — that's just a new row) means adding a case here, since a
+ * database row can pick among these but can't invent new math on its
+ * own — that's a deliberate safety/correctness boundary, not an
+ * oversight. $increment is only used by the *_increment methods;
+ * every other method ignores it.
+ */
+function round_amount_apply(string $method, float $amount, ?float $increment): float
+{
+    switch ($method) {
+        case 'ceil_whole':
+            return ceil($amount);
+        case 'round_whole':
+            return round($amount);
+        case 'floor_whole':
+            return floor($amount);
+        case 'nearest_increment':
+            $inc = $increment !== null && $increment > 0 ? $increment : 1.0;
+            return round($amount / $inc) * $inc;
+        case 'ceil_increment':
+            $inc = $increment !== null && $increment > 0 ? $increment : 1.0;
+            return ceil($amount / $inc) * $inc;
+        case 'floor_increment':
+            $inc = $increment !== null && $increment > 0 ? $increment : 1.0;
+            return floor($amount / $inc) * $inc;
+        case 'none':
+            return $amount;
+        default:
+            // An unrecognised method (e.g. a row references a method
+            // whose code was since removed) fails safe to today's
+            // existing behavior rather than guessing.
+            return ceil($amount);
+    }
+}
+
+/**
+ * The currently-selected row from `rounding_rules` (active='yes'),
+ * cached for the rest of this request. Falls back to today's
+ * existing "round up to whole dollar" behavior if the table is
+ * missing, empty, or nothing is marked active — so this feature is
+ * fully backward-compatible until an admin actually picks a
+ * different rule via its CRUD screen ("Amount Rounding Rules").
+ */
+function get_active_rounding_rule(): array
+{
+    static $rule = null;
+    if ($rule !== null) {
+        return $rule;
+    }
+    $default = ['method' => 'ceil_whole', 'increment' => null];
+    try {
+        $row = get_db()->query("SELECT method, increment FROM rounding_rules WHERE active = 'yes' ORDER BY id ASC LIMIT 1")->fetch();
+        $rule = $row ?: $default;
+    } catch (Throwable $e) {
+        $rule = $default; // table doesn't exist yet, etc.
+    }
+    return $rule;
+}
+
+/**
+ * Amount for display on the Results and View Cart (view_results.php)
+ * screens: the raw `totamt` value as stored, rounded per whichever
+ * rule is currently active in `rounding_rules` (see
+ * get_active_rounding_rule() / round_amount_apply()).
+ */
+function ds_display_amount(mixed $totamt): float
+{
+    $raw = (float)$totamt;
+    $rule = get_active_rounding_rule();
+    return round_amount_apply((string)$rule['method'], $raw, $rule['increment'] !== null ? (float)$rule['increment'] : null);
+}
+
 /** column_name => DATA_TYPE (e.g. 'int', 'decimal', 'varchar', 'text')
  * for every real column of `maindata` — used to decide how to render
  * a filter for a field that isn't one of the specially-handled ones
@@ -158,8 +233,6 @@ function ds_lookup_map(): array
         'Shape'                 => ['table' => 'shape', 'label' => 'Display _nm', 'match' => 'shape', 'hasActive' => true, 'orderCol' => 'order', 'image' => 'imgpath'],
         'Weight'                => ['table' => 'size', 'label' => 'sizedesc', 'hasActive' => false, 'orderCol' => 'sizefr'],
         'Color'                 => ['table' => 'color', 'label' => 'color', 'match' => 'color', 'hasActive' => true, 'orderCol' => 'id'],
-        'NatFancyColor'         => ['table' => 'fancycolor', 'label' => 'fncycolor', 'match' => 'fncycolor', 'hasActive' => false, 'orderCol' => 'fncycolor'],
-        'NatFancyColorIntensity' => ['table' => 'fancyint', 'label' => 'fncyint', 'match' => 'fncyint', 'hasActive' => false, 'orderCol' => 'fncyint'],
         'Clarity'               => ['table' => 'clarity', 'label' => 'clarity', 'match' => 'clarity', 'hasActive' => true, 'orderCol' => 'id'],
         'CutGrade'              => ['table' => 'cut', 'label' => 'cut', 'match' => 'cut', 'hasActive' => true, 'orderCol' => 'order'],
         'Polish'                => ['table' => 'polish', 'label' => 'pol', 'match' => 'pol', 'hasActive' => true, 'orderCol' => 'order'],

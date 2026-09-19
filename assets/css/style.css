@@ -498,7 +498,6 @@ table.data-table tr:last-child td { border-bottom: none; }
 
 /* Forms (CRUD add/edit) */
 .crud-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 20px; }
-.hold-mgmt-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 18px 0; }
 .form-group { display: flex; flex-direction: column; }
 .form-group.full-width { grid-column: 1 / -1; }
 .form-group label { font-weight: 600; font-size: 0.82rem; color: var(--text-mid); margin-bottom: 6px; }
@@ -806,8 +805,6 @@ table.data-table tr:last-child td { border-bottom: none; }
 }
 
 .ds-section { margin-bottom: 34px; }
-.ds-section-disabled { opacity: 0.4; pointer-events: none; }
-.ds-pill-disabled { opacity: 0.4; pointer-events: none; }
 .ds-section-title {
     font-size: 0.78rem;
     font-weight: 700;
@@ -817,20 +814,6 @@ table.data-table tr:last-child td { border-bottom: none; }
     margin: 0 0 14px;
 }
 .ds-empty-note { color: var(--text-low); font-size: 0.85rem; }
-
-.ds-section-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.ds-section-heading-row .ds-section-title { margin-bottom: 0; }
-.ds-section-reset-btn {
-    background: none;
-    border: none;
-    color: var(--accent-a);
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 0;
-    text-decoration: underline;
-}
-.ds-section-reset-btn:hover { opacity: 0.8; }
 
 .ds-visually-hidden-input {
     position: absolute;

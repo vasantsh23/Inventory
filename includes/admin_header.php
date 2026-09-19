@@ -81,7 +81,6 @@ $pageSubtitle = $pageSubtitle ?? '';
         <div class="sidebar-section">Data</div>
         <a href="<?= e(asset_url('/modules/admin/backup.php')) ?>" class="<?= $activeNav === 'backup' ? 'active' : '' ?>">Backup &amp; Restore</a>
         <a href="<?= e(asset_url('/modules/admin/diamond_data_upload.php')) ?>" class="<?= $activeNav === 'diamond_data_upload' ? 'active' : '' ?>">Diamond Data Upload</a>
-        <a href="<?= e(asset_url('/modules/admin/hold_management.php')) ?>" class="<?= $activeNav === 'hold_management' ? 'active' : '' ?>">Hold Management</a>
 
         <div class="sidebar-section">Tools</div>
         <a href="<?= e(asset_url('/modules/admin/font_color_preview.php')) ?>" class="<?= $activeNav === 'font_color_preview' ? 'active' : '' ?>">Font &amp; Color Preview</a>

@@ -280,14 +280,15 @@ require_once __DIR__ . '/../../includes/header.php';
             </div>
 
             <div class="results-pagination-row">
-                <div class="rows-per-page">
+                <form class="rows-per-page" method="get" action="<?= e(asset_url('/modules/user/results.php')) ?>">
                     <label for="perPageSelect">Rows per page:</label>
-                    <select id="perPageSelect" onchange="location.href = '?per_page=' + this.value + '&page=1'">
+                    <select id="perPageSelect" name="per_page" onchange="this.form.submit()">
                         <?php foreach (rows_per_page_choices() as $opt): ?>
                             <option value="<?= (int)$opt ?>" <?= $perPage === $opt ? 'selected' : '' ?>><?= (int)$opt ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
+                    <input type="hidden" name="page" value="1">
+                </form>
                 <?php render_pagination($page, $totalPages, fn($p) => '?page=' . $p); ?>
             </div>
         <?php endif; ?>

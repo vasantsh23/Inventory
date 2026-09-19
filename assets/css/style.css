@@ -498,7 +498,7 @@ table.data-table tr:last-child td { border-bottom: none; }
 .pagination-nav.is-disabled { opacity: 0.45; cursor: default; }
 .pagination-ellipsis { padding: 6px 4px; border: none; color: var(--text-mid); }
 .results-pagination-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; justify-content: space-between; margin-top: 16px; }
-.rows-per-page { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-mid); }
+.rows-per-page { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-mid); margin: 0; }
 .rows-per-page select { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--panel-border); color: var(--text-hi); background: var(--panel-bg, #fff); }
 
 /* Forms (CRUD add/edit) */

@@ -81,7 +81,7 @@ $errorCode = (string)($_GET['error'] ?? '');
                         <td class="row-actions" data-label="Actions">
                             <a class="btn btn-sm" href="<?= e(asset_url('/modules/admin/table_form.php?table=' . urlencode($table) . '&id=' . urlencode((string)$row[$meta['pk']]))) ?>">Edit</a>
                             <form method="post" action="<?= e(asset_url('/modules/admin/table_delete.php')) ?>"
-                                  onsubmit="return confirm('Delete this record? This cannot be undone.');" style="display:inline;">
+                                  data-confirm="Delete this record? This cannot be undone." style="display:inline;">
                                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                                 <input type="hidden" name="table" value="<?= e($table) ?>">
                                 <input type="hidden" name="id" value="<?= e((string)$row[$meta['pk']]) ?>">

@@ -89,7 +89,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
         </p>
         <?php if ((int)(current_user()['level'] ?? 0) >= 9): ?>
             <form method="post" action="<?= e(asset_url('/modules/admin/backup.php')) ?>" enctype="multipart/form-data"
-                  onsubmit="return confirm('This will overwrite existing data with the uploaded backup. Continue?');">
+                  data-confirm="This will overwrite existing data with the uploaded backup. Continue?">
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                 <input type="hidden" name="action" value="restore">
                 <div class="dropzone">

@@ -123,7 +123,7 @@ require_once __DIR__ . '/../../includes/header.php';
                     <button type="button" class="btn" id="markupCopyBtn">Markup Copy</button>
                     <button type="button" class="btn" id="clearSelectionBtn">Clear Selection</button>
                     <form method="post" action="<?= e(asset_url('/modules/user/view_results.php')) ?>" style="display:inline;"
-                          onsubmit="return confirm('Clear your entire cart? This cannot be undone.');">
+                          data-confirm="Clear your entire cart? This cannot be undone.">
                         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                         <input type="hidden" name="action" value="clear_cart">
                         <button type="submit" class="btn btn-danger">Clear Cart</button>
@@ -220,5 +220,6 @@ require_once __DIR__ . '/../../includes/header.php';
     </section>
 
     <script src="<?= e(asset_url_versioned('/assets/js/memo_actions.js')) ?>"></script>
+    <script src="<?= e(asset_url_versioned('/assets/js/confirm_submit.js')) ?>"></script>
 <?php
 require_once __DIR__ . '/../../includes/footer.php';

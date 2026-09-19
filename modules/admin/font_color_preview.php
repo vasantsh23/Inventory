@@ -97,6 +97,26 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                 <span class="fc-dummy-caption">Sample Image</span>
             </div>
         </div>
+
+        <div class="panel fc-contrast-panel">
+            <h2>Text Readability Check</h2>
+            <p class="panel-desc">
+                This is the same rule the live site uses on Results, View Cart, Diamond Details and every
+                other page's main content area: the chosen Forecolor becomes the text color and the chosen
+                Backcolor becomes the background behind it (see <code>--content-fg</code> / <code>--content-bg</code>
+                in <code>includes/header.php</code> and <code>includes/admin_header.php</code>). Pick a
+                Forecolor <strong>and</strong> a Backcolor above to check whether the pairing is actually
+                readable before you save it as the active theme.
+            </p>
+            <div class="fc-contrast-sample" id="fc-contrast-sample">
+                <h3 style="margin:0 0 8px;">Sample Heading</h3>
+                <p style="margin:0 0 12px;">The quick brown fox jumps over the lazy dog. This paragraph shows body text exactly as it will appear once this pairing is saved as the active theme.</p>
+                <a href="#fc-contrast-sample" style="text-decoration:underline;">A sample link</a>
+            </div>
+            <div class="fc-contrast-result" id="fc-contrast-result">
+                <p class="hint" style="margin:10px 0 0;">Pick a Forecolor and a Backcolor above to see the contrast ratio here.</p>
+            </div>
+        </div>
     </div>
 
     <script src="<?= e(asset_url_versioned('/assets/js/font_color_preview.js')) ?>"></script>

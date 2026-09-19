@@ -68,7 +68,7 @@ require_once __DIR__ . '/../../includes/header.php';
                             <td class="row-actions" data-label="Actions">
                                 <a class="btn btn-sm" href="<?= e(asset_url('/modules/user/customer_form.php?id=' . urlencode((string)$row[$meta['pk']]))) ?>">Edit</a>
                                 <form method="post" action="<?= e(asset_url('/modules/user/customer_delete.php')) ?>"
-                                      onsubmit="return confirm('Delete this customer? This cannot be undone.');" style="display:inline;">
+                                      data-confirm="Delete this customer? This cannot be undone." style="display:inline;">
                                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                                     <input type="hidden" name="id" value="<?= e((string)$row[$meta['pk']]) ?>">
                                     <button type="submit" class="btn btn-sm btn-danger">Delete</button>
@@ -93,5 +93,7 @@ require_once __DIR__ . '/../../includes/header.php';
             <?php endif; ?>
         </div>
     </section>
+
+    <script src="<?= e(asset_url_versioned('/assets/js/confirm_submit.js')) ?>"></script>
 <?php
 require_once __DIR__ . '/../../includes/footer.php';

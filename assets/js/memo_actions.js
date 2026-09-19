@@ -5,6 +5,21 @@
  * a Memo-1 or Memo-3 printout.
  */
 (function () {
+(function () {
+    // "Rows per page" (Results page): the page's Content-Security-
+    // Policy is script-src 'self' with no 'unsafe-inline', which
+    // silently blocks inline onchange="..." attributes in some
+    // browsers — so this is wired up here, in an external file,
+    // instead. Submitting the form navigates to
+    // results.php?per_page=N&page=1 (see resolve_per_page() /
+    // includes/functions.php).
+    var perPageSelect = document.getElementById('perPageSelect');
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function () {
+            perPageSelect.form.submit();
+        });
+    }
+
     var selectAll = document.getElementById('memoSelectAll');
     var customerSelect = document.getElementById('memoCustomerSelect');
     var errorBox = document.getElementById('memoError');

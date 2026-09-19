@@ -282,7 +282,7 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="results-pagination-row">
                 <form class="rows-per-page" method="get" action="<?= e(asset_url('/modules/user/results.php')) ?>">
                     <label for="perPageSelect">Rows per page:</label>
-                    <select id="perPageSelect" name="per_page" onchange="this.form.submit()">
+                    <select id="perPageSelect" name="per_page">
                         <?php foreach (rows_per_page_choices() as $opt): ?>
                             <option value="<?= (int)$opt ?>" <?= $perPage === $opt ? 'selected' : '' ?>><?= (int)$opt ?></option>
                         <?php endforeach; ?>

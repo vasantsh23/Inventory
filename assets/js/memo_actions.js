@@ -5,7 +5,6 @@
  * a Memo-1 or Memo-3 printout.
  */
 (function () {
-(function () {
     // "Rows per page" (Results page): the page's Content-Security-
     // Policy is script-src 'self' with no 'unsafe-inline', which
     // silently blocks inline onchange="..." attributes in some

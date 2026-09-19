@@ -85,34 +85,33 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             </div>
         </div>
 
-        <div class="panel fc-image-panel">
-            <h2>Preview</h2>
-            <p class="panel-desc">Click any color at left to see it applied here.</p>
-            <div class="fc-dummy-image" id="fc-dummy-image">
-                <svg viewBox="0 0 120 90" width="72" height="54" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect x="4" y="4" width="112" height="82" rx="8" stroke="currentColor" stroke-width="4"/>
-                    <circle cx="34" cy="34" r="12" stroke="currentColor" stroke-width="4"/>
-                    <path d="M4 68l28-24 24 20 20-16 36 30" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-                </svg>
-                <span class="fc-dummy-caption">Sample Image</span>
-            </div>
-        </div>
-
-        <div class="panel fc-contrast-panel">
-            <h2>Text Readability Check</h2>
+        <div class="panel fc-image-panel fc-page-panel">
+            <h2>Page Preview</h2>
             <p class="panel-desc">
-                This is the same rule the live site uses on Results, View Cart, Diamond Details and every
-                other page's main content area: the chosen Forecolor becomes the text color and the chosen
-                Backcolor becomes the background behind it (see <code>--content-fg</code> / <code>--content-bg</code>
-                in <code>includes/header.php</code> and <code>includes/admin_header.php</code>). Pick a
-                Forecolor <strong>and</strong> a Backcolor above to check whether the pairing is actually
-                readable before you save it as the active theme.
+                Click a Forecolor and a Backcolor at left to see how they will actually look together on a
+                page. The top bar below is deliberately <strong>not</strong> affected by your picks &mdash;
+                on the live site the header/nav/footer always keep their fixed default look; only the
+                content area underneath it (like this one) follows the active theme.
             </p>
-            <div class="fc-contrast-sample" id="fc-contrast-sample">
-                <h3 style="margin:0 0 8px;">Sample Heading</h3>
-                <p style="margin:0 0 12px;">The quick brown fox jumps over the lazy dog. This paragraph shows body text exactly as it will appear once this pairing is saved as the active theme.</p>
-                <a href="#fc-contrast-sample" style="text-decoration:underline;">A sample link</a>
+
+            <div class="fc-page-mockup" id="fc-page-mockup">
+                <div class="fc-page-mockup-chrome" aria-hidden="true">
+                    <span class="fc-page-mockup-logo"></span>
+                    <span class="fc-page-mockup-navline"></span>
+                    <span class="fc-page-mockup-navline"></span>
+                    <span class="fc-page-mockup-navline" style="margin-left:auto;"></span>
+                </div>
+                <div class="fc-page-mockup-content" id="fc-page-mockup-content">
+                    <h3>Diamond Search Results</h3>
+                    <p>5.01 ct Round &middot; VS2 &middot; G Color &middot; IGI &mdash; this paragraph is
+                        ordinary page text, styled with the Forecolor and Backcolor you pick at left, exactly
+                        the way Results, View Cart and Diamond Details render their text.</p>
+                    <a href="#fc-page-mockup-content">View details &rarr;</a>
+                    <button type="button" class="fc-page-mockup-btn" id="fc-page-mockup-btn">Add to Cart</button>
+                </div>
+                <p class="fc-page-mockup-caption">Top bar = fixed site chrome (never themed). Content area below = follows your Forecolor/Backcolor pick.</p>
             </div>
+
             <div class="fc-contrast-result" id="fc-contrast-result">
                 <p class="hint" style="margin:10px 0 0;">Pick a Forecolor and a Backcolor above to see the contrast ratio here.</p>
             </div>

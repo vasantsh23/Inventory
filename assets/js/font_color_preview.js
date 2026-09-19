@@ -16,8 +16,7 @@
         });
     });
 
-    // Clicking a forecolor/backcolor swatch updates the dummy preview image.
-    var dummyImage = document.getElementById('fc-dummy-image');
+    // Clicking a forecolor/backcolor swatch updates the page mockup below.
     var activeButtons = { fg: null, bg: null };
     var currentHex = { fg: null, bg: null };
 
@@ -65,12 +64,18 @@
     }
 
     function updateContrastCheck() {
-        var sample = document.getElementById('fc-contrast-sample');
+        var sample = document.getElementById('fc-page-mockup-content');
         var result = document.getElementById('fc-contrast-result');
         if (!sample || !result) {
             return;
         }
 
+        // The mockup's link and "Add to Cart" button both use
+        // color: inherit / border: currentColor in CSS, so setting
+        // just these two properties on the content wrapper updates
+        // the heading, paragraph, link AND button in one go — the
+        // same way --content-fg does double duty as text color and
+        // button border color on the real site (see the write-up).
         if (currentHex.fg) { sample.style.color = currentHex.fg; }
         if (currentHex.bg) { sample.style.backgroundColor = currentHex.bg; }
 
@@ -106,13 +111,8 @@
         btn.addEventListener('click', function () {
             var hex = btn.getAttribute('data-hex');
             var target = btn.getAttribute('data-target');
-            if (!hex || !dummyImage) {
+            if (!hex) {
                 return;
-            }
-            if (target === 'fg') {
-                dummyImage.style.color = hex;
-            } else if (target === 'bg') {
-                dummyImage.style.backgroundColor = hex;
             }
             currentHex[target] = hex;
             updateContrastCheck();

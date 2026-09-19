@@ -25,7 +25,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
     </div>
 
     <div class="fc-preview-grid">
-        <div class="panel">
+        <div class="panel fc-fonts-panel">
             <h2>Font Slots</h2>
             <p class="panel-desc">Type sample text into a box to preview it using that slot's current font and size.</p>
 
@@ -56,7 +56,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             <?php endfor; ?>
         </div>
 
-        <div class="panel">
+        <div class="panel fc-colors-panel">
             <h2>Colors</h2>
             <p class="panel-desc">Click a swatch to apply it to the preview image's outline or background.</p>
 
@@ -85,7 +85,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             </div>
         </div>
 
-        <div class="panel fc-image-panel fc-page-panel">
+        <div class="panel fc-page-panel">
             <h2>Page Preview</h2>
             <p class="panel-desc">
                 Click a Forecolor and a Backcolor at left to see how they will actually look together on a

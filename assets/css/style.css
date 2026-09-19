@@ -699,15 +699,33 @@ table.data-table tr:last-child td { border-bottom: none; }
    ============================================================ */
 .fc-preview-grid {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-columns: 1fr 0.85fr 1.05fr;
+    grid-template-areas: "fonts colors preview";
     gap: 20px;
     align-items: start;
 }
-@media (max-width: 900px) {
-    .fc-preview-grid { grid-template-columns: 1fr; }
-}
+.fc-fonts-panel { grid-area: fonts; }
+.fc-colors-panel { grid-area: colors; }
+.fc-page-panel { grid-area: preview; position: sticky; top: 90px; }
 
-.fc-page-panel { grid-column: 1 / -1; }
+@media (max-width: 1300px) {
+    .fc-preview-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "fonts fonts"
+            "colors preview";
+    }
+    .fc-page-panel { position: static; }
+}
+@media (max-width: 760px) {
+    .fc-preview-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "fonts"
+            "colors"
+            "preview";
+    }
+}
 
 .fc-font-group {
     padding: 16px;
@@ -778,7 +796,6 @@ table.data-table tr:last-child td { border-bottom: none; }
 }
 .fc-hex { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.82rem; color: var(--text-mid); }
 
-.fc-image-panel { }
 .fc-page-mockup {
     margin-top: 12px;
     border: 1px solid var(--panel-border);

@@ -18,6 +18,37 @@
         }
     }
 
+    // Color: choosing "Fancy" is mutually exclusive with every other
+    // Color option (Others included) — every other pill in that
+    // section gets visibly disabled while Fancy stays checked, so it
+    // can't be combined with a specific color grade. Every other
+    // filter SECTION (Shape, Clarity, Cut, etc.) is unaffected.
+    function applyColorFancyExclusivity(section) {
+        var fancyBox = section.querySelector('input[data-color-fancy]');
+        if (!fancyBox) {
+            return;
+        }
+        var isFancy = fancyBox.checked;
+        section.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+            if (cb === fancyBox) {
+                return;
+            }
+            if (isFancy) {
+                if (cb.checked) {
+                    cb.checked = false;
+                    setSelectedClass(cb);
+                }
+                cb.disabled = true;
+            } else {
+                cb.disabled = false;
+            }
+            var label = cb.closest('.ds-pill');
+            if (label) {
+                label.classList.toggle('ds-pill-disabled', isFancy);
+            }
+        });
+    }
+
     form.addEventListener('change', function (e) {
         var input = e.target;
         if (!(input.matches('.ds-pill input[type=checkbox], .ds-shape-btn input[type=checkbox]'))) {
@@ -50,7 +81,20 @@
                 }
             });
         }
+
+        if (section.getAttribute('data-fldname') === 'Color') {
+            applyColorFancyExclusivity(section);
+        }
     });
+
+    // Apply the Fancy/Others exclusivity immediately on page load too
+    // — e.g. after "Back to Search" restores a prior search that had
+    // Fancy checked, the other Color pills must start disabled, not
+    // just after the next click.
+    var colorSection = form.querySelector('.ds-section[data-fldname="Color"]');
+    if (colorSection) {
+        applyColorFancyExclusivity(colorSection);
+    }
 
     // Reset means "back to the true initial state" — every "All"
     // option checked, everything else cleared — regardless of
@@ -69,6 +113,9 @@
             form.querySelectorAll('input[type=number]').forEach(function (inp) {
                 inp.value = '';
             });
+            if (colorSection) {
+                applyColorFancyExclusivity(colorSection);
+            }
             if (advancedPanel) {
                 advancedPanel.setAttribute('hidden', '');
             }

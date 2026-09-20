@@ -94,7 +94,7 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
 {
     $fld = $section['fldname'];
     ?>
-    <div class="ds-section">
+    <div class="ds-section" data-fldname="<?= e($fld) ?>">
         <div class="ds-section-header-row">
             <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
             <?php if ($fld === 'Weight'): ?>
@@ -166,9 +166,14 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
             <div class="ds-pill-row">
                 <?php foreach ($section['options'] as $opt):
                     $checkedAttr = ds_option_was_checked($section, $opt, $priorFilters, $hasPriorFilters) ? 'checked' : '';
+                    // "Fancy" is a specific Color pill (see the query
+                    // builder / diamond_search.js): choosing it is
+                    // mutually exclusive with every other Color option,
+                    // "Others" included.
+                    $isColorFancyOpt = ($fld === 'Color' && strcasecmp($opt['label'], 'fancy') === 0);
                 ?>
                     <label class="ds-pill<?= $checkedAttr ? ' ds-selected' : '' ?>">
-                        <input type="checkbox" name="f[<?= e($fld) ?>][]" value="<?= e(ds_option_submit_value($section, $opt)) ?>" class="ds-visually-hidden-input" <?= $checkedAttr ?>>
+                        <input type="checkbox" name="f[<?= e($fld) ?>][]" value="<?= e(ds_option_submit_value($section, $opt)) ?>" class="ds-visually-hidden-input" <?= $checkedAttr ?> <?= $isColorFancyOpt ? 'data-color-fancy="1"' : '' ?>>
                         <?= e($opt['label']) ?>
                     </label>
                 <?php endforeach; ?>

@@ -69,6 +69,21 @@ function build_maindata_search_where(array $filters): array
         $othersSelected = $isShapeOrColor && in_array('__OTHERS__', $selected, true);
         $specificValues = array_filter($selected, fn($v) => $v !== '__OTHERS__' && $v !== '__ALL__');
 
+        // Color has two special-cased pill values, both driven by the
+        // `fancy` column added alongside `srtcol` specifically for
+        // this: selecting "Fancy" means fancy-colored stones only
+        // (fancy = 'yes'), and — because "Fancy" is meant to be
+        // mutually exclusive with every other Color option on screen
+        // (see diamond_search.js) — "Others" here specifically means
+        // "the non-fancy overflow bucket" (srtcol = 35 AND fancy =
+        // 'no'), not the generic "not in the lookup table" meaning
+        // Shape's "Others" still uses below.
+        $fancySelected = false;
+        if ($fldname === 'Color' && in_array('fancy', $validCols, true)) {
+            $fancySelected = (bool)array_filter($specificValues, fn($v) => strcasecmp((string)$v, 'Fancy') === 0);
+            $specificValues = array_filter($specificValues, fn($v) => strcasecmp((string)$v, 'Fancy') !== 0);
+        }
+
         $orParts = [];
         if ($specificValues !== []) {
             $inKeys = [];
@@ -79,12 +94,19 @@ function build_maindata_search_where(array $filters): array
             }
             $orParts[] = "`$fldname` IN (" . implode(', ', $inKeys) . ')';
         }
+        if ($fancySelected) {
+            $orParts[] = "`fancy` = 'yes'";
+        }
         if ($othersSelected) {
-            // "Others" = not present in the corresponding lookup table
-            // (Shape -> shape.shape, Color -> color.color).
-            $lookupTable = $def['table'];
-            $lookupCol = $def['match'];
-            $orParts[] = "`$fldname` NOT IN (SELECT `$lookupCol` FROM `$lookupTable`)";
+            if ($fldname === 'Color' && in_array('srtcol', $validCols, true) && in_array('fancy', $validCols, true)) {
+                $orParts[] = "(`srtcol` = 35 AND `fancy` = 'no')";
+            } else {
+                // "Others" = not present in the corresponding lookup table
+                // (Shape -> shape.shape, Color -> color.color).
+                $lookupTable = $def['table'];
+                $lookupCol = $def['match'];
+                $orParts[] = "`$fldname` NOT IN (SELECT `$lookupCol` FROM `$lookupTable`)";
+            }
         }
         if ($orParts !== []) {
             $clauses[] = '(' . implode(' OR ', $orParts) . ')';
@@ -175,6 +197,12 @@ function build_maindata_search_where(array $filters): array
                 $params[$key] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $text) . '%';
             }
         }
+    }
+
+    // --- Held stones are never shown in search results, regardless
+    //     of any other filter (see Admin > Hold Selection). ---
+    if (in_array('hold', $validCols, true)) {
+        $clauses[] = "(`hold` IS NULL OR `hold` <> 'yes')";
     }
 
     $where = $clauses !== [] ? implode(' AND ', $clauses) : '1=1';

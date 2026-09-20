@@ -1009,6 +1009,12 @@ input[type="radio"]:checked::after {
     color: #fff;
     box-shadow: 0 8px 20px -8px rgba(79,140,255,0.55);
 }
+.ds-pill-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+}
+.ds-pill-disabled:hover { border-color: var(--panel-border); }
 
 .ds-shape-grid { display: flex; flex-wrap: wrap; gap: 22px; }
 .ds-shape-btn {
@@ -1404,6 +1410,10 @@ body.ds-search-theme .ds-pill.ds-selected {
     background: #eef6f5;
     color: #a97e4a;
     font-weight: 600;
+}
+body.ds-search-theme .ds-pill-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 /* Checkbox grid (Location, Availability) — single line, wraps only if needed */

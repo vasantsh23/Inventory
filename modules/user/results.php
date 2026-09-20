@@ -20,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $memoLevel = (int)(current_user()['level'] ?? 0);
-$canMemo = in_array($memoLevel, [4, 5], true);
+$memoFeatureOn = strcasecmp((string)((get_setup() ?? [])['Memo'] ?? 'yes'), 'yes') === 0;
+$canMemo = $memoFeatureOn && in_array($memoLevel, [4, 5], true);
 $customers = [];
 $newCustomerId = '';
 if ($canMemo) {

@@ -349,6 +349,12 @@ const CRUD_COLUMN_OVERRIDES = [
             'options' => ['yes' => 'Yes — require login', 'no' => 'No — go straight to Diamond Search'],
             'hint' => 'If set to No, the "Inventory" link on the home page skips login entirely and goes straight into the user module (public browsing). Admin/Super Admin logins are unaffected — once this is No, the admin login page is no longer linked anywhere on the public site, so log in directly at yoursite.com/login.php.',
         ],
+        'Memo' => [
+            'type' => 'select',
+            'label' => 'Memo Feature',
+            'options' => ['yes' => 'Yes — show on Results', 'no' => 'No — hide everywhere'],
+            'hint' => 'When Yes, the customer picker plus Memo-1 and Memo-3 buttons appear on the Results page, but only for logged-in users whose role level is 4 or 5. When No, those are hidden for everyone regardless of level.',
+        ],
     ],
     'path' => [
         'id' => ['type' => 'readonly'],

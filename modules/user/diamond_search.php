@@ -95,7 +95,12 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
     $fld = $section['fldname'];
     ?>
     <div class="ds-section">
-        <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
+        <div class="ds-section-header-row">
+            <h2 class="ds-section-title"><?= e(ds_format_label($section['label'])) ?></h2>
+            <?php if ($fld === 'Weight'): ?>
+                <button type="button" class="ds-section-reset-btn" data-reset-section="Weight">Reset</button>
+            <?php endif; ?>
+        </div>
 
         <?php if ($section['kind'] === 'checkbox'): ?>
             <label class="ds-checkbox-row">

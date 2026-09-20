@@ -878,14 +878,35 @@ table.data-table tr:last-child td { border-bottom: none; }
 }
 
 .ds-section { margin-bottom: 34px; }
+.ds-section-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 14px;
+}
 .ds-section-title {
     font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--text-mid);
-    margin: 0 0 14px;
+    margin: 0;
 }
+.ds-section-reset-btn {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-mid);
+    background: none;
+    border: none;
+    padding: 2px 0;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.ds-section-reset-btn:hover { color: var(--text-hi); }
 .ds-empty-note { color: var(--text-low); font-size: 0.85rem; }
 
 .ds-visually-hidden-input {
@@ -1349,6 +1370,12 @@ body.ds-search-theme .ds-section-title {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     font-weight: 700;
+}
+body.ds-search-theme .ds-section-reset-btn {
+    color: #a97e4a;
+}
+body.ds-search-theme .ds-section-reset-btn:hover {
+    color: #8a6339;
 }
 body.ds-search-theme .ds-section {
     border-bottom: 1px solid #ece7db;

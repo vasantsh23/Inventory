@@ -78,6 +78,25 @@
         });
     }
 
+    // Per-section "Reset" button (currently just Carat/Weight) —
+    // clears only that section's pill selections and manual From/To
+    // inputs, leaving every other filter on the page untouched.
+    document.querySelectorAll('.ds-section-reset-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var section = btn.closest('.ds-section');
+            if (!section) {
+                return;
+            }
+            section.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+                cb.checked = false;
+                setSelectedClass(cb);
+            });
+            section.querySelectorAll('input[type=number]').forEach(function (inp) {
+                inp.value = '';
+            });
+        });
+    });
+
     // "Advanced Filter" reveals the extra sections sourced from
     // adv_filter (hidden by default, unless they started open because
     // a prior search had one of them selected).

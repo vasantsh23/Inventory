@@ -142,6 +142,11 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                     </tbody>
                 </table>
             </div>
+
+            <div class="table-toolbar" style="justify-content:flex-end;">
+                <button type="button" class="btn" id="holdClearBtnBottom">Clear Selection</button>
+                <button type="submit" class="btn btn-accent" <?= $hasHoldCol ? '' : 'disabled' ?>>Save</button>
+            </div>
         </form>
 
         <div class="results-pagination-row">

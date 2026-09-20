@@ -9,15 +9,23 @@
  * inline event-handler attributes in CSP-compliant browsers.
  */
 (function () {
-    var clearBtn = document.getElementById('holdClearBtn');
     var holdForm = document.getElementById('holdForm');
-    if (clearBtn && holdForm) {
-        clearBtn.addEventListener('click', function () {
-            holdForm.querySelectorAll('input[type=checkbox][name="hold_ids[]"]').forEach(function (cb) {
-                cb.checked = false;
-            });
+
+    function clearSelection() {
+        if (!holdForm) {
+            return;
+        }
+        holdForm.querySelectorAll('input[type=checkbox][name="hold_ids[]"]').forEach(function (cb) {
+            cb.checked = false;
         });
     }
+
+    ['holdClearBtn', 'holdClearBtnBottom'].forEach(function (id) {
+        var btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener('click', clearSelection);
+        }
+    });
 
     var perPageSelect = document.getElementById('perPageSelect');
     if (perPageSelect) {

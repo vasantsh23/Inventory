@@ -18,4 +18,4 @@ jobs:
           ssh-keyscan -p ${{ matrix.server.port }} ${{ matrix.server.host }} >> ~/.ssh/known_hosts
       - name: Pull and deploy on ${{ matrix.server.name }}
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ matrix.server.port }} ${{ matrix.server.user }}@${{ matrix.server.host }} "cd ${{ matrix.server.repo_path }} && git pull origin main && cp -R ${{ matrix.server.repo_path }}/* ${{ matrix.server.deploy_path }}"
+          ssh -i ~/.ssh/deploy_key -p ${{ matrix.server.port }} ${{ matrix.server.user }}@${{ matrix.server.host }} "cd ${{ matrix.server.repo_path }} && git fetch --force origin main && git reset --hard origin/main && cp -R ${{ matrix.server.repo_path }}/* ${{ matrix.server.deploy_path }}"

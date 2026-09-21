@@ -27,6 +27,8 @@ const CRUD_TABLES = [
     'font_and_color' => 'Fonts & Colors',
     'upload'         => 'API / Upload Config',
     'rounding_rules' => 'Amount Rounding Rules',
+    'fancycolor'     => 'Fancy Colors',
+    'fancyint'       => 'Fancy Color Intensities',
     'maindata'       => 'Main Data',
     'diamond_search' => 'Diamond Search Fields',
     'results'        => 'Results',
@@ -355,6 +357,12 @@ const CRUD_COLUMN_OVERRIDES = [
             'options' => ['yes' => 'Yes — show on Results', 'no' => 'No — hide everywhere'],
             'hint' => 'When Yes, the customer picker plus Memo-1 and Memo-3 buttons appear on the Results page, but only for logged-in users whose role level is 4 or 5. When No, those are hidden for everyone regardless of level.',
         ],
+        'Fancyfilter' => [
+            'type' => 'select',
+            'label' => 'Fancy Filter',
+            'options' => ['no' => 'No — "Fancy" pill in Color', 'yes' => 'Yes — dedicated Nat Fancy Color sections'],
+            'hint' => 'When Yes, Diamond Search removes the "Fancy" option from Color and instead shows two dedicated sections right after it — Nat Fancy Color and Nat Fancy Color Intensity — sourced from the Fancy Colors / Fancy Color Intensities tables. When No (default), Color keeps its single "Fancy" pill as before.',
+        ],
     ],
     'path' => [
         'id' => ['type' => 'readonly'],
@@ -465,6 +473,16 @@ const CRUD_COLUMN_OVERRIDES = [
         'description' => ['type' => 'textarea', 'label' => 'Description'],
         'sort_order'  => ['label' => 'Sort Order'],
     ],
+    'fancycolor' => [
+        'id'        => ['type' => 'readonly'],
+        'fncycolor' => ['label' => 'Fancy Color', 'hint' => 'e.g. Yellow, Orange, Pink — matched against maindata.NatFancyColor, which Diamond Data Upload derives automatically from the Color field.'],
+        'active'    => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No']],
+    ],
+    'fancyint' => [
+        'id'       => ['type' => 'readonly'],
+        'fncyint'  => ['label' => 'Fancy Color Intensity', 'hint' => 'e.g. Light, Intense, Vivid, Dark, Deep — matched against maindata.NatFancyColorIntensity, which Diamond Data Upload derives automatically from the Color field.'],
+        'active'   => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No']],
+    ],
     'memo' => [
         'id' => ['type' => 'readonly'],
         'company' => ['label' => 'Company (masthead + "Firm" name)'],
@@ -566,6 +584,8 @@ const CRUD_LIST_COLUMNS = [
     'path'           => ['id', 'description', 'path'],
     'uploadref'      => ['id', 'colname', 'excolname', 'active'],
     'rounding_rules' => ['id', 'rule_name', 'method', 'increment', 'active', 'sort_order'],
+    'fancycolor'     => ['id', 'fncycolor', 'active'],
+    'fancyint'       => ['id', 'fncyint', 'active'],
     'timings'        => ['id', 'Day', 'start time1', 'end time1', 'holiday'],
     'font_and_color' => ['id', 'font type-1', 'forecolor-1', 'backcolor-1'],
     'upload'         => ['id', 'API', 'API link', 'Excel', 'CSV'],

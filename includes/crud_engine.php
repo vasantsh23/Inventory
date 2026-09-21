@@ -456,25 +456,68 @@ function crud_clear_import_columns(string $table, array $meta): void
  * $dataRows:  array of arrays, one per data row, aligned to $headerRow.
  * Returns ['inserted'=>n, 'updated'=>n, 'skipped'=>n, 'errors'=>[str,...]].
  */
+/**
+ * Loosely normalizes a header/label for matching: lowercase, and
+ * every run of non-alphanumeric characters (spaces, underscores,
+ * hyphens, punctuation) collapsed to nothing. "CSV Header Name",
+ * "csv_header_name", "CSV-Header-Name " and "csvheadername" all
+ * normalize to the same string, so minor formatting differences in
+ * a hand-built import file don't cause a column to be silently
+ * skipped.
+ */
+function crud_normalize_header(string $s): string
+{
+    return strtolower(preg_replace('/[^a-zA-Z0-9]+/', '', $s) ?? '');
+}
+
 function crud_import_rows(string $table, array $headerRow, array $dataRows): array
 {
     $meta = get_table_meta($table);
     $validColumns = array_keys($meta['columns']);
 
-    // Map each header cell to a real column name (case-insensitive match
-    // on column name or label); unrecognised headers are ignored.
+    // Map each header cell to a real column name — matched, in order
+    // of preference, against the exact column name, the exact label,
+    // then a loosely-normalized version of either (see
+    // crud_normalize_header()). Anything left unmatched is recorded
+    // in $unrecognizedHeaders and reported back rather than silently
+    // dropped, since a column that fails to map imports as blank for
+    // every row with no other visible symptom.
     $colMap = []; // sheet index => db column name
+    $unrecognizedHeaders = [];
     foreach ($headerRow as $i => $h) {
         $h = trim((string)$h);
+        if ($h === '') {
+            continue;
+        }
+        $matchedCol = null;
+        $normalizedH = crud_normalize_header($h);
         foreach ($meta['columns'] as $colName => $colMeta) {
             if (strcasecmp($h, $colName) === 0 || strcasecmp($h, $colMeta['label']) === 0) {
-                $colMap[$i] = $colName;
+                $matchedCol = $colName;
                 break;
             }
+        }
+        if ($matchedCol === null && $normalizedH !== '') {
+            foreach ($meta['columns'] as $colName => $colMeta) {
+                if ($normalizedH === crud_normalize_header($colName) || $normalizedH === crud_normalize_header($colMeta['label'])) {
+                    $matchedCol = $colName;
+                    break;
+                }
+            }
+        }
+        if ($matchedCol !== null) {
+            $colMap[$i] = $matchedCol;
+        } else {
+            $unrecognizedHeaders[] = $h;
         }
     }
 
     $stats = ['inserted' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => []];
+
+    if ($unrecognizedHeaders !== []) {
+        $stats['errors'][] = 'Column' . (count($unrecognizedHeaders) === 1 ? '' : 's') . ' not recognized and left unchanged for every row: "'
+            . implode('", "', $unrecognizedHeaders) . '". Check the header text exactly matches a column name shown on this table\'s Edit form.';
+    }
 
     if ($colMap === []) {
         $stats['errors'][] = 'No recognised column headers found in the uploaded file.';

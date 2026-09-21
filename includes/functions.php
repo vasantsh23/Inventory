@@ -339,9 +339,16 @@ function ds_lookup_map(): array
         // into a real WHERE clause. "order the table by its own
         // value column" is spec'd explicitly, hence orderCol pointing
         // at the same column as label/match rather than a separate
-        // sort column like the other lookup tables use.
-        'NatFancyColor'         => ['table' => 'fancycolor', 'label' => 'fncycolor', 'match' => 'fncycolor', 'hasActive' => true, 'orderCol' => 'fncycolor'],
-        'NatFancyColorIntensity' => ['table' => 'fancyint', 'label' => 'fncyint', 'match' => 'fncyint', 'hasActive' => true, 'orderCol' => 'fncyint'],
+        // sort column like the other lookup tables use. hasActive is
+        // false here (unlike every other lookup table) because
+        // fancycolor/fancyint aren't guaranteed to have an `active`
+        // column at all — diamond_search.php's own bespoke query
+        // handles that column being optional; this flag existing
+        // as true would make the unrelated generic rendering path in
+        // get_diamond_search_sections() assume it's always there and
+        // fail outright if it isn't.
+        'NatFancyColor'         => ['table' => 'fancycolor', 'label' => 'fncycolor', 'match' => 'fncycolor', 'hasActive' => false, 'orderCol' => 'fncycolor'],
+        'NatFancyColorIntensity' => ['table' => 'fancyint', 'label' => 'fncyint', 'match' => 'fncyint', 'hasActive' => false, 'orderCol' => 'fncyint'],
     ];
 }
 

@@ -76,12 +76,28 @@ if ($fancyFilterOn) {
 
     $natColorRows = [];
     $natIntRows = [];
+    // Prefer filtering out explicitly-inactive rows when the `active`
+    // column exists (it's optional — the Fancy Colors / Fancy Color
+    // Intensities CRUD screens offer it, but a hand-created table
+    // doesn't have to include it), falling back to every row when it
+    // doesn't, rather than a fatal error either way.
     try {
-        $natColorRows = get_db()->query("SELECT id, fncycolor FROM `fancycolor` WHERE active = 'yes' ORDER BY `fncycolor` ASC")->fetchAll();
-        $natIntRows = get_db()->query("SELECT id, fncyint FROM `fancyint` WHERE active = 'yes' ORDER BY `fncyint` ASC")->fetchAll();
+        $natColorRows = get_db()->query("SELECT id, fncycolor FROM `fancycolor` WHERE active IS NULL OR active = '' OR active = 'yes' ORDER BY `fncycolor` ASC")->fetchAll();
     } catch (Throwable $e) {
-        // fancycolor/fancyint tables don't exist yet (migration not
-        // run) — degrade to empty sections rather than a fatal error.
+        try {
+            $natColorRows = get_db()->query("SELECT id, fncycolor FROM `fancycolor` ORDER BY `fncycolor` ASC")->fetchAll();
+        } catch (Throwable $e2) {
+            // fancycolor table doesn't exist at all yet.
+        }
+    }
+    try {
+        $natIntRows = get_db()->query("SELECT id, fncyint FROM `fancyint` WHERE active IS NULL OR active = '' OR active = 'yes' ORDER BY `fncyint` ASC")->fetchAll();
+    } catch (Throwable $e) {
+        try {
+            $natIntRows = get_db()->query("SELECT id, fncyint FROM `fancyint` ORDER BY `fncyint` ASC")->fetchAll();
+        } catch (Throwable $e2) {
+            // fancyint table doesn't exist at all yet.
+        }
     }
 
     $fancyExtraSections = [

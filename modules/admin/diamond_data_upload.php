@@ -233,6 +233,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 try {
                     $stats = process_diamond_upload($_FILES['csv_file']['tmp_name'], $mode);
+                    record_diamond_upload_log(
+                        (string)($_POST['csv_file_lastmod'] ?? '') !== '' ? (string)$_POST['csv_file_lastmod'] : null,
+                        current_user()['username'] ?? null
+                    );
                 } catch (Throwable $e) {
                     $fatalError = 'Upload failed: ' . $e->getMessage();
                 }
@@ -304,6 +308,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             <div class="form-group">
                 <label for="csv_file">CSV File</label>
                 <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
+                <input type="hidden" id="csvFileLastmod" name="csv_file_lastmod" value="">
                 <p id="csvFileNameDisplay" style="margin-top:6px; font-size:0.85rem; color: var(--content-fg, var(--text-mid));">No file chosen</p>
             </div>
 

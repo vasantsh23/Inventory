@@ -14,12 +14,20 @@
  * Filename display is also handled here explicitly rather than
  * relying on the browser's native file-input text, which renders
  * inconsistently in appearance and color across browsers.
+ *
+ * Also captures the chosen file's own last-modified date/time (via
+ * the File API's file.lastModified) into a hidden field, since a
+ * standard multipart upload doesn't otherwise tell the server
+ * anything about the file's own timestamp — only when it arrived.
+ * The server uses this for the `upload_date` log (see
+ * record_diamond_upload_log() in includes/functions.php).
  */
 (function () {
     var form = document.getElementById('diamondUploadForm');
     var modeIndicator = document.getElementById('uploadModeIndicator');
     var fileInput = document.getElementById('csv_file');
     var fileNameDisplay = document.getElementById('csvFileNameDisplay');
+    var fileLastmod = document.getElementById('csvFileLastmod');
 
     function getSelectedMode() {
         var checked = document.querySelector('input[name="upload_mode"]:checked');
@@ -43,9 +51,11 @@
 
     if (fileInput && fileNameDisplay) {
         fileInput.addEventListener('change', function () {
-            fileNameDisplay.textContent = fileInput.files.length > 0
-                ? fileInput.files[0].name
-                : 'No file chosen';
+            var file = fileInput.files.length > 0 ? fileInput.files[0] : null;
+            fileNameDisplay.textContent = file ? file.name : 'No file chosen';
+            if (fileLastmod) {
+                fileLastmod.value = (file && typeof file.lastModified === 'number') ? String(file.lastModified) : '';
+            }
         });
     }
 

@@ -331,4 +331,23 @@ require_once __DIR__ . '/../../includes/header.php';
 
     <script src="<?= e(asset_url_versioned('/assets/js/diamond_search.js')) ?>"></script>
 <?php
+// "Data last updated" info, right-aligned in the footer — the most
+// recent Diamond Data Upload's file date/time and run date/time (see
+// get_latest_upload_log() / record_diamond_upload_log() in
+// includes/functions.php). Silently omitted if no upload has ever
+// been logged (e.g. before this feature existed, or the migration
+// hasn't been run yet).
+$latestUpload = get_latest_upload_log();
+if ($latestUpload !== null) {
+    $fmtDt = function (?string $date, ?string $time): string {
+        if (!$date) {
+            return '—';
+        }
+        $dt = DateTime::createFromFormat('Y-m-d H:i:s', $date . ' ' . ($time ?? '00:00:00'));
+        return $dt ? $dt->format('d M Y, H:i') : e($date);
+    };
+    $footerExtraRight =
+        '<p><strong>File date/time:</strong> ' . e($fmtDt($latestUpload['upldfile_date'] ?? null, $latestUpload['upldfile_time'] ?? null)) . '</p>'
+        . '<p><strong>Data uploaded:</strong> ' . e($fmtDt($latestUpload['data_uplddate'] ?? null, $latestUpload['data_upldtime'] ?? null)) . '</p>';
+}
 require_once __DIR__ . '/../../includes/footer.php';

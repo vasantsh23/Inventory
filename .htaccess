@@ -1,0 +1,11 @@
+# Defense in depth: even though config/config.php is written to look
+# for dbconn.php OUTSIDE the web root first (see the comment there),
+# this blocks direct HTTP access to it and its template as a second
+# layer of protection, in case this hosting plan can't place files
+# above the web root and dbconn.php ends up living in here instead.
+<Files "dbconn.php">
+    Require all denied
+</Files>
+<Files "dbconn.example.php">
+    Require all denied
+</Files>

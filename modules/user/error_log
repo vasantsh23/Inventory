@@ -1,0 +1,16 @@
+[18-Sep-2026 08:00:54 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/atest8a6/labtest02.site/includes/diamond_search_query.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home2/atest8a6/labtest02.site/modules/user/results.php:5
+Stack trace:
+#0 {main}
+  thrown in /home2/atest8a6/labtest02.site/modules/user/results.php on line 5
+[18-Sep-2026 08:01:44 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/atest8a6/labtest02.site/includes/diamond_search_query.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home2/atest8a6/labtest02.site/modules/user/results.php:5
+Stack trace:
+#0 {main}
+  thrown in /home2/atest8a6/labtest02.site/modules/user/results.php on line 5
+[18-Sep-2026 08:01:49 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/atest8a6/labtest02.site/includes/diamond_search_query.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home2/atest8a6/labtest02.site/modules/user/results.php:5
+Stack trace:
+#0 {main}
+  thrown in /home2/atest8a6/labtest02.site/modules/user/results.php on line 5
+[18-Sep-2026 08:04:40 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/atest8a6/labtest02.site/includes/diamond_search_query.php' (include_path='.:/opt/cpanel/ea-php83/root/usr/share/pear') in /home2/atest8a6/labtest02.site/modules/user/results.php:5
+Stack trace:
+#0 {main}
+  thrown in /home2/atest8a6/labtest02.site/modules/user/results.php on line 5

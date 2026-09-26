@@ -31,6 +31,17 @@ function ds_option_submit_value(array $section, array $opt): string
 
 $sections = get_diamond_search_sections();
 $advancedSections = get_diamond_search_sections('adv_filter');
+// NatFancyColor / NatFancyColorIntensity are never shown via the
+// generic active/orderid mechanism — they're only ever rendered by
+// the bespoke block below (positioned right after Color, gated on
+// Site Setup's Fancy Filter), so exclude them here regardless of
+// whatever "active" status they happen to have in the
+// diamond_search / adv_filter tables. Otherwise they could render
+// twice — once here, once below — with two inputs sharing the same
+// name attribute, which breaks form submission.
+$fancyDerivedFldnames = ['NatFancyColor', 'NatFancyColorIntensity'];
+$sections = array_values(array_filter($sections, fn($s) => !in_array($s['fldname'], $fancyDerivedFldnames, true)));
+$advancedSections = array_values(array_filter($advancedSections, fn($s) => !in_array($s['fldname'], $fancyDerivedFldnames, true)));
 // A field already shown in the main search must not also render in
 // the Advanced panel — duplicate `name` attributes on two different
 // inputs breaks form submission (the browser/PHP only keeps one of
@@ -41,6 +52,79 @@ $advancedSections = array_values(array_filter(
     $advancedSections,
     fn($s) => !in_array($s['fldname'], $mainFldnames, true)
 ));
+
+// Fancy Filter (Site Setup): when on, Color loses its "Fancy" pill
+// and two dedicated sections — Nat Fancy Color, then Nat Fancy Color
+// Intensity — are inserted right after Color, sourced from the
+// fancycolor / fancyint lookup tables (each ordered by its own value
+// column, per spec, not a separate sort column).
+$fancyFilterOn = strcasecmp((string)((get_setup() ?? [])['Fancyfilter'] ?? 'no'), 'yes') === 0;
+if ($fancyFilterOn) {
+    $colorIndex = null;
+    foreach ($sections as $i => $s) {
+        if ($s['fldname'] === 'Color') {
+            $colorIndex = $i;
+            // Drop the "Fancy" pill from Color — its role is now
+            // played by the two dedicated sections below instead.
+            $sections[$i]['options'] = array_values(array_filter(
+                $s['options'],
+                fn($opt) => strcasecmp($opt['label'], 'fancy') !== 0
+            ));
+            break;
+        }
+    }
+
+    $natColorRows = [];
+    $natIntRows = [];
+    // Prefer filtering out explicitly-inactive rows when the `active`
+    // column exists (it's optional — the Fancy Colors / Fancy Color
+    // Intensities CRUD screens offer it, but a hand-created table
+    // doesn't have to include it), falling back to every row when it
+    // doesn't, rather than a fatal error either way.
+    try {
+        $natColorRows = get_db()->query("SELECT id, fncycolor FROM `fancycolor` WHERE active IS NULL OR active = '' OR active = 'yes' ORDER BY `fncycolor` ASC")->fetchAll();
+    } catch (Throwable $e) {
+        try {
+            $natColorRows = get_db()->query("SELECT id, fncycolor FROM `fancycolor` ORDER BY `fncycolor` ASC")->fetchAll();
+        } catch (Throwable $e2) {
+            // fancycolor table doesn't exist at all yet.
+        }
+    }
+    try {
+        $natIntRows = get_db()->query("SELECT id, fncyint FROM `fancyint` WHERE active IS NULL OR active = '' OR active = 'yes' ORDER BY `fncyint` ASC")->fetchAll();
+    } catch (Throwable $e) {
+        try {
+            $natIntRows = get_db()->query("SELECT id, fncyint FROM `fancyint` ORDER BY `fncyint` ASC")->fetchAll();
+        } catch (Throwable $e2) {
+            // fancyint table doesn't exist at all yet.
+        }
+    }
+
+    $fancyExtraSections = [
+        [
+            'kind'    => 'pill',
+            'fldname' => 'NatFancyColor',
+            'label'   => 'Nat Fancy Color',
+            'options' => array_map(fn($r) => ['id' => $r['id'], 'label' => (string)$r['fncycolor'], 'value' => (string)$r['fncycolor']], $natColorRows),
+        ],
+        [
+            'kind'    => 'pill',
+            'fldname' => 'NatFancyColorIntensity',
+            'label'   => 'Nat Fancy Color Intensity',
+            'options' => array_map(fn($r) => ['id' => $r['id'], 'label' => (string)$r['fncyint'], 'value' => (string)$r['fncyint']], $natIntRows),
+        ],
+    ];
+
+    if ($colorIndex !== null) {
+        array_splice($sections, $colorIndex + 1, 0, [$fancyExtraSections[0]]);
+        array_splice($sections, $colorIndex + 2, 0, [$fancyExtraSections[1]]);
+    } else {
+        // Color isn't active in the main search at all — still show
+        // both sections rather than silently dropping the feature.
+        array_push($sections, ...$fancyExtraSections);
+    }
+}
+
 // "Back to Search" links here with ?restore=1 (no filter values in the
 // URL) — the actual prior selections are read back from the session,
 // where results.php stored them on the last search submission.
@@ -247,4 +331,23 @@ require_once __DIR__ . '/../../includes/header.php';
 
     <script src="<?= e(asset_url_versioned('/assets/js/diamond_search.js')) ?>"></script>
 <?php
+// "Data last updated" info, right-aligned in the footer — the most
+// recent Diamond Data Upload's file date/time and run date/time (see
+// get_latest_upload_log() / record_diamond_upload_log() in
+// includes/functions.php). Silently omitted if no upload has ever
+// been logged (e.g. before this feature existed, or the migration
+// hasn't been run yet).
+$latestUpload = get_latest_upload_log();
+if ($latestUpload !== null) {
+    $fmtDt = function (?string $date, ?string $time): string {
+        if (!$date) {
+            return '—';
+        }
+        $dt = DateTime::createFromFormat('Y-m-d H:i:s', $date . ' ' . ($time ?? '00:00:00'));
+        return $dt ? $dt->format('d M Y, H:i') : e($date);
+    };
+    $footerExtraRight =
+        '<p><strong>File date/time:</strong> ' . e($fmtDt($latestUpload['upldfile_date'] ?? null, $latestUpload['upldfile_time'] ?? null)) . '</p>'
+        . '<p><strong>Data uploaded:</strong> ' . e($fmtDt($latestUpload['data_uplddate'] ?? null, $latestUpload['data_upldtime'] ?? null)) . '</p>';
+}
 require_once __DIR__ . '/../../includes/footer.php';

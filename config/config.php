@@ -24,19 +24,63 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https://v3601425.v360.in; frame-src 'self' https://v3601425.v360.in https://veeradimon.be; media-src 'self' https://onlinemediafiles.com; style-src 'self' 'unsafe-inline'; script-src 'self'");
 
 // ---- Database credentials --------------------------------------------------
-// On BigRock/cPanel shared hosting, the DB host is almost always
-// "localhost" (the database runs on the same server as PHP).
-// Do NOT append the port to the hostname — that made the earlier
-// value ("localhost3306") invalid. If you ever do need a non-default
-// port, use "localhost;port=3306" is NOT valid either — instead pass
-// it separately in config/db.php's DSN as ";port=3306".
-define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: 'atest8a6_inventorydb');
-define('DB_USER', getenv('DB_USER') ?: 'atest8a6_inv001');
+// Read from dbconn.php rather than kept here, so the actual
+// credentials live in exactly one file, are never in this repo/zip,
+// and can be placed somewhere the webserver won't ever serve (see
+// the "Where to put dbconn.php" note below and the delivered
+// dbconn.example.php for the exact format it must follow).
+//
+// Checked in this order — first one found wins:
+//   1. Two levels above this app's root folder (i.e. OUTSIDE the web
+//      root, assuming this app's root is your hosting account's
+//      public_html/ or equivalent) — the strongest option, since a
+//      file outside the web root can never be requested over HTTP no
+//      matter how the server is configured.
+//   2. One level above this app's root (still outside web root on
+//      most cPanel-style layouts, just one directory shallower).
+//   3. Inside config/ itself, as a last resort for hosting that only
+//      grants access to a single directory — that specific file is
+//      also blocked at the webserver level by the .htaccess shipped
+//      alongside it (see the root .htaccess this app now includes).
+$dbConnCandidates = [
+    dirname(__DIR__, 2) . '/dbconn.php',
+    dirname(__DIR__, 1) . '/dbconn.php', // one level above config/, i.e. the app root's parent
+    __DIR__ . '/dbconn.php',
+];
+$dbConnFile = null;
+foreach ($dbConnCandidates as $candidate) {
+    if (is_file($candidate)) {
+        $dbConnFile = $candidate;
+        break;
+    }
+}
+if ($dbConnFile === null) {
+    error_log('FATAL: dbconn.php not found in any of: ' . implode(', ', $dbConnCandidates));
+    http_response_code(500);
+    exit('Server configuration error.');
+}
 
-// !! Replace with the NEW password you set in cPanel after rotating it.
-// The previous password must be considered leaked and not reused.
-define('DB_PASS', getenv('DB_PASS') ?: 'D({7uSLiEuW0.UnK');
+// dbconn.php must define exactly these four variables and nothing
+// that produces output (it runs in this same request):
+//   $servernm  - DB host, e.g. "localhost" or "yourdb.host.example.com"
+//   $dbname    - database name
+//   $username  - database user
+//   $pwd       - database password
+require $dbConnFile;
+
+// getenv() still wins when actually set, for any host that does
+// support real environment variables — dbconn.php's values are the
+// fallback used everywhere else.
+define('DB_HOST', getenv('DB_HOST') ?: ($servernm ?? ''));
+define('DB_NAME', getenv('DB_NAME') ?: ($dbname ?? ''));
+define('DB_USER', getenv('DB_USER') ?: ($username ?? ''));
+define('DB_PASS', getenv('DB_PASS') ?: ($pwd ?? ''));
+
+if (DB_HOST === '' || DB_NAME === '' || DB_USER === '') {
+    error_log('FATAL: dbconn.php was found but did not set $servernm / $dbname / $username.');
+    http_response_code(500);
+    exit('Server configuration error.');
+}
 
 // ---- Encryption keys --------------------------------------------------------
 // Hardcoded here because this shared-hosting plan has no environment-
@@ -57,7 +101,7 @@ if (APP_ENCRYPTION_KEY === '' || APP_HMAC_KEY === '') {
 define('APP_NAME', 'Inventory Management System');
 // Bump this on each deploy — shown in the footer of every page so
 // support can quickly confirm which build is currently live.
-define('APP_VERSION', '20-Sep-26V1.11');
+define('APP_VERSION', '22-Sep-26V1.18');
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_MINUTES', 15);
 

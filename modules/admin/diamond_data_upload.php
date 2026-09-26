@@ -8,10 +8,15 @@ require_module_access('admin');
 /**
  * Runs the actual CSV import: matches header names against the
  * uploadref table (active rows only), inserts into maindata using
- * only the matched columns, and skips any row whose mapped Color
- * value contains "fancy" (case-insensitive) — fancy-colored diamonds
- * are graded/priced completely differently and are intentionally
- * excluded from this import.
+ * only the matched columns. When the mapped Color value starts with
+ * "Fancy", that row's `fancy`, `NatFancyColor` and
+ * `NatFancyColorIntensity` columns are derived from it automatically
+ * — e.g. "Fancy Blue" -> NatFancyColor "Blue", NatFancyColorIntensity
+ * blank; "Fancy Deep Orange" -> NatFancyColor "Orange",
+ * NatFancyColorIntensity "Deep" (the word immediately after "Fancy"
+ * is the intensity, the last word is the color). These three columns
+ * feed Diamond Search's Nat Fancy Color / Nat Fancy Color Intensity
+ * sections and the Color "Fancy" pill — see includes/diamond_search_query.php.
  */
 function process_diamond_upload(string $csvPath, string $mode): array
 {
@@ -80,8 +85,11 @@ function process_diamond_upload(string $csvPath, string $mode): array
     // fields when blank/zero (see the row loop below) — make sure
     // both are in the insert's column list even if the CSV doesn't
     // map either of them directly, so a computed value has somewhere
-    // to go.
-    foreach (['totamt', 'Measurements'] as $computedCol) {
+    // to go. Same for fancy/NatFancyColor/NatFancyColorIntensity,
+    // always derived from Color (see docblock above) whenever Color
+    // itself is mapped.
+    $derivedFancyCols = $colorIdx !== null ? ['fancy', 'NatFancyColor', 'NatFancyColorIntensity'] : [];
+    foreach (array_merge(['totamt', 'Measurements'], $derivedFancyCols) as $computedCol) {
         if (in_array($computedCol, $validCols, true) && !in_array($computedCol, $mappedCols, true)) {
             $mappedCols[] = $computedCol;
         }
@@ -97,7 +105,7 @@ function process_diamond_upload(string $csvPath, string $mode): array
     $insertStmt = $db->prepare("INSERT INTO maindata ($colList) VALUES ($placeholders)");
 
     $inserted = 0;
-    $skippedFancy = 0;
+    $fancyCount = 0;
     $skippedErrors = 0;
     $errors = [];
     $rowNum = 1; // the header row itself was line 1
@@ -108,11 +116,6 @@ function process_diamond_upload(string $csvPath, string $mode): array
             $rowNum++;
             if ($row === [null]) {
                 continue; // a blank line in the file
-            }
-
-            if ($colorIdx !== null && isset($row[$colorIdx]) && stripos((string)$row[$colorIdx], 'fancy') !== false) {
-                $skippedFancy++;
-                continue;
             }
 
             // Build [colname => value] first (rather than going
@@ -153,6 +156,29 @@ function process_diamond_upload(string $csvPath, string $mode): array
                 }
             }
 
+            // fancy / NatFancyColor / NatFancyColorIntensity: derived
+            // from Color when it starts with "Fancy" — the word right
+            // after "Fancy" is the intensity, the last word is the
+            // color (e.g. "Fancy Deep Orange" -> intensity "Deep",
+            // color "Orange"; "Fancy Blue" -> intensity blank, color
+            // "Blue"). Anything else -> fancy = 'no', both left blank.
+            if ($colorIdx !== null) {
+                $colorRaw = isset($row[$colorIdx]) ? trim((string)$row[$colorIdx]) : '';
+                $isFancy = $colorRaw !== '' && preg_match('/^fancy\b\s*(.*)$/i', $colorRaw, $fancyMatch) === 1;
+                $rowValues['fancy'] = $isFancy ? 'yes' : 'no';
+                $rowValues['NatFancyColor'] = null;
+                $rowValues['NatFancyColorIntensity'] = null;
+                if ($isFancy) {
+                    $fancyCount++;
+                    $rest = trim((string)$fancyMatch[1]);
+                    if ($rest !== '') {
+                        $tokens = preg_split('/\s+/', $rest);
+                        $rowValues['NatFancyColor'] = array_pop($tokens);
+                        $rowValues['NatFancyColorIntensity'] = $tokens !== [] ? implode(' ', $tokens) : null;
+                    }
+                }
+            }
+
             $values = [];
             foreach ($mappedCols as $col) {
                 $values[] = $rowValues[$col] ?? null;
@@ -180,7 +206,7 @@ function process_diamond_upload(string $csvPath, string $mode): array
         'mode' => $mode,
         'mapped_columns' => $mappedCols,
         'inserted' => $inserted,
-        'skipped_fancy' => $skippedFancy,
+        'fancy_colored' => $fancyCount,
         'skipped_errors' => $skippedErrors,
         'errors' => $errors,
     ];
@@ -207,6 +233,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 try {
                     $stats = process_diamond_upload($_FILES['csv_file']['tmp_name'], $mode);
+                    record_diamond_upload_log(
+                        (string)($_POST['csv_file_lastmod'] ?? '') !== '' ? (string)$_POST['csv_file_lastmod'] : null,
+                        current_user()['username'] ?? null
+                    );
                 } catch (Throwable $e) {
                     $fatalError = 'Upload failed: ' . $e->getMessage();
                 }
@@ -229,7 +259,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
     <?php if ($stats !== null): ?>
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value"><?= (int)$stats['inserted'] ?></div><div class="stat-label">Rows inserted</div></div>
-            <div class="stat-card"><div class="stat-value"><?= (int)$stats['skipped_fancy'] ?></div><div class="stat-label">Skipped (Fancy color)</div></div>
+            <div class="stat-card"><div class="stat-value"><?= (int)$stats['fancy_colored'] ?></div><div class="stat-label">Fancy-colored rows</div></div>
             <div class="stat-card"><div class="stat-value"><?= (int)$stats['skipped_errors'] ?></div><div class="stat-label">Skipped (errors)</div></div>
         </div>
         <p class="panel-desc">
@@ -254,10 +284,12 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             Upload a CSV file of diamond records. Column headers in the file are matched against
             <a href="<?= e(asset_url('/modules/admin/table_view.php?table=uploadref')) ?>">Upload Field Mapping</a>'s
             "CSV Header Name" entries to decide which <code>maindata</code> field each column populates —
-            any header that doesn't match an active mapping is ignored. Rows whose Color value contains
-            "Fancy" are always skipped (fancy-colored diamonds aren't imported by this program).
-            If Total Amount is blank or zero, it's computed as Weight &times; Price. If Measurements is
-            blank, it's derived as Length x Width x Height from those three fields.
+            any header that doesn't match an active mapping is ignored. When Color starts with "Fancy"
+            (e.g. "Fancy Deep Orange"), the Fancy flag, Nat Fancy Color and Nat Fancy Color Intensity are
+            derived from it automatically — the word right after "Fancy" is the intensity, the last word is
+            the color ("Fancy Deep Orange" &rarr; color "Orange", intensity "Deep"; "Fancy Blue" &rarr; color
+            "Blue", intensity blank). If Total Amount is blank or zero, it's computed as Weight &times;
+            Price. If Measurements is blank, it's derived as Length x Width x Height from those three fields.
         </p>
         <form method="post" enctype="multipart/form-data" class="crud-form" id="diamondUploadForm">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -276,6 +308,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             <div class="form-group">
                 <label for="csv_file">CSV File</label>
                 <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
+                <input type="hidden" id="csvFileLastmod" name="csv_file_lastmod" value="">
                 <p id="csvFileNameDisplay" style="margin-top:6px; font-size:0.85rem; color: var(--content-fg, var(--text-mid));">No file chosen</p>
             </div>
 

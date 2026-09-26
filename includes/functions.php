@@ -331,6 +331,24 @@ function ds_lookup_map(): array
         'Lab'                   => ['table' => 'lab', 'label' => 'lab', 'match' => 'lab', 'hasActive' => true, 'orderCol' => 'id'],
         'location'              => ['table' => 'location', 'label' => 'location', 'match' => 'location', 'hasActive' => true, 'orderCol' => 'order', 'style' => 'checkbox_grid'],
         'avail'                 => ['table' => 'availability', 'label' => 'avail', 'match' => 'avail', 'hasActive' => true, 'orderCol' => 'order', 'style' => 'checkbox_grid'],
+        // Only ever actually rendered by diamond_search.php's own
+        // bespoke logic (positioned right after Color, only when
+        // Site Setup's Fancy Filter is Yes) — registered here so
+        // build_maindata_search_where() knows how to turn a
+        // submitted f[NatFancyColor][] / f[NatFancyColorIntensity][]
+        // into a real WHERE clause. "order the table by its own
+        // value column" is spec'd explicitly, hence orderCol pointing
+        // at the same column as label/match rather than a separate
+        // sort column like the other lookup tables use. hasActive is
+        // false here (unlike every other lookup table) because
+        // fancycolor/fancyint aren't guaranteed to have an `active`
+        // column at all — diamond_search.php's own bespoke query
+        // handles that column being optional; this flag existing
+        // as true would make the unrelated generic rendering path in
+        // get_diamond_search_sections() assume it's always there and
+        // fail outright if it isn't.
+        'NatFancyColor'         => ['table' => 'fancycolor', 'label' => 'fncycolor', 'match' => 'fncycolor', 'hasActive' => false, 'orderCol' => 'fncycolor'],
+        'NatFancyColorIntensity' => ['table' => 'fancyint', 'label' => 'fncyint', 'match' => 'fncyint', 'hasActive' => false, 'orderCol' => 'fncyint'],
     ];
 }
 
@@ -592,5 +610,65 @@ function get_active_theme(): array
         'foreColor'  => $resolve($row['selected_forecolor'] ?? null),
         'backColor'  => $resolve($row['selected_backcolor'] ?? null),
     ];
+    return $cache;
+}
+
+/**
+ * Records one row in `upload_date` for a successful Diamond Data
+ * Upload run — see modules/admin/diamond_data_upload.php. Never
+ * throws: a logging failure (e.g. the table/migration isn't in
+ * place yet) shouldn't block the actual upload from completing.
+ *
+ * @param string|null $clientFileLastModifiedMs  The uploaded CSV's
+ *   own last-modified timestamp, in epoch milliseconds, as reported
+ *   by the browser's File API (see assets/js/diamond_data_upload.js)
+ *   — this is the only way to learn the file's own date/time, since
+ *   a standard file upload doesn't otherwise carry it. Null/invalid
+ *   falls back to "now", same as the execution timestamp, for
+ *   browsers too old to support it.
+ */
+function record_diamond_upload_log(?string $clientFileLastModifiedMs, ?string $userid): void
+{
+    try {
+        $now = new DateTime();
+
+        $fileDt = $now;
+        if ($clientFileLastModifiedMs !== null && ctype_digit($clientFileLastModifiedMs)) {
+            $fileDt = (new DateTime())->setTimestamp((int)((int)$clientFileLastModifiedMs / 1000));
+        }
+
+        get_db()->prepare(
+            'INSERT INTO upload_date (upldfile_date, upldfile_time, data_uplddate, data_upldtime, userid)
+             VALUES (:ufd, :uft, :dud, :dut, :uid)'
+        )->execute([
+            ':ufd' => $fileDt->format('Y-m-d'),
+            ':uft' => $fileDt->format('H:i:s'),
+            ':dud' => $now->format('Y-m-d'),
+            ':dut' => $now->format('H:i:s'),
+            ':uid' => $userid,
+        ]);
+    } catch (Throwable $e) {
+        error_log('record_diamond_upload_log failed: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Most recent `upload_date` row, if any — used by Diamond Search's
+ * footer to show "as of" freshness info. Cached per-request.
+ */
+function get_latest_upload_log(): ?array
+{
+    static $cache = null;
+    static $loaded = false;
+    if ($loaded) {
+        return $cache;
+    }
+    $loaded = true;
+    try {
+        $row = get_db()->query('SELECT * FROM upload_date ORDER BY id DESC LIMIT 1')->fetch();
+        $cache = $row ?: null;
+    } catch (Throwable $e) {
+        $cache = null;
+    }
     return $cache;
 }

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/functions.php'; // get_maindata_columns(), get_maindata_column_types(), etc.
+require_once __DIR__ . '/ThemeSettings.php'; // stockno-notforweb-bg
 
 /**
  * Build [whereSql, params] for maindata from the Diamond Search
@@ -252,7 +253,9 @@ function build_rsetup_order_by(): string
 function get_stockno_bg_color(?string $avail, ?string $notforweb): ?string
 {
     if (strcasecmp(trim((string)$notforweb), 'true') === 0) {
-        return '#f33b2b';
+        // Admin → Theme Settings → Diamond search & results. The literal is
+        // only a safety net so the warning never disappears if the row is missing.
+        return ThemeSettings::value('stockno-notforweb-bg', '#f33b2b');
     }
 
     $avail = trim((string)$avail);

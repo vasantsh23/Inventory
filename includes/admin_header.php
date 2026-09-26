@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/crud_config.php';
+require_once __DIR__ . '/theme.php';
 
 require_module_access('admin');
 
@@ -11,7 +12,6 @@ $setup = get_setup() ?? [];
 $companyName = $setup['company'] ?? APP_NAME;
 $logoPath = get_logo_path();
 $logoUrl = preg_match('#^https?://#i', $logoPath) ? $logoPath : asset_url($logoPath);
-$theme = get_active_theme();
 $activeNav = $activeNav ?? '';
 $pageTitle = $pageTitle ?? 'Dashboard';
 $pageSubtitle = $pageSubtitle ?? '';
@@ -22,23 +22,9 @@ $pageSubtitle = $pageSubtitle ?? '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?> · <?= e($companyName) ?></title>
+    <?php // Same theme_settings-driven theme as the public site (Admin → Theme Settings) ?>
+    <?= theme_head_tags(!empty($loadAllThemeFonts)) ?>
     <link rel="stylesheet" href="<?= e(asset_url_versioned('/assets/css/style.css')) ?>">
-    <?php if (array_filter($theme)): ?>
-    <style>
-        /* Active theme selected in Admin > Fonts & Colors, applied to
-           the dashboard's main working area (panels, stat cards,
-           table text). The sidebar, top bar, buttons and status
-           pills intentionally keep their own fixed styling — those
-           need to stay readable/semantic (danger/success/warning)
-           regardless of what colors are picked for content. */
-        .dash-main {
-            <?php if ($theme['fontFamily']): ?>--content-font-family: <?= e($theme['fontFamily']) ?>, var(--font);<?php endif; ?>
-            <?php if ($theme['fontSize']): ?>--content-font-size: <?= e(normalize_css_length($theme['fontSize'])) ?>;<?php endif; ?>
-            <?php if ($theme['foreColor']): ?>--content-fg: <?= e($theme['foreColor']) ?>;<?php endif; ?>
-            <?php if ($theme['backColor']): ?>--content-bg: <?= e($theme['backColor']) ?>;<?php endif; ?>
-        }
-    </style>
-    <?php endif; ?>
 </head>
 <body>
 <header class="site-header">
@@ -83,8 +69,9 @@ $pageSubtitle = $pageSubtitle ?? '';
         <a href="<?= e(asset_url('/modules/admin/diamond_data_upload.php')) ?>" class="<?= $activeNav === 'diamond_data_upload' ? 'active' : '' ?>">Diamond Data Upload</a>
         <a href="<?= e(asset_url('/modules/admin/maindata_hold.php')) ?>" class="<?= $activeNav === 'maindata_hold' ? 'active' : '' ?>">Hold Selection</a>
 
-        <div class="sidebar-section">Tools</div>
-        <a href="<?= e(asset_url('/modules/admin/font_color_preview.php')) ?>" class="<?= $activeNav === 'font_color_preview' ? 'active' : '' ?>">Font &amp; Color Preview</a>
+        <div class="sidebar-section">Appearance</div>
+        <a href="<?= e(asset_url('/modules/admin/theme_settings.php')) ?>" class="<?= $activeNav === 'theme_settings' ? 'active' : '' ?>">Theme Settings</a>
+        <a href="<?= e(asset_url('/modules/admin/theme_sections.php')) ?>" class="<?= $activeNav === 'theme_sections' ? 'active' : '' ?>">Theme Sections</a>
     </aside>
 
     <main class="dash-main">

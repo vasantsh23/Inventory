@@ -71,7 +71,6 @@ function dd_field_display_value(array $diamond, string $field): string
 $pageTitle = 'Diamond Details';
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
-$applyPublicTheme = true;
 
 require_once __DIR__ . '/../../includes/header.php';
 ?>

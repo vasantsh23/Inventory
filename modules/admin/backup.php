@@ -84,7 +84,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
     <div class="panel">
         <h2>Restore from Backup</h2>
         <p class="panel-desc">
-            <strong style="color:#ffb0c0;">Warning:</strong> restoring replaces existing tables with the contents
+            <strong class="text-danger">Warning:</strong> restoring replaces existing tables with the contents
             of the uploaded file. This cannot be undone. Restricted to superadmin accounts.
         </p>
         <?php if ((int)(current_user()['level'] ?? 0) >= 9): ?>

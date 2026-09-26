@@ -37,9 +37,17 @@ modules/
     table_export.php     Streams the current table as .xlsx
     table_import.php     Uploads and imports an .xlsx file into a table
     backup.php            Backup & restore UI
+    theme_settings.php    Theme Settings: every colour/font/size, quick edit + live preview
+    theme_setting_form.php Add / edit one theme setting
+    theme_sections.php    Add / rename / reorder / delete theme sections
+    theme_actions.php     Delete / reset (one, section, all) — POST + CSRF
     download_backup.php   Serves a backup file (authenticated only)
   superadmin/index.php   superadmin only
-assets/css/style.css      Design system (dark, glassmorphic, gradient accents)
+assets/css/style.css      Design system — every colour and font is a var(--…) from theme_settings
+theme.css.php             Outputs theme_settings as CSS custom properties (:root { --key: value; })
+includes/ThemeSettings.php  Theme data access + validation
+includes/theme.php        theme_head_tags(): Google Fonts link + theme.css.php link for every page
+includes/fonts.php        Font dropdown library + Google Fonts URL builder
 storage/backups/          Generated .sql backups (blocked from direct HTTP access)
 sql/schema.sql            Table definitions matching Admintablestructures.xlsx
 .env.example               Required environment variables (for hosts that support them)
@@ -63,7 +71,7 @@ sql/schema.sql            Table definitions matching Admintablestructures.xlsx
   - `admin` → user + admin modules
   - `superadmin` → user + admin + superadmin modules
 - **Admin dashboard CRUD** — every table (`user`, `user_types`, `setup`, `path`,
-  `timings`, `font_and_color`, `upload`) gets add/edit/delete screens
+  `timings`, `upload`) gets add/edit/delete screens
   automatically, driven by `includes/crud_config.php` +
   `includes/crud_engine.php`. Column types (select, color picker,
   password, encrypted, textarea, lookup/foreign-key dropdown) are
@@ -79,16 +87,27 @@ sql/schema.sql            Table definitions matching Admintablestructures.xlsx
   available types (`table_form.php`'s "lookup" field type), and
   deleting a type still assigned to an account is blocked by a
   foreign-key constraint rather than silently corrupting data.
-- **Live theming from Fonts & Colors** — the `font_and_color` table
-  stores 5 numbered slots each for font type, font size, text color
-  and background color. Four `selected_*` columns pick which slot is
-  active; `get_active_theme()` in `includes/functions.php` resolves
-  the actual values, and `includes/header.php` applies them as CSS
-  directly to the public page content area (Home, About Us,
-  Inventory, Contact Us) — without touching the admin dashboard's own
-  styling. Editing a font/color slot's value, or picking a different
-  slot as "active", changes the public site's look immediately with
-  no code changes.
+- **Theme settings (colours, fonts, sizes)** — every colour, font
+  family, font size, font weight, text case and themed spacing on
+  every page (public site, user module, admin dashboard and the
+  printable memo) comes from the `theme_settings` table, grouped by
+  `theme_sections` (Global, Header & navigation, Buttons, Forms,
+  Tables, Admin dashboard, Diamond Search page, Memo printout, …).
+  One row = one CSS custom property: `/theme.css.php` turns
+  `header-bg = #ffffff` into `--header-bg: #ffffff;` and
+  `assets/css/style.css` only ever uses `var(--header-bg)`.
+  Edit them in **Admin → Appearance → Theme Settings**: colour
+  pickers, a font dropdown (any Google Fonts family can be typed as a
+  custom stack and is loaded automatically), live previews, search,
+  save many at once, and reset one setting, a section or the whole
+  theme to its default. Values are validated on save *and* again when
+  the CSS is generated, so a bad value can never break or inject into
+  a page. The stylesheet URL carries a version hash, so changes show
+  immediately. The Results / View Cart table font (formerly
+  `rsetup.fontype` / `fontsize`) and the "not for web" Stock No
+  highlight are theme settings too. To style something new, add a
+  setting (e.g. key `promo-border`) and use `var(--promo-border)` in
+  `assets/css/style.css`.
 - **Excel import/export** — every table list view has an "Export to
   Excel" button and an "Import from Excel" upload form. Built with a
   **dependency-free** XLSX reader/writer (`includes/xlsx_lite.php`)
@@ -134,9 +153,15 @@ sql/schema.sql            Table definitions matching Admintablestructures.xlsx
    `user_types` table and converts your existing accounts over
    without losing any data. Do not run both files against the same
    database.
-   **If you already had the `font_and_color` table before this
-   update**, also run `sql/migration_theme_selection.sql` to add the
-   four `selected_*` columns.
+   **Upgrading an existing installation to theme settings:** back up
+   the database (Admin → Backup & Restore), then run
+   `sql/migration_theme_settings.sql` once, **before** uploading the
+   new files. It creates `theme_sections` / `theme_settings` with
+   values that reproduce the current look, carries over your active
+   Fonts & Colors choices and Results font, then drops the old
+   `font_and_color` table and the `rsetup.fontype` / `fontsize`
+   columns. (Fresh installs from `sql/schema.sql` already include the
+   theme tables — don't run the migration there.)
 2. Copy `.env.example` to your environment if your host supports env
    vars; otherwise set `DB_PASS` and the encryption keys directly in
    `config/config.php` (see the warnings at the top of that file).

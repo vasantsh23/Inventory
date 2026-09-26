@@ -4,7 +4,6 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/functions.php';
 
 require_module_access('user');
-$applyPublicTheme = true; // this page's content should reflect the Fonts & Colors selection
 
 /**
  * The actual value submitted for a pill/shape checkbox. Weight/Carat

@@ -62,7 +62,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                 <h2>Notes</h2>
                 <ul>
                     <?php foreach ($stats['errors'] as $err): ?>
-                        <li style="color:var(--text-mid); margin-bottom:6px;"><?= e($err) ?></li>
+                        <li style="color:var(--text-muted); margin-bottom:6px;"><?= e($err) ?></li>
                     <?php endforeach; ?>
                 </ul>
             </div>

@@ -56,7 +56,7 @@ $errorCode = (string)($_GET['error'] ?? '');
                 </thead>
                 <tbody>
                 <?php if ($result['rows'] === []): ?>
-                    <tr><td colspan="<?= count($listColumns) + 1 ?>" style="color:var(--text-low);">No records found.</td></tr>
+                    <tr><td colspan="<?= count($listColumns) + 1 ?>" style="color:var(--text-faint);">No records found.</td></tr>
                 <?php endif; ?>
                 <?php foreach ($result['rows'] as $row): ?>
                     <tr>

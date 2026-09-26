@@ -2,7 +2,6 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
 require_module_access('superadmin');
-$applyPublicTheme = true; // this page's content should reflect the Fonts & Colors selection
 require_once __DIR__ . '/../../includes/header.php';
 ?>
     <section class="page-content">

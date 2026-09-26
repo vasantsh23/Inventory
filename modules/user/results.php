@@ -140,18 +140,12 @@ $totalPages = max(1, (int)ceil($total / $perPage));
 $pageTitle = 'Results';
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
-$applyPublicTheme = true;
 $wideContent = true; // this table has many columns — use the full viewport width
 
 $rsetup = get_rsetup();
 
 require_once __DIR__ . '/../../includes/header.php';
 ?>
-    <?php if ($rsetup && (!empty($rsetup['fontype']) || !empty($rsetup['fontsize']))): ?>
-        <style>
-            table.results-table { font-family: <?= json_encode((string)($rsetup['fontype'] ?: 'inherit')) ?>, sans-serif !important; font-size: <?= (int)($rsetup['fontsize'] ?: 14) ?>px !important; }
-        </style>
-    <?php endif; ?>
     <section class="ds-page">
         <div class="ds-hero">
             <h1 class="ds-title">Results</h1>

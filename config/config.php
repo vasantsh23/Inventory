@@ -21,7 +21,7 @@ session_name('IMS_SESSID');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https://v3601425.v360.in; frame-src 'self' https://v3601425.v360.in https://veeradimon.be; media-src 'self' https://onlinemediafiles.com; style-src 'self' 'unsafe-inline'; script-src 'self'");
+header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https://v3601425.v360.in; frame-src 'self' https://v3601425.v360.in https://veeradimon.be; media-src 'self' https://onlinemediafiles.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'");
 
 // ---- Database credentials --------------------------------------------------
 // Read from dbconn.php rather than kept here, so the actual

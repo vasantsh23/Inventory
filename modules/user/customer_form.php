@@ -46,7 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $pageTitle = ($isNew ? 'Add Customer' : 'Edit Customer');
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
-$applyPublicTheme = true;
 
 require_once __DIR__ . '/../../includes/header.php';
 ?>

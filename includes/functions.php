@@ -561,59 +561,6 @@ function get_social_media_links(array $setup): array
 }
 
 /**
- * Turn a loosely-entered CSS length into something browsers will
- * actually accept. A bare number like "9" is invalid CSS for
- * font-size (silently ignored by the browser) — this adds "px" if
- * no unit was given. Values that already look like valid CSS
- * (units, "inherit", "1.2em", etc.) are passed through unchanged.
- */
-function normalize_css_length(string $value): string
-{
-    $value = trim($value);
-    return preg_match('/^\d+(\.\d+)?$/', $value) ? $value . 'px' : $value;
-}
-
-/**
- * Resolve the currently-active theme from the font_and_color table.
- * The table stores 5 numbered slots each for font type/size/fore
- * color/back color; the selected_* columns say which slot is active.
- * Returns null values for anything not configured, so callers can
- * fall back to the site's default styling.
- */
-function get_active_theme(): array
-{
-    static $cache = null;
-    if ($cache !== null) {
-        return $cache;
-    }
-
-    $default = ['fontFamily' => null, 'fontSize' => null, 'foreColor' => null, 'backColor' => null];
-
-    $stmt = get_db()->query('SELECT * FROM font_and_color ORDER BY id ASC LIMIT 1');
-    $row = $stmt->fetch();
-    if (!$row) {
-        $cache = $default;
-        return $cache;
-    }
-
-    $resolve = function (?string $slotName) use ($row): ?string {
-        if ($slotName === null || $slotName === '' || !array_key_exists($slotName, $row)) {
-            return null;
-        }
-        $value = trim((string)$row[$slotName]);
-        return $value !== '' ? $value : null;
-    };
-
-    $cache = [
-        'fontFamily' => $resolve($row['selected_fonttype'] ?? null),
-        'fontSize'   => $resolve($row['selected_fontsize'] ?? null),
-        'foreColor'  => $resolve($row['selected_forecolor'] ?? null),
-        'backColor'  => $resolve($row['selected_backcolor'] ?? null),
-    ];
-    return $cache;
-}
-
-/**
  * Records one row in `upload_date` for a successful Diamond Data
  * Upload run — see modules/admin/diamond_data_upload.php. Never
  * throws: a logging failure (e.g. the table/migration isn't in

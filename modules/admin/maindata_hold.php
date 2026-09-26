@@ -120,7 +120,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                     </thead>
                     <tbody>
                     <?php if ($rows === []): ?>
-                        <tr><td colspan="<?= count($displayColumns) + 1 ?>" style="color:var(--text-low);">No records found.</td></tr>
+                        <tr><td colspan="<?= count($displayColumns) + 1 ?>" style="color:var(--text-faint);">No records found.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($rows as $row): ?>
                         <?php $isHeld = $hasHoldCol && strcasecmp((string)($row['hold'] ?? ''), 'yes') === 0; ?>

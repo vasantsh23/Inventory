@@ -61,7 +61,6 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                 <input type="hidden" name="id" value="<?= e($id) ?>">
             <?php endif; ?>
 
-            <?php $renderedDatalists = []; ?>
             <?php foreach ($meta['columns'] as $colName => $col):
                 if ($col['type'] === 'hidden' || ($col['auto'] && $isNew)) {
                     continue;
@@ -77,25 +76,6 @@ require_once __DIR__ . '/../../includes/admin_header.php';
 
                     <?php elseif ($col['type'] === 'textarea'): ?>
                         <textarea id="<?= e($fieldId) ?>" name="<?= e($fieldId) ?>" rows="4"><?= e($value) ?></textarea>
-
-                    <?php elseif ($col['type'] === 'font_select'):
-                        // Multiple fields (e.g. all 5 "font type-N" columns) share the
-                        // exact same 1600+ option list — embed that list as data once
-                        // and have every matching field's combo widget reference it,
-                        // instead of repeating it per field.
-                        $comboKey = 'combo_' . substr(md5(serialize($col['options'])), 0, 12);
-                        $isFirstUse = !isset($renderedDatalists[$comboKey]);
-                        $renderedDatalists[$comboKey] = true;
-                    ?>
-                        <div class="combo-wrap" data-combo-source="<?= e($comboKey) ?>">
-                            <input type="text" id="<?= e($fieldId) ?>" name="<?= e($fieldId) ?>" value="<?= e($value) ?>"
-                                   class="combo-input" autocomplete="off" placeholder="Click to browse, or type to search…">
-                            <div class="combo-panel" hidden></div>
-                        </div>
-                        <?php if ($isFirstUse): ?>
-                            <script type="application/json" id="<?= e($comboKey) ?>"><?= json_encode(array_values((array)$col['options']), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-                        <?php endif; ?>
-                        <p class="hint">Click the box to browse the full list — typing filters it live. Custom names are allowed too.</p>
 
                     <?php elseif ($col['type'] === 'maindata_column_select'): ?>
                         <select id="<?= e($fieldId) ?>" name="<?= e($fieldId) ?>">
@@ -115,10 +95,6 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                                 // behaviour of using the same string for both.
                                 $optValue = is_int($optKey) ? $opt : (string)$optKey;
                                 $optLabel = $opt;
-                                if ($table === 'font_and_color' && str_starts_with($colName, 'selected_')
-                                    && array_key_exists($optValue, $row) && trim((string)$row[$optValue]) !== '') {
-                                    $optLabel = $optValue . ' — ' . $row[$optValue];
-                                }
                             ?>
                                 <option value="<?= e($optValue) ?>" <?= $value === $optValue ? 'selected' : '' ?>><?= e($optLabel) ?></option>
                             <?php endforeach; ?>
@@ -171,8 +147,5 @@ require_once __DIR__ . '/../../includes/admin_header.php';
     </div>
 
     <script src="<?= e(asset_url_versioned('/assets/js/color_picker_sync.js')) ?>"></script>
-    <?php if (!empty($renderedDatalists)): ?>
-        <script src="<?= e(asset_url_versioned('/assets/js/font_combo.js')) ?>"></script>
-    <?php endif; ?>
 <?php
 require_once __DIR__ . '/../../includes/admin_footer.php';

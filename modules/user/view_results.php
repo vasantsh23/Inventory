@@ -100,18 +100,12 @@ if ($emailid !== '' && $columns !== []) {
 $pageTitle = 'View Cart';
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
-$applyPublicTheme = true;
 $wideContent = true; // this table can have many columns — use the full viewport width
 
 $rsetup = get_rsetup();
 
 require_once __DIR__ . '/../../includes/header.php';
 ?>
-    <?php if ($rsetup && (!empty($rsetup['fontype']) || !empty($rsetup['fontsize']))): ?>
-        <style>
-            table.results-table { font-family: <?= json_encode((string)($rsetup['fontype'] ?: 'inherit')) ?>, sans-serif !important; font-size: <?= (int)($rsetup['fontsize'] ?: 14) ?>px !important; }
-        </style>
-    <?php endif; ?>
     <section class="ds-page">
         <div class="ds-hero">
             <h1 class="ds-title">View Cart</h1>

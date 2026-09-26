@@ -16,7 +16,6 @@ $listColumns = crud_list_columns($table, $meta);
 $pageTitle = 'Customers';
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
-$applyPublicTheme = true;
 
 $errorMessages = [
     'still_referenced' => 'This customer can\'t be deleted because they\'re referenced elsewhere.',
@@ -58,7 +57,7 @@ require_once __DIR__ . '/../../includes/header.php';
                     </thead>
                     <tbody>
                     <?php if ($result['rows'] === []): ?>
-                        <tr><td colspan="<?= count($listColumns) + 1 ?>" style="color:var(--text-low);">No customers found.</td></tr>
+                        <tr><td colspan="<?= count($listColumns) + 1 ?>" style="color:var(--text-faint);">No customers found.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($result['rows'] as $row): ?>
                         <tr>

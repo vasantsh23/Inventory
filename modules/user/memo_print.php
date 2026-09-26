@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/diamond_search_query.php';
+require_once __DIR__ . '/../../includes/theme.php';
 
 $level = require_memo_level();
 
@@ -212,26 +213,28 @@ $pageTitle = 'Memo';
 <head>
 <meta charset="utf-8">
 <title>Memo — <?= e($customer['custnm']) ?></title>
+<?php // Memo colours and font: Admin → Theme Settings → Memo printout ?>
+<?= theme_head_tags() ?>
 <style>
     @page { size: A4; margin: 8mm; }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 9px;
-        color: #000;
-        background: #e6e6e6; /* on-screen "paper on desk" backdrop, removed for print */
+        font-family: var(--memo-font);
+        font-size: var(--memo-font-size);
+        color: var(--memo-text);
+        background: var(--memo-desk-bg); /* on-screen "paper on desk" backdrop, removed for print */
     }
     .memo-page {
         width: 210mm;
         min-height: 297mm;
         margin: 16px auto;
-        background: #fff;
+        background: var(--memo-paper-bg);
         padding: 8mm;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+        box-shadow: 0 4px 24px var(--memo-shadow);
     }
     table { border-collapse: collapse !important; width: 100%; margin: 0 0 4px; }
-    table, tr, td, th { border: 1.5px solid #000 !important; }
+    table, tr, td, th { border: 1.5px solid var(--memo-border) !important; }
     td, th { padding: 1px 4px; }
     /* Faint gray borders for the Total row + footer rows on the 2nd
        and 3rd copies of a Memo-3 printout — matches the original
@@ -240,15 +243,15 @@ $pageTitle = 'Memo';
        section on the repeated copies. */
     tr.memo3-faint-border td,
     tr.memo3-faint-border th {
-        border-color: #d8d8d8 !important;
+        border-color: var(--memo-faint-border) !important;
     }
     /* The combined Cut/Polish/Symmetry/Fluorescence "Make" column
        needs a smaller size so it doesn't force the row too tall. */
-    .memo-make-cell { font-size: 10px; line-height: 1.1; white-space: nowrap; }
+    .memo-make-cell { font-size: var(--memo-make-size); line-height: 1.1; white-space: nowrap; }
     @media print {
-        table, tr, td, th { border: 1.5px solid #000 !important; color: #000 !important; }
+        table, tr, td, th { border: 1.5px solid var(--memo-border) !important; color: var(--memo-text) !important; }
         tr.memo3-faint-border td,
-        tr.memo3-faint-border th { border-color: #d8d8d8 !important; }
+        tr.memo3-faint-border th { border-color: var(--memo-faint-border) !important; }
         body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
     .memo-header-table td { vertical-align: top; line-height: 1.15; }
@@ -256,7 +259,7 @@ $pageTitle = 'Memo';
     .memo-toolbar button { padding: 8px 22px; font-size: 0.95rem; cursor: pointer; }
     @media print {
         .memo-toolbar { display: none; }
-        body { background: #fff; }
+        body { background: var(--memo-paper-bg); }
         .memo-page { box-shadow: none; margin: 0; width: auto; min-height: 0; padding: 0; }
     }
 </style>

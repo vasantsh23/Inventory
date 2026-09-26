@@ -46,6 +46,7 @@ $dbConnCandidates = [
     dirname(__DIR__, 2) . '/dbconn.php',
     dirname(__DIR__, 1) . '/dbconn.php', // one level above config/, i.e. the app root's parent
     __DIR__ . '/dbconn.php',
+    dirname(__DIR__, 1) . '/includes/dbconn.php', // this server keeps it in includes/
 ];
 $dbConnFile = null;
 foreach ($dbConnCandidates as $candidate) {

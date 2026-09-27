@@ -32,9 +32,9 @@ if (isset($_GET['v'])) {
 echo "/* Generated from MySQL table theme_settings — edit values in Admin → Theme Settings */\n:root {\n";
 foreach ($settings as $key => $row) {
     // Re-validate on output: a hand-edited DB row can never inject CSS
-    if (!preg_match('/^[a-z][a-z0-9-]*$/', (string) $key)
+    if (!preg_match('/^[a-z][a-z0-9_-]*$/', (string) $key)
         || !ThemeSettings::isValidValue($row['property_type'], (string) $row['setting_value'])) {
-        echo '  /* skipped invalid setting: ' . preg_replace('/[^a-z0-9-]/', '', (string) $key) . " */\n";
+        echo '  /* skipped invalid setting: ' . preg_replace('/[^a-z0-9_-]/', '', (string) $key) . " */\n";
         continue;
     }
     echo '  --' . $key . ': ' . trim((string) $row['setting_value']) . ";\n";

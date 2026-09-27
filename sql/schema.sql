@@ -370,6 +370,8 @@ INSERT IGNORE INTO theme_settings (section_id, setting_key, label, property_type
 (10,'results-table-font-size','Results table font size','font_size','14px','14px','Results and View Cart table (was rsetup.fontsize)',20),
 (10,'stockno-link-color','Stock No link colour','color','#4f8cff','#4f8cff',NULL,21),
 (10,'stockno-notforweb-bg','"Not for web" Stock No background','color','#f33b2b','#f33b2b','Overrides the availability colour when notforweb = true',22),
+(10,'band_color1','Results row band colour 1','color','transparent','transparent','Background of odd rows (1st, 3rd, 5th ...) on Results and View Cart',23),
+(10,'band_color2','Results row band colour 2','color','rgba(255, 255, 255, 0.05)','rgba(255, 255, 255, 0.05)','Background of even rows (2nd, 4th, 6th ...) on Results and View Cart',24),
 -- Diamond Search page
 (11,'dsp-bg','Page background','color','#fbf9f5','#fbf9f5',NULL,1),
 (11,'dsp-text','Text colour','color','#3a3733','#3a3733',NULL,2),

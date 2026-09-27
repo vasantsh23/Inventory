@@ -920,6 +920,12 @@ table.results-table {
     font-size: var(--results-table-font-size);
 }
 .results-empty { text-align: center; padding: 30px !important; color: var(--text-faint); white-space: normal !important; }
+/* Row banding — Results and View Cart. Colours from theme_settings
+   band_color1 (odd rows) / band_color2 (even rows). The Stock No cell keeps
+   its availability colour because that is an inline style on the cell. */
+table.results-table tbody tr:nth-child(odd) td  { background-color: var(--band_color1, transparent); }
+table.results-table tbody tr:nth-child(even) td { background-color: var(--band_color2, transparent); }
+table.results-table tbody tr:hover td { background-color: var(--table-row-hover); }
 
 /* ============================================================
    Responsive: Diamond Search / Results pages

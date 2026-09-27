@@ -121,8 +121,8 @@ final class ThemeSettings
     {
         $err = [];
 
-        if (!preg_match('/^[a-z][a-z0-9-]{1,78}$/', (string) ($d['setting_key'] ?? ''))) {
-            $err['setting_key'] = 'Use lowercase letters, numbers and hyphens, starting with a letter (e.g. header-bg).';
+        if (!preg_match('/^[a-z][a-z0-9_-]{1,78}$/', (string) ($d['setting_key'] ?? ''))) {
+            $err['setting_key'] = 'Use lowercase letters, numbers, hyphens or underscores, starting with a letter (e.g. header-bg, band_color1).';
         } else {
             $st = get_db()->prepare('SELECT id FROM theme_settings WHERE setting_key = ? AND id <> ?');
             $st->execute([$d['setting_key'], $ignoreId ?? 0]);

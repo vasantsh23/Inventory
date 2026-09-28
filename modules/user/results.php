@@ -29,9 +29,16 @@ if ($canMemo) {
     $newCustomerId = (string)($_GET['new_customer'] ?? '');
 }
 
+// setup.loginscrn = 'yes' → the normal cart: "Add to Cart" saves rows
+// to the `selection` table and "View Cart" lists them.
+// setup.loginscrn = 'no'  → no cart at all: "Add to Cart" is hidden and
+// "View Selected" just shows the rows ticked on this page, looked up
+// straight from maindata by StockNo (see view_results.php).
+$cartEnabled = !is_guest_browsing_enabled();
+
 $emailid = (string)(current_user()['emailid'] ?? '');
 $cartCount = 0;
-if ($emailid !== '') {
+if ($cartEnabled && $emailid !== '') {
     $cartCountStmt = get_db()->prepare('SELECT COUNT(DISTINCT stockno) AS c FROM selection WHERE emailid = :e');
     $cartCountStmt->execute([':e' => $emailid]);
     $cartCount = (int)$cartCountStmt->fetch()['c'];
@@ -155,9 +162,15 @@ require_once __DIR__ . '/../../includes/header.php';
                     <a class="btn btn-accent" href="?export=xlsx">Export to Excel</a>
                     <button type="button" class="btn" id="excelSelectBtn">Excel-select</button>
                     <button type="button" class="btn" id="copyBtn">Copy</button>
-                    <button type="button" class="btn" id="addToCartBtn">Add to Cart (<span id="cartCountLabel"><?= (int)$cartCount ?></span>)</button>
+                    <?php if ($cartEnabled): ?>
+                        <button type="button" class="btn" id="addToCartBtn">Add to Cart (<span id="cartCountLabel"><?= (int)$cartCount ?></span>)</button>
+                    <?php else: ?>
+                        <button type="button" class="btn" id="viewSelectedBtn">View Selected</button>
+                    <?php endif; ?>
                 <?php endif; ?>
-                <a class="btn" href="<?= e(asset_url('/modules/user/view_results.php')) ?>">View Cart</a>
+                <?php if ($cartEnabled): ?>
+                    <a class="btn" href="<?= e(asset_url('/modules/user/view_results.php')) ?>">View Cart</a>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -168,10 +181,18 @@ require_once __DIR__ . '/../../includes/header.php';
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                 <input type="hidden" name="ids" id="copyFormIds">
             </form>
-            <form method="post" action="<?= e(asset_url('/modules/user/cart_add.php')) ?>" id="cartForm" style="display:none;">
-                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                <input type="hidden" name="ids" id="cartFormIds">
-            </form>
+            <?php if ($cartEnabled): ?>
+                <form method="post" action="<?= e(asset_url('/modules/user/cart_add.php')) ?>" id="cartForm" style="display:none;">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="ids" id="cartFormIds">
+                </form>
+            <?php else: ?>
+                <form method="post" action="<?= e(asset_url('/modules/user/view_results.php')) ?>" id="viewSelectedForm" style="display:none;">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="action" value="view_selected">
+                    <input type="hidden" name="stocknos" id="viewSelectedStocknos">
+                </form>
+            <?php endif; ?>
         <?php endif; ?>
 
         <?php if ($canMemo): ?>
@@ -234,7 +255,7 @@ require_once __DIR__ . '/../../includes/header.php';
                         <?php endif; ?>
                         <?php foreach ($rows as $row): ?>
                             <tr>
-                                <td class="results-checkbox-col" data-label="Select"><input type="checkbox" class="memo-row-select" value="<?= e((string)$row['id']) ?>"></td>
+                                <td class="results-checkbox-col" data-label="Select"><input type="checkbox" class="memo-row-select" value="<?= e((string)$row['id']) ?>" data-stockno="<?= e((string)($row['StockNo'] ?? '')) ?>"></td>
                                 <?php
                                 $stockNoBg = get_stockno_bg_color($row['avail'] ?? null, $row['notforweb'] ?? null);
                                 $rowCertUrl = build_certificate_url($row['Lab'] ?? null, $row['CertificateNo'] ?? null, $row['StockNo'] ?? null);

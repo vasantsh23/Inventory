@@ -12,6 +12,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['error' => 'Method not allowed.']);
     exit;
 }
+if (is_guest_browsing_enabled()) {
+    // setup.loginscrn = 'no': the cart feature is switched off.
+    http_response_code(403);
+    echo json_encode(['error' => 'The cart is not available on this site.']);
+    exit;
+}
 if (!csrf_verify($_POST['csrf_token'] ?? null)) {
     http_response_code(400);
     echo json_encode(['error' => 'Your session expired — please reload the page and try again.']);

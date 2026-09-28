@@ -284,6 +284,25 @@
         });
     }
 
+    // "View Selected" (Results page, only when setup.loginscrn = 'no',
+    // i.e. there is no cart) — posts the StockNos of the ticked rows to
+    // view_results.php, which looks them up directly in maindata.
+    var viewSelectedBtn = document.getElementById('viewSelectedBtn');
+    var viewSelectedForm = document.getElementById('viewSelectedForm');
+    if (viewSelectedBtn && viewSelectedForm) {
+        viewSelectedBtn.addEventListener('click', function () {
+            var stockNos = Array.from(document.querySelectorAll('.memo-row-select:checked'))
+                .map(function (cb) { return (cb.getAttribute('data-stockno') || '').trim(); })
+                .filter(function (v) { return v !== ''; });
+            if (stockNos.length === 0) {
+                showCopyStatus('Please select at least one row to view.', true);
+                return;
+            }
+            document.getElementById('viewSelectedStocknos').value = stockNos.join(',');
+            viewSelectedForm.submit();
+        });
+    }
+
     // "Add to Cart" — available to every user: sends the selected
     // rows to the server, which resolves them to Stock Nos and saves
     // them against the logged-in user's email in the `selection` table.

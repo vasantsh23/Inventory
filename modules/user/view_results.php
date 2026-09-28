@@ -9,8 +9,31 @@ require_module_access('user');
 
 $emailid = (string)(current_user()['emailid'] ?? '');
 
-// ---- Clear cart ----
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'clear_cart') {
+// setup.loginscrn = 'yes' → "View Cart": rows come from this user's
+//   entries in the `selection` (cart) table.
+// setup.loginscrn = 'no'  → "View Selected": the cart table is not used
+//   at all. The Results page posts the StockNos of the ticked rows here;
+//   they are kept in the session (so reloads and Excel export keep
+//   working) and the details are fetched straight from maindata.
+$cartEnabled = !is_guest_browsing_enabled();
+
+// ---- View Selected (loginscrn = 'no'): receive the ticked StockNos ----
+if (!$cartEnabled && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'view_selected') {
+    if (!csrf_verify($_POST['csrf_token'] ?? null)) {
+        http_response_code(400);
+        exit('Your session expired — please reload the page and try again.');
+    }
+    $postedStockNos = array_values(array_unique(array_filter(
+        array_map('trim', explode(',', (string)($_POST['stocknos'] ?? ''))),
+        fn($v) => $v !== '' && strlen($v) <= 255
+    )));
+    $_SESSION['view_selected_stocknos'] = array_slice($postedStockNos, 0, 1000);
+    header('Location: ' . asset_url('/modules/user/view_results.php'));
+    exit;
+}
+
+// ---- Clear cart (loginscrn = 'yes' only) ----
+if ($cartEnabled && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'clear_cart') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
         http_response_code(400);
         exit('Your session expired — please reload the page and try again.');
@@ -27,77 +50,86 @@ $columns = get_results_columns();
 $rows = [];
 $total = 0;
 
-if ($emailid !== '' && $columns !== []) {
-    $stockStmt = get_db()->prepare('SELECT DISTINCT stockno FROM selection WHERE emailid = :e');
-    $stockStmt->execute([':e' => $emailid]);
-    $stockNos = array_column($stockStmt->fetchAll(), 'stockno');
-
-    if ($stockNos !== []) {
-        $fieldList = implode(', ', array_map(fn($c) => "`{$c['field']}`", $columns));
-        // Always fetch avail/notforweb (background color) and
-        // Lab/CertificateNo/StockNo (certificate hyperlink) too, even
-        // if not shown as visible columns.
-        $validColsForBg = get_maindata_columns();
-        $extraBgFields = array_diff(
-            array_intersect(['avail', 'notforweb', 'Lab', 'CertificateNo', 'StockNo'], $validColsForBg),
-            array_column($columns, 'field')
-        );
-        if ($extraBgFields !== []) {
-            $fieldList .= ', ' . implode(', ', array_map(fn($f) => "`$f`", $extraBgFields));
+$stockNos = [];
+if ($columns !== []) {
+    if ($cartEnabled) {
+        if ($emailid !== '') {
+            $stockStmt = get_db()->prepare('SELECT DISTINCT stockno FROM selection WHERE emailid = :e');
+            $stockStmt->execute([':e' => $emailid]);
+            $stockNos = array_column($stockStmt->fetchAll(), 'stockno');
         }
-        $placeholders = implode(',', array_fill(0, count($stockNos), '?'));
-
-        // ---- Excel export: only the checked rows (falls back to
-        //      the whole cart if nothing was selected — e.g. a
-        //      bookmarked export link with no selection state) ----
-        if (($_GET['export'] ?? '') === 'xlsx') {
-            $exportIdsRaw = (string)($_GET['ids'] ?? '');
-            $exportIds = array_values(array_unique(array_filter(
-                array_map('trim', explode(',', $exportIdsRaw)),
-                fn($v) => $v !== '' && ctype_digit($v)
-            )));
-
-            if ($exportIds !== []) {
-                // Security: only export rows whose StockNo is actually in
-                // this user's own cart — a requested id outside that set
-                // (however it got there) is silently dropped, not exported.
-                $idPlaceholders = implode(',', array_fill(0, count($exportIds), '?'));
-                $verifyStmt = get_db()->prepare("SELECT id FROM maindata WHERE id IN ($idPlaceholders) AND StockNo IN ($placeholders)");
-                $verifyStmt->execute(array_merge($exportIds, $stockNos));
-                $verifiedIds = array_column($verifyStmt->fetchAll(), 'id');
-            } else {
-                $verifiedIds = [];
-            }
-
-            if ($verifiedIds === []) {
-                http_response_code(400);
-                exit('Please select at least one row to export.');
-            }
-
-            $verifiedPlaceholders = implode(',', array_fill(0, count($verifiedIds), '?'));
-            $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE id IN ($verifiedPlaceholders) ORDER BY " . build_rsetup_order_by());
-            $stmt->execute($verifiedIds);
-            $headers = array_map(fn($c) => $c['label'], $columns);
-            $exportRows = [];
-            foreach ($stmt->fetchAll() as $row) {
-                $exportRows[] = array_map(
-                    fn($c) => $c['field'] === 'totamt'
-                        ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
-                        : (string)($row[$c['field']] ?? ''),
-                    $columns
-                );
-            }
-            XlsxWriter::download('cart-' . date('Ymd-His') . '.xlsx', $headers, $exportRows);
-        }
-
-        $stmt = get_db()->prepare("SELECT id, $fieldList FROM maindata WHERE StockNo IN ($placeholders) ORDER BY " . build_rsetup_order_by());
-        $stmt->execute($stockNos);
-        $rows = $stmt->fetchAll();
-        $total = count($rows);
+    } else {
+        $sessionStockNos = $_SESSION['view_selected_stocknos'] ?? [];
+        $stockNos = is_array($sessionStockNos) ? array_values(array_map('strval', $sessionStockNos)) : [];
     }
 }
 
-$pageTitle = 'View Cart';
+if ($stockNos !== []) {
+    $fieldList = implode(', ', array_map(fn($c) => "`{$c['field']}`", $columns));
+    // Always fetch avail/notforweb (background color) and
+    // Lab/CertificateNo/StockNo (certificate hyperlink) too, even
+    // if not shown as visible columns.
+    $validColsForBg = get_maindata_columns();
+    $extraBgFields = array_diff(
+        array_intersect(['avail', 'notforweb', 'Lab', 'CertificateNo', 'StockNo'], $validColsForBg),
+        array_column($columns, 'field')
+    );
+    if ($extraBgFields !== []) {
+        $fieldList .= ', ' . implode(', ', array_map(fn($f) => "`$f`", $extraBgFields));
+    }
+    $placeholders = implode(',', array_fill(0, count($stockNos), '?'));
+
+    // ---- Excel export: only the checked rows (falls back to
+    //      the whole cart if nothing was selected — e.g. a
+    //      bookmarked export link with no selection state) ----
+    if (($_GET['export'] ?? '') === 'xlsx') {
+        $exportIdsRaw = (string)($_GET['ids'] ?? '');
+        $exportIds = array_values(array_unique(array_filter(
+            array_map('trim', explode(',', $exportIdsRaw)),
+            fn($v) => $v !== '' && ctype_digit($v)
+        )));
+
+        if ($exportIds !== []) {
+            // Security: only export rows whose StockNo is actually in
+            // this user's own cart / selection — a requested id outside that set
+            // (however it got there) is silently dropped, not exported.
+            $idPlaceholders = implode(',', array_fill(0, count($exportIds), '?'));
+            $verifyStmt = get_db()->prepare("SELECT id FROM maindata WHERE id IN ($idPlaceholders) AND StockNo IN ($placeholders)");
+            $verifyStmt->execute(array_merge($exportIds, $stockNos));
+            $verifiedIds = array_column($verifyStmt->fetchAll(), 'id');
+        } else {
+            $verifiedIds = [];
+        }
+
+        if ($verifiedIds === []) {
+            http_response_code(400);
+            exit('Please select at least one row to export.');
+        }
+
+        $verifiedPlaceholders = implode(',', array_fill(0, count($verifiedIds), '?'));
+        $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE id IN ($verifiedPlaceholders) ORDER BY " . build_rsetup_order_by());
+        $stmt->execute($verifiedIds);
+        $headers = array_map(fn($c) => $c['label'], $columns);
+        $exportRows = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $exportRows[] = array_map(
+                fn($c) => $c['field'] === 'totamt'
+                    ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
+                    : (string)($row[$c['field']] ?? ''),
+                $columns
+            );
+        }
+        XlsxWriter::download(($cartEnabled ? 'cart-' : 'selected-') . date('Ymd-His') . '.xlsx', $headers, $exportRows);
+    }
+
+    $stmt = get_db()->prepare("SELECT id, $fieldList FROM maindata WHERE StockNo IN ($placeholders) ORDER BY " . build_rsetup_order_by());
+    $stmt->execute($stockNos);
+    $rows = $stmt->fetchAll();
+    $total = count($rows);
+}
+
+$viewTitle = $cartEnabled ? 'View Cart' : 'View Selected';
+$pageTitle = $viewTitle;
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
 $wideContent = true; // this table can have many columns — use the full viewport width
@@ -108,7 +140,7 @@ require_once __DIR__ . '/../../includes/header.php';
 ?>
     <section class="ds-page">
         <div class="ds-hero">
-            <h1 class="ds-title">View Cart</h1>
+            <h1 class="ds-title"><?= e($viewTitle) ?></h1>
             <div class="ds-actions">
                 <a class="btn" href="<?= e(asset_url('/modules/user/results.php')) ?>">&larr; Back to Results</a>
                 <?php if ($total > 0): ?>
@@ -116,12 +148,14 @@ require_once __DIR__ . '/../../includes/header.php';
                     <button type="button" class="btn" id="copyBtn">Copy</button>
                     <button type="button" class="btn" id="markupCopyBtn">Markup Copy</button>
                     <button type="button" class="btn" id="clearSelectionBtn">Clear Selection</button>
-                    <form method="post" action="<?= e(asset_url('/modules/user/view_results.php')) ?>" style="display:inline;"
-                          data-confirm="Clear your entire cart? This cannot be undone.">
-                        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                        <input type="hidden" name="action" value="clear_cart">
-                        <button type="submit" class="btn btn-danger">Clear Cart</button>
-                    </form>
+                    <?php if ($cartEnabled): ?>
+                        <form method="post" action="<?= e(asset_url('/modules/user/view_results.php')) ?>" style="display:inline;"
+                              data-confirm="Clear your entire cart? This cannot be undone.">
+                            <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                            <input type="hidden" name="action" value="clear_cart">
+                            <button type="submit" class="btn btn-danger">Clear Cart</button>
+                        </form>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>
@@ -153,10 +187,14 @@ require_once __DIR__ . '/../../includes/header.php';
             </div>
         <?php elseif ($total === 0): ?>
             <div class="panel">
-                <p class="panel-desc">Your cart is empty. Go to Results, select some rows, and click "Add to Cart".</p>
+                <?php if ($cartEnabled): ?>
+                    <p class="panel-desc">Your cart is empty. Go to Results, select some rows, and click "Add to Cart".</p>
+                <?php else: ?>
+                    <p class="panel-desc">No diamonds selected. Go to Results, tick some rows, and click "View Selected".</p>
+                <?php endif; ?>
             </div>
         <?php else: ?>
-            <p class="results-count"><?= number_format($total) ?> diamond<?= $total === 1 ? '' : 's' ?> in your cart</p>
+            <p class="results-count"><?= number_format($total) ?> diamond<?= $total === 1 ? '' : 's' ?> <?= $cartEnabled ? 'in your cart' : 'selected' ?></p>
 
             <div class="results-table-wrap">
                 <table class="data-table results-table">

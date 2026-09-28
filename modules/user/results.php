@@ -15,6 +15,9 @@ require_module_access('user');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postedFilters = $_POST['f'] ?? [];
     $_SESSION['ds_last_filters'] = is_array($postedFilters) ? $postedFilters : [];
+    // A brand-new search starts with nothing ticked — tells
+    // memo_actions.js to forget the rows remembered from the last one.
+    $_SESSION['ds_reset_selection'] = true;
     header('Location: ' . asset_url('/modules/user/results.php'));
     exit;
 }
@@ -144,6 +147,9 @@ if ($columns !== []) {
 }
 $totalPages = max(1, (int)ceil($total / $perPage));
 
+$resetSelection = !empty($_SESSION['ds_reset_selection']);
+unset($_SESSION['ds_reset_selection']);
+
 $pageTitle = 'Results';
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
@@ -167,6 +173,7 @@ require_once __DIR__ . '/../../includes/header.php';
                     <?php else: ?>
                         <button type="button" class="btn" id="viewSelectedBtn">View Selected</button>
                     <?php endif; ?>
+                    <button type="button" class="btn" id="clearSelectionBtn">Clear Selection</button>
                 <?php endif; ?>
                 <?php if ($cartEnabled): ?>
                     <a class="btn" href="<?= e(asset_url('/modules/user/view_results.php')) ?>">View Cart</a>
@@ -240,7 +247,7 @@ require_once __DIR__ . '/../../includes/header.php';
             </div>
 
             <div class="results-table-wrap">
-                <table class="data-table results-table">
+                <table class="data-table results-table" data-persist-selection="1"<?= $resetSelection ? ' data-reset-selection="1"' : '' ?>>
                     <thead>
                         <tr>
                             <th class="results-checkbox-col"><input type="checkbox" id="memoSelectAll" title="Select all"></th>

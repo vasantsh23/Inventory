@@ -26,17 +26,92 @@
     var memo1Btn = document.getElementById('memo1Btn');
     var memo3Btn = document.getElementById('memo3Btn');
 
+    // ---- Remembered selection (Results page only) ----
+    // The ticked rows are saved in sessionStorage (this browser tab
+    // only) so they are still ticked after going to View Cart / View
+    // Selected / Diamond Details and coming back, or after paging.
+    // The Results table opts in with data-persist-selection; a new
+    // search sets data-reset-selection so it starts empty.
+    var SELECTION_KEY = 'ds_results_selected_ids';
+    var persistTable = document.querySelector('[data-persist-selection]');
+
+    function loadStoredSelection() {
+        try {
+            var parsed = JSON.parse(window.sessionStorage.getItem(SELECTION_KEY) || '[]');
+            return Array.isArray(parsed) ? parsed.map(String) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveStoredSelection(ids) {
+        try {
+            if (ids.length === 0) {
+                window.sessionStorage.removeItem(SELECTION_KEY);
+            } else {
+                window.sessionStorage.setItem(SELECTION_KEY, JSON.stringify(ids));
+            }
+        } catch (e) {
+            // Storage unavailable (e.g. private mode) — selection just isn't remembered.
+        }
+    }
+
+    /** Merge this page's ticks into the stored set (rows on other pages are kept). */
+    function syncStoredSelection() {
+        if (!persistTable) {
+            return;
+        }
+        var stored = loadStoredSelection();
+        document.querySelectorAll('.memo-row-select').forEach(function (cb) {
+            var idx = stored.indexOf(cb.value);
+            if (cb.checked && idx === -1) {
+                stored.push(cb.value);
+            } else if (!cb.checked && idx !== -1) {
+                stored.splice(idx, 1);
+            }
+        });
+        saveStoredSelection(stored);
+    }
+
+    function updateSelectAllState() {
+        if (!selectAll) {
+            return;
+        }
+        var boxes = document.querySelectorAll('.memo-row-select');
+        var checked = document.querySelectorAll('.memo-row-select:checked');
+        selectAll.checked = boxes.length > 0 && boxes.length === checked.length;
+    }
+
+    if (persistTable) {
+        if (persistTable.hasAttribute('data-reset-selection')) {
+            saveStoredSelection([]);
+        }
+        var storedIds = loadStoredSelection();
+        document.querySelectorAll('.memo-row-select').forEach(function (cb) {
+            if (storedIds.indexOf(cb.value) !== -1) {
+                cb.checked = true;
+            }
+            cb.addEventListener('change', function () {
+                syncStoredSelection();
+                updateSelectAllState();
+            });
+        });
+        updateSelectAllState();
+    }
+
     if (selectAll) {
         selectAll.addEventListener('change', function () {
             document.querySelectorAll('.memo-row-select').forEach(function (cb) {
                 cb.checked = selectAll.checked;
             });
+            syncStoredSelection();
         });
     }
 
     // "Clear Selection" — unchecks every row checkbox and the
     // "select all" checkbox, without touching what's actually in the
-    // cart (that's what "Clear Cart" is for).
+    // cart (that's what "Clear Cart" is for). On Results it also
+    // forgets the remembered ticks on every page.
     var clearSelectionBtn = document.getElementById('clearSelectionBtn');
     if (clearSelectionBtn) {
         clearSelectionBtn.addEventListener('click', function () {
@@ -45,6 +120,9 @@
             });
             if (selectAll) {
                 selectAll.checked = false;
+            }
+            if (persistTable) {
+                saveStoredSelection([]);
             }
         });
     }

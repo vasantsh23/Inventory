@@ -2,6 +2,9 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/functions.php';
+// Sort-order rebuild (srtcol/srtcla/srtshp/...), run after every
+// successful upload below. Included, so it only defines its functions.
+require_once __DIR__ . '/../../update_id26.php';
 
 require_module_access('admin');
 
@@ -214,6 +217,8 @@ function process_diamond_upload(string $csvPath, string $mode): array
 
 $stats = null;
 $fatalError = '';
+$sortRebuildCount = null; // rows update_id26 re-sorted, when it succeeded
+$sortRebuildError = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
@@ -240,6 +245,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } catch (Throwable $e) {
                     $fatalError = 'Upload failed: ' . $e->getMessage();
                 }
+
+                // The upload itself is committed at this point, so a
+                // failure here is reported as a warning, not as a failed
+                // upload. update_id26_run() rolls back its own changes
+                // and logs the error to prglog before throwing.
+                if ($stats !== null) {
+                    try {
+                        $sortRebuildCount = update_id26_run(get_db());
+                    } catch (Throwable $e) {
+                        error_log('update_id26 after diamond upload failed: ' . $e->getMessage());
+                        $sortRebuildError = $e->getMessage();
+                    }
+                }
             }
         }
     }
@@ -261,7 +279,16 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             <div class="stat-card"><div class="stat-value"><?= (int)$stats['inserted'] ?></div><div class="stat-label">Rows inserted</div></div>
             <div class="stat-card"><div class="stat-value"><?= (int)$stats['fancy_colored'] ?></div><div class="stat-label">Fancy-colored rows</div></div>
             <div class="stat-card"><div class="stat-value"><?= (int)$stats['skipped_errors'] ?></div><div class="stat-label">Skipped (errors)</div></div>
+            <?php if ($sortRebuildCount !== null): ?>
+                <div class="stat-card"><div class="stat-value"><?= (int)$sortRebuildCount ?></div><div class="stat-label">Sort orders rebuilt</div></div>
+            <?php endif; ?>
         </div>
+        <?php if ($sortRebuildError !== ''): ?>
+            <div class="alert alert-error">
+                The diamond data was imported, but rebuilding the sort orders (update_id26) failed, so
+                listings may sort incorrectly until it's run again: <?= e($sortRebuildError) ?>
+            </div>
+        <?php endif; ?>
         <p class="panel-desc">
             Mode: <strong><?= $stats['mode'] === 'replace' ? 'Replace data (existing rows were deleted first)' : 'Add data (appended to existing rows)' ?></strong><br>
             Columns populated from this file: <?= e(implode(', ', $stats['mapped_columns'])) ?>
@@ -290,6 +317,8 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             the color ("Fancy Deep Orange" &rarr; color "Orange", intensity "Deep"; "Fancy Blue" &rarr; color
             "Blue", intensity blank). If Total Amount is blank or zero, it's computed as Weight &times;
             Price. If Measurements is blank, it's derived as Length x Width x Height from those three fields.
+            After a successful upload, the sort orders (color, clarity, shape, cut, fluorescence, polish,
+            symmetry, carat) are rebuilt for every record automatically.
         </p>
         <form method="post" enctype="multipart/form-data" class="crud-form" id="diamondUploadForm">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">

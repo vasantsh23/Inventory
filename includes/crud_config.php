@@ -48,6 +48,9 @@ const CRUD_TABLES = [
     'clarity'        => 'Clarity',
     'color'          => 'Color',
     'availability'   => 'Availability',
+    'site_content'     => 'Website Content',
+    'contact_messages' => 'Website Enquiries',
+    'site_options'     => 'Website Options',
 ];
 
 /**
@@ -283,6 +286,45 @@ const CRUD_COLUMN_OVERRIDES = [
         // auto-increment (ids come from your data source), so it must
         // stay an editable required field on both add and edit.
     ],
+    'site_content' => [
+        'id'          => ['type' => 'readonly'],
+        'page'        => ['type' => 'select', 'label' => 'Page', 'options' => [
+            'home' => 'Home', 'about' => 'About', 'services' => 'Services', 'diamonds' => 'Diamonds',
+            'responsible' => 'Responsible Practices', 'sustainability' => 'Sustainability', 'contact' => 'Contact Us',
+            'global' => 'Every page (footer)'],
+            'hint' => 'The page this row appears on.'],
+        'block'       => ['label' => 'Block', 'hint' => 'Section of the page, e.g. hero, intro, services, faq. Rows with the same page and block form a list. A block called <list>_intro (e.g. services_intro) is the heading above that list.'],
+        'sort_order'  => ['label' => 'Sort order', 'hint' => 'Lower numbers first. Each page + block + sort order must be unique (10, 20, 30… leaves room to insert).'],
+        'title'       => ['label' => 'Title', 'hint' => 'Heading. For key figures, the figure itself (e.g. 0.01–10 ct). For quotes, the quote. {company} inserts the company name.'],
+        'subtitle'    => ['label' => 'Subtitle', 'hint' => 'Small label above the heading, the key-figure caption, or the quote author.'],
+        'body'        => ['type' => 'textarea', 'label' => 'Text', 'hint' => 'Leave a blank line between paragraphs.'],
+        'image'       => ['label' => 'Image path', 'hint' => 'A file on this website, e.g. /assets/img/site/hero.jpg. Leave empty to use the template\'s diamond artwork.'],
+        'icon'        => ['type' => 'select', 'label' => 'Icon', 'options' => ['' => '(none)', 'diamond' => 'diamond', 'spark' => 'spark', 'gem' => 'gem', 'drop' => 'drop', 'ring' => 'ring',
+            'search' => 'search', 'mail' => 'mail', 'phone' => 'phone', 'pin' => 'pin', 'clock' => 'clock', 'shield' => 'shield', 'truck' => 'truck',
+            'factory' => 'factory', 'certificate' => 'certificate', 'document' => 'document', 'handshake' => 'handshake', 'layers' => 'layers',
+            'eye' => 'eye', 'users' => 'users', 'leaf' => 'leaf', 'recycle' => 'recycle', 'box' => 'box', 'globe' => 'globe', 'scale' => 'scale']],
+        'link_label'  => ['label' => 'Button 1 text'],
+        'link_url'    => ['label' => 'Button 1 link', 'hint' => 'A page of this site (/inventory.php, /contact.php) or a full https:// address.'],
+        'link2_label' => ['label' => 'Button 2 text'],
+        'link2_url'   => ['label' => 'Button 2 link'],
+        'active'      => ['type' => 'select', 'label' => 'Show on website', 'options' => ['yes' => 'Yes', 'no' => 'No — hidden']],
+        'updated_at'  => ['type' => 'readonly', 'label' => 'Last changed'],
+    ],
+    'contact_messages' => [
+        'id'          => ['type' => 'readonly'],
+        'created_at'  => ['type' => 'readonly', 'label' => 'Received'],
+        'status'      => ['type' => 'select', 'label' => 'Status', 'options' => ['new' => 'New', 'replied' => 'Replied', 'closed' => 'Closed', 'spam' => 'Spam']],
+        'email'       => ['type' => 'email', 'label' => 'Email'],
+        'phone'       => ['label' => 'Phone'],
+        'message'     => ['type' => 'textarea', 'label' => 'Message'],
+        'ip_address'  => ['type' => 'readonly', 'label' => 'Sender IP'],
+        'admin_notes' => ['type' => 'textarea', 'label' => 'Internal notes', 'hint' => 'Only visible here.'],
+    ],
+    'site_options' => [
+        'option_key'   => ['label' => 'Option', 'hint' => 'active_template is set from Website Template; change it there.'],
+        'option_value' => ['label' => 'Value'],
+        'updated_at'   => ['type' => 'readonly', 'label' => 'Last changed'],
+    ],
     'lab' => [
         'id'     => ['type' => 'readonly'],
         'active' => ['type' => 'select', 'options' => ['yes', 'no']],
@@ -339,5 +381,8 @@ const CRUD_LIST_COLUMNS = [
     'clarity'        => ['id', 'clarity', 'active'],
     'color'          => ['id', 'color', 'active'],
     'availability'   => ['id', 'avail', 'shortnm', 'color', 'active', 'order'],
+    'site_content'     => ['id', 'page', 'block', 'sort_order', 'title', 'subtitle', 'active'],
+    'contact_messages' => ['id', 'created_at', 'status', 'name', 'company', 'email', 'location'],
+    'site_options'     => ['option_key', 'option_value', 'updated_at'],
 ];
 

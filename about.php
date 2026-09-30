@@ -1,12 +1,9 @@
 <?php
+/**
+ * About Us page. Layout comes from the website template chosen in
+ * Admin → Appearance → Website Template; text and images come from
+ * Admin → Manage Tables → Website Content (page = "about").
+ */
 declare(strict_types=1);
-require_once __DIR__ . '/includes/header.php';
-?>
-    <section class="page-content">
-        <h1>About Us</h1>
-        <p>
-            <?= e($setup['Page Desc'] ?? ($setup['company'] ?? APP_NAME) . ' is committed to reliable, secure inventory management.') ?>
-        </p>
-    </section>
-<?php
-require_once __DIR__ . '/includes/footer.php';
+require_once __DIR__ . '/includes/site.php';
+site_render('about');

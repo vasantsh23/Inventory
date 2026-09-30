@@ -166,7 +166,7 @@ $partPicker = function (string $part, string $title, string $current) use ($edit
                         <input id="f-desc" name="description" value="<?= $val('description', $tpl['description']) ?>" maxlength="255"<?= $editable ? '' : ' readonly' ?>>
                     </div>
                     <?php if ($editable):
-                        $row = get_db()->prepare('SELECT thumbnail FROM site_templates WHERE template_key = ?');
+                        $row = get_db()->prepare('SELECT thumbnail FROM website_templates WHERE template_key = ?');
                         $row->execute([$key]);
                         $ownThumb = (string) $row->fetchColumn(); ?>
                         <div class="form-group full-width sf-thumb">

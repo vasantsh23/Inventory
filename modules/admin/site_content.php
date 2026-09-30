@@ -32,7 +32,7 @@ if ($ready && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $db = get_db();
 
     if (isset($_POST['save_layout']) && $pageKey !== 'global') {
-        $st = $db->prepare('INSERT INTO site_blocks (template_key, page_key, block_key, is_enabled, sort_order) VALUES (?,?,?,?,?)
+        $st = $db->prepare('INSERT INTO website_blocks (template_key, page_key, block_key, is_enabled, sort_order) VALUES (?,?,?,?,?)
                             ON DUPLICATE KEY UPDATE is_enabled = VALUES(is_enabled), sort_order = VALUES(sort_order)');
         foreach (array_keys($def['blocks']) as $blockKey) {
             $row = (array) ($_POST['layout'][$blockKey] ?? []);
@@ -43,19 +43,19 @@ if ($ready && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['reset_layout']) && $pageKey !== 'global') {
-        $db->prepare('DELETE FROM site_blocks WHERE template_key = ? AND page_key = ?')->execute([$tplKey, $pageKey]);
+        $db->prepare('DELETE FROM website_blocks WHERE template_key = ? AND page_key = ?')->execute([$tplKey, $pageKey]);
         theme_flash('success', 'Sections on ' . $def['label'] . ' are back to the template’s default arrangement.');
         theme_redirect('site_content.php?' . http_build_query(['page' => $pageKey, 'template' => $tplKey]) . '#layout');
     }
 
     if (($reset = (string) ($_POST['reset_block'] ?? '')) !== '' && isset($def['blocks'][$reset])) {
-        $db->prepare('UPDATE site_content SET content_value = NULL WHERE page_key = ? AND block_key = ?')->execute([$pageKey, $reset]);
+        $db->prepare('UPDATE website_content SET content_value = NULL WHERE page_key = ? AND block_key = ?')->execute([$pageKey, $reset]);
         theme_flash('success', '“' . $def['blocks'][$reset]['label'] . '” is back to its default text and images.');
         theme_redirect('site_content.php?' . http_build_query(['page' => $pageKey, 'template' => $tplKey]) . '#blk-' . $reset);
     }
 
     if (isset($_POST['save_content'])) {
-        $upd = $db->prepare('UPDATE site_content SET content_value = ? WHERE page_key = ? AND block_key = ? AND field_key = ?');
+        $upd = $db->prepare('UPDATE website_content SET content_value = ? WHERE page_key = ? AND block_key = ? AND field_key = ?');
         $saved = 0;
         $errors = [];
         foreach ($def['blocks'] as $blockKey => $block) {

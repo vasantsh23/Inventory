@@ -18,23 +18,87 @@ const SITE_UPLOAD_DIR = '/assets/site/uploads';
 const SITE_UPLOAD_MAX_BYTES = 6 * 1024 * 1024;
 const SITE_UPLOAD_TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
 
+/** Why the website tables look missing (database error text), for the notice */
+$GLOBALS['site_admin_ready_error'] = '';
+
 /** true when the website tables exist (migration has been run) */
 function site_admin_ready(): bool
 {
     try {
-        get_db()->query('SELECT 1 FROM site_templates LIMIT 1');
-        get_db()->query('SELECT 1 FROM site_content LIMIT 1');
+        foreach (['website_templates', 'website_blocks', 'website_content', 'website_enquiries'] as $t) {
+            get_db()->query("SELECT 1 FROM `$t` LIMIT 1");
+        }
+        get_db()->query('SELECT settings_prefix, parts FROM website_templates LIMIT 1'); // current table layout
         return true;
     } catch (Throwable $e) {
+        $GLOBALS['site_admin_ready_error'] = $e->getMessage();
         return false;
     }
 }
 
+/**
+ * Create the website tables by running sql/migration_website_templates.sql
+ * through the app's own database connection (same as running it in
+ * phpMyAdmin). Safe to repeat. Returns a list of error messages ([] = ok).
+ */
+function site_admin_install(): array
+{
+    $file = dirname(__DIR__) . '/sql/migration_website_templates.sql';
+    if (!is_readable($file)) {
+        return ['The file sql/migration_website_templates.sql is missing on the server. Upload it and try again.'];
+    }
+    $db = get_db();
+    $sql = preg_replace('/^\s*--.*$/m', '', (string) file_get_contents($file));
+    $errors = [];
+    foreach (preg_split('/;\s*(?:\R|$)/', $sql) as $stmt) {
+        $stmt = trim($stmt);
+        if ($stmt === '') {
+            continue;
+        }
+        try {
+            $db->exec($stmt);
+        } catch (Throwable $e) {
+            $errors[] = $e->getMessage() . ' — in: ' . mb_strimwidth(preg_replace('/\s+/', ' ', $stmt), 0, 90, '…');
+        }
+    }
+    if (!$errors) {
+        try {
+            Site::ensureBuiltins();
+            Site::syncContent();
+        } catch (Throwable $e) {
+            $errors[] = $e->getMessage();
+        }
+    }
+    return $errors;
+}
+
+// "Install website tables now" button on any Website screen
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['site_install'])) {
+    theme_csrf_check();
+    $installErrors = site_admin_install();
+    if ($installErrors) {
+        foreach (array_slice($installErrors, 0, 5) as $err) {
+            theme_flash('error', 'Install problem: ' . $err);
+        }
+    } else {
+        theme_flash('success', 'Website tables installed. The Atelier, Heritage and Noir templates are ready.');
+    }
+    header('Location: ' . strtok((string) $_SERVER['REQUEST_URI'], '?'), true, 303);
+    exit;
+}
+
 function site_admin_missing_notice(): string
 {
+    $why = (string) ($GLOBALS['site_admin_ready_error'] ?? '');
     return '<div class="panel"><h2>Website tables not installed yet</h2>'
-         . '<p class="panel-desc">Run <code>sql/migration_website_templates.sql</code> once in phpMyAdmin (SQL tab, with your database selected), then reload this page. '
-         . 'Take a backup first in Backup &amp; Restore.</p></div>';
+         . '<p class="panel-desc">The templates, page content and enquiries are stored in four new database tables. '
+         . 'Take a backup first in <a href="' . e(asset_url('/modules/admin/backup.php')) . '">Backup &amp; Restore</a>, then install them:</p>'
+         . '<form method="post" style="margin:16px 0">' . theme_csrf_field()
+         . '<button class="btn btn-accent" name="site_install" value="1">Install website tables now</button></form>'
+         . '<p class="panel-desc">This runs <code>sql/migration_website_templates.sql</code> for you. It only adds new tables and settings, and is safe to repeat. '
+         . 'You can also run that file yourself in phpMyAdmin (SQL tab, with this site\'s database selected).</p>'
+         . ($why !== '' ? '<p class="hint">Database said: <code>' . e($why) . '</code></p>' : '')
+         . '</div>';
 }
 
 /** Extra stylesheet for the Website admin screens (admin_header has no head hook, so it is linked in the body) */

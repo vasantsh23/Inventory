@@ -4,17 +4,17 @@
 -- Adds everything the new public website needs WITHOUT changing any
 -- existing inventory table:
 --
---   site_templates  Every website template. 3 are built in (Atelier,
+--   website_templates  Every website template. 3 are built in (Atelier,
 --                   Heritage, Noir); admins can create more in
 --                   Admin -> Website -> Templates by duplicating one and
 --                   choosing the header, hero, footer and section styles.
 --                   Exactly one template is live.
---   site_blocks     Which sections each template shows on each page,
+--   website_blocks     Which sections each template shows on each page,
 --                   and in what order.
---   site_content    Every text, image and link on every page. Rows are
+--   website_content    Every text, image and link on every page. Rows are
 --                   created automatically the first time you open
 --                   Admin -> Website -> Page Content.
---   site_enquiries  Messages sent from the website's contact form.
+--   website_enquiries  Messages sent from the website's contact form.
 --
 --   theme_sections / theme_settings
 --                   One section per template ("Website - <name> template")
@@ -26,7 +26,7 @@
 -- a backup (Admin -> Backup & Restore).
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS site_templates (
+CREATE TABLE IF NOT EXISTS website_templates (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     template_key    VARCHAR(30)  NOT NULL UNIQUE,
     name            VARCHAR(80)  NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS site_templates (
     updated_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS site_blocks (
+CREATE TABLE IF NOT EXISTS website_blocks (
     id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     template_key  VARCHAR(30)  NOT NULL,
     page_key      VARCHAR(40)  NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS site_blocks (
     UNIQUE KEY uq_site_block (template_key, page_key, block_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS site_content (
+CREATE TABLE IF NOT EXISTS website_content (
     id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     page_key       VARCHAR(40)  NOT NULL,
     block_key      VARCHAR(40)  NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS site_content (
     UNIQUE KEY uq_site_content (page_key, block_key, field_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS site_enquiries (
+CREATE TABLE IF NOT EXISTS website_enquiries (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(120) NOT NULL,
     company     VARCHAR(150) NULL,
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS site_enquiries (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Built-in templates (Atelier is live after install)
-INSERT IGNORE INTO site_templates (template_key, name, description, is_builtin, is_active, settings_prefix, base_template, sort_order) VALUES
+INSERT IGNORE INTO website_templates (template_key, name, description, is_builtin, is_active, settings_prefix, base_template, sort_order) VALUES
 ('atelier', 'Atelier', 'Light and editorial. Centred logo, full-width photography, fine serif headings and a black contact band.', 1, 1, 'at', 'atelier', 1),
 ('heritage', 'Heritage', 'Clear and trustworthy. Sticky menu with a button, brand-colour feature band, step-by-step timeline, reviews and FAQs.', 1, 0, 'he', 'heritage', 2),
 ('noir', 'Noir', 'Dark and dramatic. Top contact bar, full-screen hero with key figures, gold detailing and office cards.', 1, 0, 'no', 'noir', 3);

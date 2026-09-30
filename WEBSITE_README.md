@@ -7,11 +7,17 @@ option to create more. The inventory module is not changed.
 ## Install (existing installation)
 
 1. **Back up** the database: Admin → Backup & Restore.
-2. In phpMyAdmin, select your database and run
-   **`sql/migration_website_templates.sql`** once (SQL tab).
-   It only creates new tables and adds new Theme Settings rows. It is safe
-   to run twice.
-3. Upload the files. Make sure **`assets/site/uploads/`** is writable by the
+2. Upload the files, then open **Admin → Website → Templates** and click
+   **Install website tables now**. That button runs
+   `sql/migration_website_templates.sql` for you through the site's own
+   database connection. If anything fails, the database's exact error is
+   shown on screen. Alternatively, run that file yourself in phpMyAdmin
+   (SQL tab, with this site's database selected). It only creates four new
+   tables — `website_templates`, `website_blocks`, `website_content` and
+   `website_enquiries` — and adds new Theme Settings rows. It never changes or
+   removes existing tables (for example `site_content` or `site_options`
+   from other software), and is safe to run twice.
+3. Make sure **`assets/site/uploads/`** is writable by the
    web server (usually 755). Images uploaded in the admin are stored there.
 4. Open **Admin → Website → Templates**. Atelier is live by default.
 

@@ -15,10 +15,10 @@ if ($ready && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int) ($_POST['id'] ?? 0);
     $action = (string) ($_POST['action'] ?? '');
     if ($id > 0 && in_array($action, ['new', 'read', 'archived'], true)) {
-        get_db()->prepare('UPDATE site_enquiries SET status = ? WHERE id = ?')->execute([$action, $id]);
+        get_db()->prepare('UPDATE website_enquiries SET status = ? WHERE id = ?')->execute([$action, $id]);
         theme_flash('success', 'Enquiry marked as ' . ($action === 'new' ? 'new' : $action) . '.');
     } elseif ($id > 0 && $action === 'delete') {
-        get_db()->prepare('DELETE FROM site_enquiries WHERE id = ?')->execute([$id]);
+        get_db()->prepare('DELETE FROM website_enquiries WHERE id = ?')->execute([$id]);
         theme_flash('success', 'Enquiry deleted.');
     }
     $back = (string) ($_POST['status'] ?? 'new');
@@ -28,11 +28,11 @@ if ($ready && $_SERVER['REQUEST_METHOD'] === 'POST') {
 $counts = ['new' => 0, 'read' => 0, 'archived' => 0, 'all' => 0];
 $rows = [];
 if ($ready) {
-    foreach (get_db()->query('SELECT status, COUNT(*) c FROM site_enquiries GROUP BY status')->fetchAll() as $r) {
+    foreach (get_db()->query('SELECT status, COUNT(*) c FROM website_enquiries GROUP BY status')->fetchAll() as $r) {
         $counts[$r['status']] = (int) $r['c'];
         $counts['all'] += (int) $r['c'];
     }
-    $sql = 'SELECT * FROM site_enquiries' . ($status !== 'all' ? ' WHERE status = ?' : '') . ' ORDER BY created_at DESC, id DESC LIMIT 500';
+    $sql = 'SELECT * FROM website_enquiries' . ($status !== 'all' ? ' WHERE status = ?' : '') . ' ORDER BY created_at DESC, id DESC LIMIT 500';
     $st = get_db()->prepare($sql);
     $st->execute($status !== 'all' ? [$status] : []);
     $rows = $st->fetchAll();

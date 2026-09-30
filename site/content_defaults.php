@@ -4,13 +4,13 @@
  * The website's content model: every page, the sections (blocks) it can
  * show, the fields each section has, and the default text/images.
  *
- * - Values saved in Admin -> Website -> Page Content (table site_content)
+ * - Values saved in Admin -> Website -> Page Content (table website_content)
  *   override these defaults; a field that has never been saved shows the
  *   default below, so the site looks complete straight after install.
  * - 'layouts' lists, per template, which blocks a page shows and in which
  *   order. That is what makes each template's page structure different.
  *   Admins can switch blocks on/off and reorder them per template
- *   (table site_blocks).
+ *   (table website_blocks).
  *
  * Placeholders usable in any text: {company} {year} {phone} {email} {address}
  * Link fields accept: page:home, page:about, page:services, page:diamonds,

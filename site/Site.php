@@ -4,9 +4,9 @@
  * Engine for the public website (Home, About, Services, Diamonds,
  * Responsible Practices, Sustainability, Contact Us).
  *
- *   Templates  site_templates  -> which of the 3 designs is live
- *   Layouts    site_blocks     -> which sections each template shows per page
- *   Content    site_content    -> every text / image / link (falls back to
+ *   Templates  website_templates  -> which of the 3 designs is live
+ *   Layouts    website_blocks  -> which sections each template shows per page
+ *   Content    website_content  -> every text / image / link (falls back to
  *                                 site/content_defaults.php)
  *   Colours    theme_settings  -> sections "Website - <template>" (Admin -> Theme Settings)
  *
@@ -25,7 +25,7 @@ final class Site
     /**
      * Style families: each one ships a header, footer, hero and a version of
      * every section type in code (site/templates/<family>/ + assets/site/css/<family>.css).
-     * A TEMPLATE (table site_templates) picks one family per part and has its
+     * A TEMPLATE (table website_templates) picks one family per part and has its
      * own colour/font palette, so admins can create new templates by mixing
      * parts without writing code.
      */
@@ -160,7 +160,7 @@ final class Site
         }
         $rows = [];
         try {
-            foreach (get_db()->query('SELECT * FROM site_templates ORDER BY sort_order, id')->fetchAll() as $r) {
+            foreach (get_db()->query('SELECT * FROM website_templates ORDER BY sort_order, id')->fetchAll() as $r) {
                 $rows[$r['template_key']] = $r;
             }
         } catch (Throwable $e) {
@@ -285,8 +285,8 @@ final class Site
         $db = get_db();
         $db->beginTransaction();
         try {
-            $db->exec('UPDATE site_templates SET is_active = 0');
-            $db->prepare('UPDATE site_templates SET is_active = 1 WHERE template_key = ?')->execute([$key]);
+            $db->exec('UPDATE website_templates SET is_active = 0');
+            $db->prepare('UPDATE website_templates SET is_active = 1 WHERE template_key = ?')->execute([$key]);
             $db->commit();
         } catch (Throwable $e) {
             $db->rollBack();
@@ -300,9 +300,9 @@ final class Site
     public static function ensureBuiltins(): void
     {
         $db = get_db();
-        $ins = $db->prepare('INSERT IGNORE INTO site_templates (template_key, name, description, is_builtin, is_active, settings_prefix, base_template, sort_order)
+        $ins = $db->prepare('INSERT IGNORE INTO website_templates (template_key, name, description, is_builtin, is_active, settings_prefix, base_template, sort_order)
                              VALUES (?,?,?,1,?,?,?,?)');
-        $hasActive = (int) $db->query('SELECT COUNT(*) FROM site_templates WHERE is_active = 1')->fetchColumn() > 0;
+        $hasActive = (int) $db->query('SELECT COUNT(*) FROM website_templates WHERE is_active = 1')->fetchColumn() > 0;
         $i = 0;
         foreach (self::BUILTIN as $key => $prefix) {
             $ins->execute([$key, self::FAMILIES[$key]['name'], self::FAMILIES[$key]['about'],
@@ -374,18 +374,18 @@ final class Site
         $db = get_db();
         $db->beginTransaction();
         try {
-            $db->prepare('INSERT INTO site_templates (template_key, name, description, is_builtin, is_active, settings_prefix, base_template, parts, sort_order)
+            $db->prepare('INSERT INTO website_templates (template_key, name, description, is_builtin, is_active, settings_prefix, base_template, parts, sort_order)
                           VALUES (?,?,?,0,0,?,?,?,?)')
                ->execute(['tmp-' . bin2hex(random_bytes(6)), $name, $description ?: null, 'tmp', $src['base'],
                           json_encode($src['parts']), 100]);
             $id = (int) $db->lastInsertId();
             $key = 't' . $id;
-            $db->prepare('UPDATE site_templates SET template_key = ?, settings_prefix = ?, sort_order = ? WHERE id = ?')
+            $db->prepare('UPDATE website_templates SET template_key = ?, settings_prefix = ?, sort_order = ? WHERE id = ?')
                ->execute([$key, $key, 100 + $id, $id]);
 
             self::ensurePalette($key, $name, self::paletteValues($sourceKey), 'site_' . $key, 30 + $id);
 
-            $ins = $db->prepare('INSERT INTO site_blocks (template_key, page_key, block_key, is_enabled, sort_order) VALUES (?,?,?,?,?)');
+            $ins = $db->prepare('INSERT INTO website_blocks (template_key, page_key, block_key, is_enabled, sort_order) VALUES (?,?,?,?,?)');
             foreach (array_keys(self::pages()) as $page) {
                 foreach (self::layout($sourceKey, $page, true) as $row) {
                     $ins->execute([$key, $page, $row['key'], $row['enabled'] ? 1 : 0, $row['sort']]);
@@ -407,7 +407,7 @@ final class Site
         if (!$t || $t['builtin']) {
             throw new InvalidArgumentException('Only templates you created can be changed here.');
         }
-        get_db()->prepare('UPDATE site_templates SET name = ?, description = ?, parts = ?, thumbnail = ? WHERE template_key = ?')
+        get_db()->prepare('UPDATE website_templates SET name = ?, description = ?, parts = ?, thumbnail = ? WHERE template_key = ?')
             ->execute([$name, $description ?: null, json_encode(self::normaliseParts($parts, $t['base'])),
                        ($thumbnail !== null && $thumbnail !== '' && self::isValidImage($thumbnail)) ? $thumbnail : null, $key]);
         get_db()->prepare('UPDATE theme_sections s JOIN theme_settings t ON t.section_id = s.id AND t.setting_key = ?
@@ -430,13 +430,13 @@ final class Site
         $sid = self::paletteSectionId($key);
         $db->beginTransaction();
         try {
-            $db->prepare('DELETE FROM site_blocks WHERE template_key = ?')->execute([$key]);
+            $db->prepare('DELETE FROM website_blocks WHERE template_key = ?')->execute([$key]);
             $db->prepare('DELETE FROM theme_settings WHERE setting_key LIKE ?')->execute([$t['prefix'] . '-%']);
             if ($sid) {
                 $db->prepare('DELETE FROM theme_sections WHERE id = ? AND NOT EXISTS (SELECT 1 FROM theme_settings WHERE section_id = ?)')
                    ->execute([$sid, $sid]);
             }
-            $db->prepare('DELETE FROM site_templates WHERE template_key = ? AND is_builtin = 0')->execute([$key]);
+            $db->prepare('DELETE FROM website_templates WHERE template_key = ? AND is_builtin = 0')->execute([$key]);
             $db->commit();
         } catch (Throwable $e) {
             $db->rollBack();
@@ -484,7 +484,7 @@ final class Site
 
     /**
      * Ordered list of block keys shown on $page for $template.
-     * Uses the admin's saved arrangement (site_blocks) when there is one,
+     * Uses the admin's saved arrangement (website_blocks) when there is one,
      * otherwise the template's default layout from content_defaults.php.
      * @return array<int, array{key:string, enabled:bool}>
      */
@@ -498,7 +498,7 @@ final class Site
         $defaultOrder = $def['layouts'][$template] ?? $def['layouts'][$base] ?? array_keys($def['blocks']);
         $saved = [];
         try {
-            $st = get_db()->prepare('SELECT block_key, is_enabled, sort_order FROM site_blocks WHERE template_key = ? AND page_key = ?');
+            $st = get_db()->prepare('SELECT block_key, is_enabled, sort_order FROM website_blocks WHERE template_key = ? AND page_key = ?');
             $st->execute([$template, $page]);
             foreach ($st->fetchAll() as $r) {
                 $saved[$r['block_key']] = ['enabled' => (int) $r['is_enabled'] === 1, 'sort' => (int) $r['sort_order']];
@@ -534,7 +534,7 @@ final class Site
         }
         self::$content = [];
         try {
-            $rows = get_db()->query('SELECT page_key, block_key, field_key, content_value FROM site_content')->fetchAll();
+            $rows = get_db()->query('SELECT page_key, block_key, field_key, content_value FROM website_content')->fetchAll();
             foreach ($rows as $r) {
                 if ($r['content_value'] !== null) {
                     self::$content[$r['page_key']][$r['block_key']][$r['field_key']] = (string) $r['content_value'];
@@ -598,11 +598,11 @@ final class Site
         ]);
     }
 
-    /** Insert a site_content row for every field in the defaults that has none yet */
+    /** Insert a website_content row for every field in the defaults that has none yet */
     public static function syncContent(): int
     {
         $st = get_db()->prepare(
-            'INSERT IGNORE INTO site_content (page_key, block_key, field_key, field_type, label, content_value, default_value, sort_order)
+            'INSERT IGNORE INTO website_content (page_key, block_key, field_key, field_type, label, content_value, default_value, sort_order)
              VALUES (?,?,?,?,?,NULL,?,?)'
         );
         $n = 0;

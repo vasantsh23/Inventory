@@ -4,7 +4,7 @@
  *
  * Protection: CSRF token, hidden honeypot field, minimum fill time,
  * per-IP rate limit, strict length/format validation, header-safe e-mail.
- * Messages are stored in site_enquiries (Admin -> Website -> Enquiries)
+ * Messages are stored in website_enquiries (Admin -> Website -> Enquiries)
  * and, when possible, e-mailed to the company address.
  */
 
@@ -88,13 +88,13 @@ function site_contact_handle(string $page): void
 
     $ip = substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
     try {
-        $st = get_db()->prepare('SELECT COUNT(*) FROM site_enquiries WHERE ipadd = ? AND created_at > (NOW() - INTERVAL 1 HOUR)');
+        $st = get_db()->prepare('SELECT COUNT(*) FROM website_enquiries WHERE ipadd = ? AND created_at > (NOW() - INTERVAL 1 HOUR)');
         $st->execute([$ip]);
         if ((int) $st->fetchColumn() >= SITE_FORM_MAX_PER_HOUR) {
             $fail(['form' => 'You have sent several messages in the last hour. Please try again later, or call us.'], $old);
         }
         get_db()->prepare(
-            'INSERT INTO site_enquiries (name, company, email, phone, location, message, page_key, ipadd) VALUES (?,?,?,?,?,?,?,?)'
+            'INSERT INTO website_enquiries (name, company, email, phone, location, message, page_key, ipadd) VALUES (?,?,?,?,?,?,?,?)'
         )->execute([$old['name'], $old['company'] ?: null, $old['email'], $old['phone'] ?: null,
                     $old['location'] ?: null, $old['message'], $page, $ip]);
     } catch (Throwable $e) {

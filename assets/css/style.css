@@ -1451,26 +1451,3 @@ table.data-table.ts-table tr.is-dirty td { background: var(--warning-bg); }
 .ts-stack h2 { margin: 0; }
 .ts-inline { display: inline; margin: 0; }
 @media (max-width: 960px) { .ts-two-col { grid-template-columns: 1fr; } }
-
-/* ------------------------------------------------------------------
-   Admin → Website Template (modules/admin/site_template.php)
-   ------------------------------------------------------------------ */
-.st-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px; }
-.st-card { display: flex; flex-direction: column; padding: 0; overflow: hidden; margin-bottom: 0; }
-.st-card.is-live { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.st-thumb { position: relative; aspect-ratio: 16 / 11; overflow: hidden; background: var(--input-bg); border-bottom: 1px solid var(--panel-border);
-            display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
-.st-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.st-badge { position: absolute; top: 12px; left: 12px; }
-.st-body { display: flex; flex-direction: column; flex: 1; padding: 20px 22px 22px; }
-.st-body h2 { margin: 0; }
-.st-tagline { margin: 2px 0 10px; color: var(--accent); font-weight: 600; font-size: 0.88rem; }
-.st-meta { margin: -8px 0 14px; color: var(--text-muted); font-size: 0.8rem; }
-.st-layout { margin: 0 0 18px; font-size: 0.82rem; color: var(--text-muted); }
-.st-layout summary { cursor: pointer; font-weight: 600; color: var(--text-color); }
-.st-layout dl { margin: 10px 0 0; display: grid; gap: 6px; }
-.st-layout dl div { display: grid; grid-template-columns: 130px 1fr; gap: 10px; }
-.st-layout dt { font-weight: 600; color: var(--text-color); }
-.st-layout dd { margin: 0; }
-.st-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
-.st-actions form { margin: 0; }

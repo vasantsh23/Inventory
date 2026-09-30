@@ -1,9 +1,6 @@
 <?php
-/**
- * Diamonds page. Layout comes from the website template chosen in
- * Admin → Appearance → Website Template; text and images come from
- * Admin → Manage Tables → Website Content (page = "diamonds").
- */
+/** Diamonds (links to the inventory) page — layout comes from the active template (Admin -> Website -> Templates),
+ *  text and images from Admin -> Website -> Page Content. */
 declare(strict_types=1);
-require_once __DIR__ . '/includes/site.php';
+require __DIR__ . '/site/bootstrap.php';
 site_render('diamonds');

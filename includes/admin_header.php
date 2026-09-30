@@ -70,14 +70,15 @@ $pageSubtitle = $pageSubtitle ?? '';
         <a href="<?= e(asset_url('/modules/admin/diamond_data_upload.php')) ?>" class="<?= $activeNav === 'diamond_data_upload' ? 'active' : '' ?>">Diamond Data Upload</a>
         <a href="<?= e(asset_url('/modules/admin/maindata_hold.php')) ?>" class="<?= $activeNav === 'maindata_hold' ? 'active' : '' ?>">Hold Selection</a>
 
-        <div class="sidebar-section">Website</div>
-        <a href="<?= e(asset_url('/modules/admin/site_template.php')) ?>" class="<?= $activeNav === 'site_template' ? 'active' : '' ?>">Website Template</a>
-        <a href="<?= e(asset_url('/modules/admin/table_view.php?table=site_content')) ?>" class="<?= $activeNav === 'table:site_content' ? 'active' : '' ?>">Website Content</a>
-        <a href="<?= e(asset_url('/modules/admin/table_view.php?table=contact_messages')) ?>" class="<?= $activeNav === 'table:contact_messages' ? 'active' : '' ?>">Website Enquiries</a>
-
         <div class="sidebar-section">Appearance</div>
         <a href="<?= e(asset_url('/modules/admin/theme_settings.php')) ?>" class="<?= $activeNav === 'theme_settings' ? 'active' : '' ?>">Theme Settings</a>
         <a href="<?= e(asset_url('/modules/admin/theme_sections.php')) ?>" class="<?= $activeNav === 'theme_sections' ? 'active' : '' ?>">Theme Sections</a>
+
+        <?php // Public website (site/ folder) — templates, page content, contact-form enquiries ?>
+        <div class="sidebar-section">Website</div>
+        <a href="<?= e(asset_url('/modules/admin/site_templates.php')) ?>" class="<?= in_array($activeNav, ['site_templates'], true) ? 'active' : '' ?>">Templates</a>
+        <a href="<?= e(asset_url('/modules/admin/site_content.php')) ?>" class="<?= $activeNav === 'site_content' ? 'active' : '' ?>">Page Content</a>
+        <a href="<?= e(asset_url('/modules/admin/site_enquiries.php')) ?>" class="<?= $activeNav === 'site_enquiries' ? 'active' : '' ?>">Enquiries</a>
     </aside>
 
     <main class="dash-main">

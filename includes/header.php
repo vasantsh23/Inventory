@@ -39,14 +39,9 @@ $logoUrl = preg_match('#^https?://#i', $logoPath) ? $logoPath : asset_url($logoP
     </div>
     <nav class="main-nav">
         <ul>
-            <?php // Same pages as the public website menu (includes/site.php → SITE_PAGES) ?>
             <li><a href="<?= e(asset_url('/index.php')) ?>">Home</a></li>
-            <li><a href="<?= e(asset_url('/about.php')) ?>">About</a></li>
-            <li><a href="<?= e(asset_url('/services.php')) ?>">Services</a></li>
-            <li><a href="<?= e(asset_url('/diamonds.php')) ?>">Diamonds</a></li>
+            <li><a href="<?= e(asset_url('/about.php')) ?>">About Us</a></li>
             <li><a href="<?= e(asset_url('/inventory.php')) ?>">Inventory</a></li>
-            <li><a href="<?= e(asset_url('/responsible-practices.php')) ?>">Responsible Practices</a></li>
-            <li><a href="<?= e(asset_url('/sustainability.php')) ?>">Sustainability</a></li>
             <li><a href="<?= e(asset_url('/contact.php')) ?>">Contact Us</a></li>
             <?php if (is_logged_in()): ?>
                 <li class="nav-account">

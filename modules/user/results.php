@@ -160,7 +160,7 @@ $rsetup = get_rsetup();
 require_once __DIR__ . '/../../includes/header.php';
 ?>
     <section class="ds-page">
-        <div class="ds-hero">
+        <div class="ds-hero<?= $canMemo ? ' ds-hero--tight' : '' ?>">
             <h1 class="ds-title">Results</h1>
             <div class="ds-actions">
                 <a class="btn" href="<?= e(asset_url('/modules/user/diamond_search.php') . '?restore=1') ?>">&larr; Back to Search</a>

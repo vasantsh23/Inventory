@@ -1092,22 +1092,37 @@ table.results-table tbody tr:hover td { background-color: var(--table-row-hover)
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 20px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
 }
+/* Results page: pull the memo bar up closer to the action buttons */
+.ds-hero.ds-hero--tight { margin-bottom: 12px; }
 .memo-bar-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 .memo-field { display: flex; flex-direction: column; gap: 6px; min-width: 240px; }
 .memo-field label { font-size: 0.78rem; font-weight: 700; text-transform: var(--table-head-transform); letter-spacing: 0.04em; color: var(--label-color); }
 .memo-field select {
     padding: 10px 12px;
-    background: var(--input-bg);
-    border: 1px solid var(--input-border);
+    /* Uses the dropdown-list colours (kept light for readability) plus the
+       button border, so the box is visible on light page backgrounds too —
+       the input-* defaults are tuned for a dark theme. */
+    background: var(--option-bg);
+    border: 1px solid var(--btn-border);
     border-radius: var(--radius-sm);
-    color: var(--input-text);
+    color: var(--option-text);
     font-size: var(--input-font-size);
     font-family: var(--font-body);
     width: 100%;
     box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.memo-field select:focus {
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 3px var(--input-focus-ring);
+}
+.memo-field select option {
+    color: var(--option-text);
+    background: var(--option-bg);
 }
 .memo-bar-spacer { flex: 1; }
 .memo-error {

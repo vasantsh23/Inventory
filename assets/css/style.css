@@ -510,12 +510,24 @@ table.data-table tr:last-child td { border-bottom: none; }
 .rows-per-page { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); margin: 0; }
 .rows-per-page select {
     padding: 8px 10px;
-    background: var(--input-bg);
-    border: 1px solid var(--input-border);
+    /* Same readable colours as the Customer dropdown on the memo bar —
+       the input-* defaults are tuned for a dark theme. */
+    background: var(--option-bg);
+    border: 1px solid var(--btn-border);
     border-radius: var(--radius-sm);
-    color: var(--input-text);
+    color: var(--option-text);
     font-size: 0.85rem;
     font-family: var(--font-body);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.rows-per-page select:focus {
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 3px var(--input-focus-ring);
+}
+.rows-per-page select option {
+    color: var(--option-text);
+    background: var(--option-bg);
 }
 
 /* Forms (CRUD add/edit) */

@@ -1,0 +1,17 @@
+# Per-server files: each site keeps its own copy, never overwritten by a deploy
+.env
+dbconn.php
+/assets/img/logo.png
+
+# Logs, temp and cache
+*.log
+logs/
+tmp/
+temp/
+cache/
+
+# Editor / OS clutter
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

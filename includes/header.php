@@ -52,4 +52,4 @@ $logoUrl = preg_match('#^https?://#i', $logoPath) ? $logoPath : asset_url($logoP
         </ul>
     </nav>
 </header>
-<main class="site-content<?= !empty($wideContent) ? ' site-content--wide' : '' ?>">
+<main class="site-content<?= !empty($wideContent) ? ' site-content--wide' : '' ?><?= !empty($compactTop) ? ' site-content--compact' : '' ?>">

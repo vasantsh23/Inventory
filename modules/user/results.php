@@ -154,6 +154,7 @@ $pageTitle = 'Results';
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
 $wideContent = true; // this table has many columns — use the full viewport width
+$compactTop = true;  // less space between the site header and the Results buttons
 
 $rsetup = get_rsetup();
 

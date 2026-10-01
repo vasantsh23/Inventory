@@ -126,6 +126,8 @@ a:hover { color: var(--link-hover-color); }
     padding-left: 20px;
     padding-right: 20px;
 }
+/* Pages that need their toolbar close to the site header (Results) */
+.site-content--compact { padding-top: 16px; }
 
 /* ---------------- Hero / home ---------------- */
 .hero {
@@ -1096,7 +1098,8 @@ table.results-table tbody tr:hover td { background-color: var(--table-row-hover)
     margin-bottom: 16px;
 }
 /* Results page: pull the memo bar up closer to the action buttons */
-.ds-hero.ds-hero--tight { margin-bottom: 12px; }
+.ds-hero.ds-hero--tight { margin-bottom: 4px; }
+.ds-hero--tight ~ .memo-bar { padding-top: 6px; padding-bottom: 8px; }
 .memo-bar-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 .memo-field { display: flex; flex-direction: column; gap: 6px; min-width: 240px; }
 .memo-field label { font-size: 0.78rem; font-weight: 700; text-transform: var(--table-head-transform); letter-spacing: 0.04em; color: var(--label-color); }

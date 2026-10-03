@@ -215,6 +215,78 @@ function process_diamond_upload(string $csvPath, string $mode): array
     ];
 }
 
+/**
+ * Decides where the CSV comes from, based on the `path` table row
+ * whose description = 'upload':
+ *   - row found and `path` is non-blank -> that server-side file is
+ *     imported directly; the user isn't asked to choose a file.
+ *   - row found but `path` is blank/spaces (or no row at all) -> the
+ *     user is prompted to choose the file to upload, as before.
+ *
+ * The stored value must be the full path including the file name
+ * (e.g. "/home/acct/feeds/stock.csv" or "C:\feeds\stock.csv"). A
+ * relative or "/"-rooted value that doesn't exist as-is is also tried
+ * relative to the application root, the same way the logo path is.
+ *
+ * Returns:
+ *   use_server_file  bool    true when the stored path should be used
+ *   raw              string  the stored path, trimmed
+ *   dir / filename   string  the stored path split for display
+ *   resolved         ?string the readable file actually found, if any
+ *   error            string  why the stored path can't be used ('' if fine)
+ */
+function resolve_diamond_upload_source(): array
+{
+    $source = [
+        'use_server_file' => false,
+        'raw' => '',
+        'dir' => '',
+        'filename' => '',
+        'resolved' => null,
+        'error' => '',
+    ];
+
+    $stored = get_path_by_description('upload');
+    $raw = trim((string)$stored);
+    if ($raw === '') {
+        return $source; // no row, or path is spaces -> prompt for the file
+    }
+
+    $source['use_server_file'] = true;
+    $source['raw'] = $raw;
+
+    // Split on the last "/" or "\" so Windows-style paths display correctly too.
+    $p1 = strrpos($raw, '/');
+    $p2 = strrpos($raw, '\\');
+    $pos = max($p1 === false ? -1 : $p1, $p2 === false ? -1 : $p2);
+    $source['dir'] = $pos > 0 ? substr($raw, 0, $pos) : ($pos === 0 ? substr($raw, 0, 1) : '');
+    $source['filename'] = substr($raw, $pos + 1);
+
+    if ($source['filename'] === '') {
+        $source['error'] = 'The upload path "' . $raw . '" points to a folder — include the CSV file name at the end of the path in File Paths (description "upload").';
+        return $source;
+    }
+    if (!str_ends_with(strtolower($source['filename']), '.csv')) {
+        $source['error'] = 'The upload file "' . $source['filename'] . '" is not a .csv file.';
+        return $source;
+    }
+
+    $candidates = [$raw, dirname(__DIR__, 2) . '/' . ltrim($raw, '/\\')];
+    foreach ($candidates as $candidate) {
+        if (is_file($candidate) && is_readable($candidate)) {
+            $source['resolved'] = $candidate;
+            break;
+        }
+    }
+    if ($source['resolved'] === null) {
+        $source['error'] = 'The upload file "' . $raw . '" was not found on the server, or cannot be read.';
+    }
+
+    return $source;
+}
+
+$uploadSource = resolve_diamond_upload_source();
+
 $stats = null;
 $fatalError = '';
 $sortRebuildCount = null; // rows update_id26 re-sorted, when it succeeded
@@ -227,21 +299,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mode = (string)($_POST['upload_mode'] ?? '');
         if (!in_array($mode, ['replace', 'add'], true)) {
             $fatalError = 'Please choose "Replace data" or "Add data".';
-        } elseif (empty($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
-            $fatalError = $_FILES['csv_file']['error'] === UPLOAD_ERR_INI_SIZE
-                ? 'That file is larger than this server allows for uploads.'
-                : 'No file was uploaded, or the upload failed.';
         } else {
-            $origName = (string)$_FILES['csv_file']['name'];
-            if (!str_ends_with(strtolower($origName), '.csv')) {
-                $fatalError = 'Please upload a .csv file.';
+            // Where the CSV comes from: the `path` table's 'upload' row
+            // when it holds a path, otherwise the file the user chose.
+            $csvPath = null;
+            $fileLastModMs = null;
+            $sourcePathShown = '';
+            $sourceFileShown = '';
+
+            if ($uploadSource['use_server_file']) {
+                if ($uploadSource['error'] !== '') {
+                    $fatalError = $uploadSource['error'];
+                } else {
+                    $csvPath = $uploadSource['resolved'];
+                    $mtime = @filemtime($csvPath);
+                    $fileLastModMs = $mtime !== false ? (string)($mtime * 1000) : null;
+                    $sourcePathShown = $uploadSource['dir'];
+                    $sourceFileShown = $uploadSource['filename'];
+                }
+            } elseif (empty($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+                $fatalError = ($_FILES['csv_file']['error'] ?? null) === UPLOAD_ERR_INI_SIZE
+                    ? 'That file is larger than this server allows for uploads.'
+                    : 'No file was uploaded, or the upload failed.';
             } else {
+                $origName = (string)$_FILES['csv_file']['name'];
+                if (!str_ends_with(strtolower($origName), '.csv')) {
+                    $fatalError = 'Please upload a .csv file.';
+                } else {
+                    $csvPath = $_FILES['csv_file']['tmp_name'];
+                    $fileLastModMs = (string)($_POST['csv_file_lastmod'] ?? '') !== '' ? (string)$_POST['csv_file_lastmod'] : null;
+                    $sourcePathShown = 'Uploaded from this computer';
+                    $sourceFileShown = $origName;
+                }
+            }
+
+            if ($fatalError === '' && $csvPath !== null) {
                 try {
-                    $stats = process_diamond_upload($_FILES['csv_file']['tmp_name'], $mode);
-                    record_diamond_upload_log(
-                        (string)($_POST['csv_file_lastmod'] ?? '') !== '' ? (string)$_POST['csv_file_lastmod'] : null,
-                        current_user()['username'] ?? null
-                    );
+                    $stats = process_diamond_upload($csvPath, $mode);
+                    $stats['source_path'] = $sourcePathShown;
+                    $stats['source_file'] = $sourceFileShown;
+                    record_diamond_upload_log($fileLastModMs, current_user()['username'] ?? null);
                 } catch (Throwable $e) {
                     $fatalError = 'Upload failed: ' . $e->getMessage();
                 }
@@ -290,6 +387,8 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             </div>
         <?php endif; ?>
         <p class="panel-desc">
+            Path: <strong><?= e($stats['source_path'] !== '' ? $stats['source_path'] : '(application folder)') ?></strong><br>
+            File name: <strong><?= e($stats['source_file']) ?></strong><br>
             Mode: <strong><?= $stats['mode'] === 'replace' ? 'Replace data (existing rows were deleted first)' : 'Add data (appended to existing rows)' ?></strong><br>
             Columns populated from this file: <?= e(implode(', ', $stats['mapped_columns'])) ?>
         </p>
@@ -320,7 +419,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             After a successful upload, the sort orders (color, clarity, shape, cut, fluorescence, polish,
             symmetry, carat) are rebuilt for every record automatically.
         </p>
-        <form method="post" enctype="multipart/form-data" class="crud-form" id="diamondUploadForm">
+        <form method="post" enctype="multipart/form-data" class="crud-form" id="diamondUploadForm"<?= $uploadSource['use_server_file'] ? ' data-source-file="' . e($uploadSource['raw']) . '"' : '' ?>>
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
 
             <div class="form-group">
@@ -334,14 +433,35 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                 <p id="uploadModeIndicator" style="margin-top:8px; font-size:0.85rem; color: var(--text-muted);"></p>
             </div>
 
-            <div class="form-group">
-                <label for="csv_file">CSV File</label>
-                <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
-                <input type="hidden" id="csvFileLastmod" name="csv_file_lastmod" value="">
-                <p id="csvFileNameDisplay" style="margin-top:6px; font-size:0.85rem; color: var(--text-muted);">No file chosen</p>
-            </div>
+            <?php if ($uploadSource['use_server_file']): ?>
+                <div class="form-group">
+                    <label>CSV File (from File Paths &rarr; "upload")</label>
+                    <p style="margin:0;">
+                        Path: <code><?= e($uploadSource['dir'] !== '' ? $uploadSource['dir'] : '(application folder)') ?></code><br>
+                        File name: <code><?= e($uploadSource['filename'] !== '' ? $uploadSource['filename'] : '(none)') ?></code>
+                    </p>
+                    <?php if ($uploadSource['error'] !== ''): ?>
+                        <div class="alert alert-warning"><?= e($uploadSource['error']) ?></div>
+                    <?php endif; ?>
+                    <p style="margin-top:6px; font-size:0.85rem; color: var(--text-muted);">
+                        This file is read directly from the server. To choose a file yourself instead, clear the path on the
+                        <a href="<?= e(asset_url('/modules/admin/table_view.php?table=path')) ?>">File Paths</a> row whose description is "upload".
+                    </p>
+                </div>
+            <?php else: ?>
+                <div class="form-group">
+                    <label for="csv_file">Enter the file name to upload</label>
+                    <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
+                    <input type="hidden" id="csvFileLastmod" name="csv_file_lastmod" value="">
+                    <p id="csvFileNameDisplay" style="margin-top:6px; font-size:0.85rem; color: var(--text-muted);">No file chosen</p>
+                    <p style="margin-top:6px; font-size:0.85rem; color: var(--text-muted);">
+                        No upload path is set in <a href="<?= e(asset_url('/modules/admin/table_view.php?table=path')) ?>">File Paths</a>
+                        (description "upload"), so please choose the file.
+                    </p>
+                </div>
+            <?php endif; ?>
 
-            <button type="submit" class="btn btn-accent" id="diamondUploadSubmitBtn" style="grid-column: 1 / -1; justify-self: start;">Upload</button>
+            <button type="submit" class="btn btn-accent" id="diamondUploadSubmitBtn" style="grid-column: 1 / -1; justify-self: start;"<?= ($uploadSource['use_server_file'] && $uploadSource['error'] !== '') ? ' disabled' : '' ?>>Upload</button>
         </form>
     </div>
 

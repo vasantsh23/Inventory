@@ -65,9 +65,14 @@
 
     form.addEventListener('submit', function (e) {
         var mode = getSelectedMode();
+        // When the File Paths "upload" row supplies the file, the server
+        // reads it directly — name it in the prompt since the user
+        // didn't pick it themselves.
+        var serverFile = form.getAttribute('data-source-file');
+        var fileLabel = serverFile ? ' (' + serverFile + ')' : '';
         var message = (mode === 'replace')
-            ? 'Replace data will permanently DELETE every existing diamond record before importing this file. This cannot be undone. Continue?'
-            : 'Add this file\'s records to the existing diamond data?';
+            ? 'Replace data will permanently DELETE every existing diamond record before importing this file' + fileLabel + '. This cannot be undone. Continue?'
+            : 'Add this file\'s records' + fileLabel + ' to the existing diamond data?';
         if (!window.confirm(message)) {
             e.preventDefault();
         }

@@ -1,15 +1,17 @@
 <?php
+/**
+ * includes/partials/footer_bar.php
+ * The site footer (company, address, Tel | email, copyright, version).
+ * Shared by every inventory page (via includes/footer.php) and the
+ * website pages — Home, About, Contact — (via site/bootstrap.php).
+ * Optional $footerExtraRight (pre-escaped HTML) adds a right-aligned
+ * block — currently only Diamond Search uses it.
+ */
 declare(strict_types=1);
-// $setup is already populated by header.php, which is always included first.
+
 $setup = $setup ?? (function_exists('get_setup') ? (get_setup() ?? []) : []);
-// Optional: a page can set $footerExtraRight (pre-escaped HTML) before
-// requiring this file to add a right-aligned block inside the footer
-// — currently only Diamond Search uses this, for its "data last
-// updated" info (see includes/functions.php's get_latest_upload_log()).
-// Every other page renders exactly as before, unchanged.
 $footerExtraRight = $footerExtraRight ?? '';
 ?>
-</main>
 <footer class="site-footer">
     <div class="footer-inner<?= $footerExtraRight !== '' ? ' footer-inner-split' : '' ?>">
         <div class="footer-main">
@@ -40,5 +42,3 @@ $footerExtraRight = $footerExtraRight ?? '';
         <?php endif; ?>
     </div>
 </footer>
-</body>
-</html>

@@ -54,3 +54,49 @@ function theme_head_tags(bool $allLibraryFonts = false, bool $useDefaults = fals
                                             . ($useDefaults ? '&defaults=1' : '')) . '">';
     return $html;
 }
+
+/**
+ * Theme for the shared header/footer bars on the website pages (Home,
+ * About, Contact — site/bootstrap.php).
+ *
+ * Those pages have their own template stylesheet, which uses some of
+ * the same CSS variable names as the theme (--accent, --radius,
+ * --text-muted, …). So instead of linking /theme.css.php (which sets
+ * the variables on :root and would restyle the whole page), the
+ * variables are set only on $selector — the wrapper around the bars —
+ * and inherited by the bars alone. Also loads the theme's Google Fonts
+ * and assets/css/site-chrome.css (the bars' own styles).
+ */
+function theme_scoped_head_tags(string $selector): string
+{
+    $vars = '';
+    $fontValues = [];
+    try {
+        foreach (ThemeSettings::map() as $key => $row) {
+            $value = trim((string) $row['setting_value']);
+            if (!preg_match('/^[a-z][a-z0-9_-]*$/', (string) $key)
+                || !ThemeSettings::isValidValue($row['property_type'], $value)) {
+                continue;
+            }
+            if ($row['property_type'] === 'font_family') {
+                $fontValues[] = $value;
+            }
+            $vars .= '--' . $key . ':' . $value . ';';
+        }
+    } catch (Throwable $e) {
+        error_log('Theme settings unavailable: ' . $e->getMessage());
+    }
+
+    $html = '';
+    $fontsUrl = google_fonts_url($fontValues);
+    if ($fontsUrl) {
+        $html .= '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n"
+               . '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n"
+               . '<link rel="stylesheet" href="' . e($fontsUrl) . '">' . "\n";
+    }
+    // Values are validated above; '<' can't appear in them, so this can't
+    // break out of the <style> element.
+    $html .= '<style>' . $selector . '{' . str_replace('<', '', $vars) . '}</style>' . "\n";
+    $html .= '<link rel="stylesheet" href="' . e(asset_url_versioned('/assets/css/site-chrome.css')) . '">' . "\n";
+    return $html;
+}

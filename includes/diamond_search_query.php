@@ -277,6 +277,71 @@ function get_stockno_bg_color(?string $avail, ?string $notforweb): ?string
 }
 
 /**
+ * Media/certificate location configured in the `path` table, looked up
+ * by description ('video' or 'cert').
+ *   null  → no such row: callers fall back to their built-in URLs
+ *   ''    → row exists but path is blank: show "No media found"
+ *   other → the configured base URL / template (see expand_media_path)
+ * Cached per request, since Results/View Cart call this once per row.
+ */
+function media_path_override(string $description): ?string
+{
+    static $cache = [];
+    if (!array_key_exists($description, $cache)) {
+        $stmt = get_db()->prepare(
+            'SELECT `path` FROM path WHERE `description` = :d ORDER BY id LIMIT 1'
+        );
+        $stmt->execute([':d' => $description]);
+        $row = $stmt->fetch();
+        $cache[$description] = $row ? trim((string)$row['path']) : null;
+    }
+    return $cache[$description];
+}
+
+/**
+ * Turn a `path` table value into the URL for one diamond.
+ *
+ * Template form — the value contains placeholders, which are replaced:
+ *   https://media.example.com/videos/{StockNo}.mp4
+ *   https://certs.example.com/{Lab}/{CertificateNo}.pdf
+ * Folder form — no placeholders: "/{StockNo}{ext}" is appended:
+ *   https://media.example.com/videos   →   …/videos/25233.mp4
+ *
+ * A value starting with "/" is a path on this site's own domain.
+ * Returns null (→ "No media found") when the value is blank or a
+ * placeholder it needs has no value for this diamond.
+ */
+function expand_media_path(string $base, string $ext, array $vars): ?string
+{
+    $base = trim($base);
+    if ($base === '') {
+        return null;
+    }
+
+    if (strpos($base, '{') !== false) {
+        $missing = false;
+        $url = preg_replace_callback('/\{(\w+)\}/', function ($m) use ($vars, &$missing) {
+            $value = trim((string)($vars[$m[1]] ?? ''));
+            if ($value === '') {
+                $missing = true;
+            }
+            return rawurlencode($value);
+        }, $base);
+        if ($missing) {
+            return null;
+        }
+    } else {
+        $stockNo = trim((string)($vars['StockNo'] ?? ''));
+        if ($stockNo === '') {
+            return null;
+        }
+        $url = rtrim($base, '/') . '/' . rawurlencode($stockNo) . $ext;
+    }
+
+    return $url[0] === '/' ? full_url($url) : $url;
+}
+
+/**
  * The certificate PDF URL for a diamond, based on Lab: HRD/IGI use a
  * path on this site's own domain (keyed by CertificateNo); GIA uses
  * a fixed external domain (keyed by StockNo instead). Any other lab,
@@ -290,6 +355,17 @@ function build_certificate_url(?string $lab, ?string $certNo, ?string $stockNo):
     $stockNo = trim((string)$stockNo);
     if ($certNo !== '' && is_numeric($certNo) && (float)$certNo === 0.0) {
         $certNo = '';
+    }
+
+    // `path` table row with description = 'cert' takes priority over the
+    // Lab-based logic below. Row present but path blank → no certificate.
+    $override = media_path_override('cert');
+    if ($override !== null) {
+        return expand_media_path($override, '.pdf', [
+            'StockNo'       => $stockNo,
+            'CertificateNo' => $certNo,
+            'Lab'           => $lab,
+        ]);
     }
 
     if ($certNo !== '' && in_array($lab, ['HRD', 'IGI'], true)) {

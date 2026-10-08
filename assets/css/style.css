@@ -1055,6 +1055,16 @@ table.results-table tbody tr:hover td { background-color: var(--table-row-hover)
 }
 .dd-media-content { width: 100%; height: 100%; object-fit: contain; border: 0; display: block; }
 .dd-media-content[hidden] { display: none !important; }
+/* "No media found" — Video tab / Certificate panel when the `path`
+   table row for it exists but its path is blank. */
+.dd-no-media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.95rem;
+}
+.dd-cert-no-media { padding: 40px 0; margin: 0; }
 
 @media (max-width: 720px) {
     .dd-media-panel { flex-basis: auto; width: 100%; }

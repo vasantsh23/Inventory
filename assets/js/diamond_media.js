@@ -35,12 +35,13 @@
             var isTarget = item === target;
             item.content.hidden = !isTarget;
             item.thumb.classList.toggle('is-active', isTarget);
-            if (isTarget && item.kind !== 'img' && !item.content.getAttribute('src')) {
+            var url = item.thumb.getAttribute('data-media-url');
+            // No data-media-url = "No media found" placeholder: just show it.
+            if (isTarget && url && item.kind !== 'img' && !item.content.getAttribute('src')) {
                 // Load the source only after this item is visible and has
                 // been given a layout pass — some embedded players/videos
                 // measure their container once on load and never recover
                 // if that happened while display:none (0x0 size).
-                var url = item.thumb.getAttribute('data-media-url');
                 requestAnimationFrame(function () {
                     requestAnimationFrame(function () {
                         item.content.setAttribute('src', url);

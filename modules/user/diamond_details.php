@@ -42,13 +42,19 @@ if ($id !== '' && ctype_digit($id)) {
 // this site's own domain (keyed by CertificateNo); GIA uses an
 // external, fixed domain (keyed by StockNo instead). Any other lab
 // simply doesn't show this section.
+//
+// If the `path` table has a row with description = 'cert', that row
+// decides the URL instead (see build_certificate_url); a blank path
+// there shows "No media found" in the Certificate panel.
 $certUrl = null;
+$certNoMedia = false;
 if ($diamond !== null) {
     $certUrl = build_certificate_url(
         $diamond['Lab'] ?? null,
         $diamond['CertificateNo'] ?? null,
         $diamond['StockNo'] ?? null
     );
+    $certNoMedia = $certUrl === null && media_path_override('cert') !== null;
 }
 
 /**
@@ -99,7 +105,18 @@ require_once __DIR__ . '/../../includes/header.php';
                     $stockNoEnc = urlencode((string)$diamond['StockNo']);
                     $stillUrl = 'https://v3601425.v360.in/imaged/' . $stockNoEnc . '/still.jpg';
                     $videoUrl = 'https://v3601425.v360.in/vision360.html?d=' . $stockNoEnc;
-                    $video2Url = 'https://onlinemediafiles.com/info-videos/' . $stockNoEnc . '.mp4';
+                    // Video: `path` table row description = 'video' wins if present
+                    // (blank path → "No media found"); otherwise the built-in URL.
+                    $videoOverride = media_path_override('video');
+                    if ($videoOverride === null) {
+                        $video2Url = 'https://onlinemediafiles.com/info-videos/' . $stockNoEnc . '.mp4';
+                    } else {
+                        $video2Url = expand_media_path($videoOverride, '.mp4', [
+                            'StockNo'       => (string)$diamond['StockNo'],
+                            'CertificateNo' => format_certificate_no_display($diamond['CertificateNo'] ?? null),
+                            'Lab'           => strtoupper(trim((string)($diamond['Lab'] ?? ''))),
+                        ]);
+                    }
                     $handVideoUrl = 'https://onlinemediafiles.com/hvideos/' . $stockNoEnc . '.mp4';
                 ?>
                     <div class="dd-media-panel">
@@ -111,7 +128,7 @@ require_once __DIR__ . '/../../includes/header.php';
                                 <span class="dd-play-icon">&#9654;</span>
                                 <span class="dd-play-label">360</span>
                             </button>
-                            <button type="button" class="dd-thumb-btn" id="ddThumbVideo2" title="Video" data-media-url="<?= e($video2Url) ?>">
+                            <button type="button" class="dd-thumb-btn" id="ddThumbVideo2" title="Video"<?= $video2Url !== null ? ' data-media-url="' . e($video2Url) . '"' : '' ?>>
                                 <span class="dd-play-icon">&#9654;</span>
                                 <span class="dd-play-label">Video</span>
                             </button>
@@ -123,7 +140,11 @@ require_once __DIR__ . '/../../includes/header.php';
                         <div class="dd-media-box">
                             <img src="<?= e($stillUrl) ?>" alt="" class="dd-media-content" id="ddMediaImage">
                             <iframe class="dd-media-content" id="ddMediaFrame" hidden allowfullscreen></iframe>
-                            <video class="dd-media-content" id="ddMediaVideo2" hidden controls></video>
+                            <?php if ($video2Url !== null): ?>
+                                <video class="dd-media-content" id="ddMediaVideo2" hidden controls></video>
+                            <?php else: ?>
+                                <div class="dd-media-content dd-no-media" id="ddMediaVideo2" hidden>No media found</div>
+                            <?php endif; ?>
                             <video class="dd-media-content" id="ddMediaHandVideo" hidden controls></video>
                         </div>
                     </div>
@@ -198,6 +219,11 @@ require_once __DIR__ . '/../../includes/header.php';
                         <iframe src="<?= e($certUrl) ?>" class="dd-cert-frame" title="Diamond certificate"></iframe>
                     </div>
                     <p class="dd-cert-fallback-link"><a href="<?= e($certUrl) ?>" target="_blank" rel="noopener">Open certificate in a new tab &rarr;</a></p>
+                </div>
+            <?php elseif ($certNoMedia): ?>
+                <div class="dd-cert-panel">
+                    <div class="dd-section-header"><h2>Certificate</h2></div>
+                    <p class="dd-no-media dd-cert-no-media">No media found</p>
                 </div>
             <?php endif; ?>
         <?php endif; ?>

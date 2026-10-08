@@ -58,13 +58,21 @@ if ($diamond !== null) {
 // Let the browser embed the hosts configured in the `path` table —
 // without this the site's security policy blocks them inside the page
 // ("This content is blocked"), even though they open fine in a new tab.
-$certOrigin = media_path_origin(media_path_override('cert'));
-$videoOrigin = media_path_origin(media_path_override('video'));
-$imageOrigin = media_path_origin(media_path_override('image'));
+// Frames: certificate + 360 view. Videos: video + hand video. Images: image.
+$cspOrigins = static function (array $descriptions): array {
+    $out = [];
+    foreach ($descriptions as $d) {
+        $origin = media_path_origin(media_path_override($d));
+        if ($origin !== null) {
+            $out[] = $origin;
+        }
+    }
+    return $out;
+};
 send_csp(
-    $certOrigin !== null ? [$certOrigin] : [],
-    $videoOrigin !== null ? [$videoOrigin] : [],
-    $imageOrigin !== null ? [$imageOrigin] : []
+    $cspOrigins(['cert', '360view']),
+    $cspOrigins(['video', 'handvideo']),
+    $cspOrigins(['image'])
 );
 
 /**
@@ -152,7 +160,12 @@ require_once __DIR__ . '/../../includes/header.php';
                     } else {
                         $stillUrl = expand_media_path($imageOverride, '.jpg', $mediaVars);
                     }
-                    $videoUrl = 'https://v3601425.v360.in/vision360.html?d=' . $stockNoEnc;
+                    // 360 View: `path` row description = '360view' (row inactive or
+                    // path blank → no 360 icon); otherwise the V360 viewer.
+                    $view360Override = media_path_override('360view');
+                    $videoUrl = $view360Override === null
+                        ? 'https://v3601425.v360.in/vision360.html?d=' . $stockNoEnc
+                        : expand_media_path($view360Override, '.html', $mediaVars);
                     // Video: `path` table row description = 'video' wins if present
                     // (row inactive or path blank → no Video icon); otherwise
                     // the built-in URL.
@@ -162,7 +175,12 @@ require_once __DIR__ . '/../../includes/header.php';
                     } else {
                         $video2Url = expand_media_path($videoOverride, '.mp4', $mediaVars);
                     }
-                    $handVideoUrl = 'https://onlinemediafiles.com/hvideos/' . $stockNoEnc . '.mp4';
+                    // Hand Video: `path` row description = 'handvideo' (row inactive
+                    // or path blank → no Hand icon); otherwise the built-in URL.
+                    $handOverride = media_path_override('handvideo');
+                    $handVideoUrl = $handOverride === null
+                        ? 'https://onlinemediafiles.com/hvideos/' . $stockNoEnc . '.mp4'
+                        : expand_media_path($handOverride, '.mp4', $mediaVars);
                 ?>
                     <div class="dd-media-panel">
                         <div class="dd-media-thumbs">
@@ -171,30 +189,38 @@ require_once __DIR__ . '/../../includes/header.php';
                                     <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="">
                                 </button>
                             <?php endif; ?>
-                            <button type="button" class="dd-thumb-btn" id="ddThumbVideo" title="360° View" data-media-url="<?= e($videoUrl) ?>">
-                                <span class="dd-play-icon">&#9654;</span>
-                                <span class="dd-play-label">360</span>
-                            </button>
+                            <?php if ($videoUrl !== null): ?>
+                                <button type="button" class="dd-thumb-btn" id="ddThumbVideo" title="360° View" data-media-url="<?= e($videoUrl) ?>">
+                                    <span class="dd-play-icon">&#9654;</span>
+                                    <span class="dd-play-label">360</span>
+                                </button>
+                            <?php endif; ?>
                             <?php if ($video2Url !== null): ?>
                                 <button type="button" class="dd-thumb-btn" id="ddThumbVideo2" title="Video" data-media-url="<?= e($video2Url) ?>">
                                     <span class="dd-play-icon">&#9654;</span>
                                     <span class="dd-play-label">Video</span>
                                 </button>
                             <?php endif; ?>
-                            <button type="button" class="dd-thumb-btn" id="ddThumbHandVideo" title="Hand Video" data-media-url="<?= e($handVideoUrl) ?>">
-                                <span class="dd-play-icon">&#9654;</span>
-                                <span class="dd-play-label">Hand</span>
-                            </button>
+                            <?php if ($handVideoUrl !== null): ?>
+                                <button type="button" class="dd-thumb-btn" id="ddThumbHandVideo" title="Hand Video" data-media-url="<?= e($handVideoUrl) ?>">
+                                    <span class="dd-play-icon">&#9654;</span>
+                                    <span class="dd-play-label">Hand</span>
+                                </button>
+                            <?php endif; ?>
                         </div>
                         <div class="dd-media-box">
                             <?php if ($stillUrl !== null): ?>
                                 <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="" class="dd-media-content" id="ddMediaImage">
                             <?php endif; ?>
-                            <iframe class="dd-media-content" id="ddMediaFrame" hidden allowfullscreen></iframe>
+                            <?php if ($videoUrl !== null): ?>
+                                <iframe class="dd-media-content" id="ddMediaFrame" hidden allowfullscreen></iframe>
+                            <?php endif; ?>
                             <?php if ($video2Url !== null): ?>
                                 <video class="dd-media-content" id="ddMediaVideo2" hidden controls></video>
                             <?php endif; ?>
-                            <video class="dd-media-content" id="ddMediaHandVideo" hidden controls></video>
+                            <?php if ($handVideoUrl !== null): ?>
+                                <video class="dd-media-content" id="ddMediaHandVideo" hidden controls></video>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php elseif (!empty($diamond['imglink'])): ?>

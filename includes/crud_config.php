@@ -116,7 +116,7 @@ const CRUD_COLUMN_OVERRIDES = [
     'path' => [
         'id'     => ['type' => 'readonly'],
         'active' => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No'],
-                     'hint' => "For the image / video / cert rows: Yes shows that item on Diamond Details (when Path is filled in); No hides it. If there's no row at all, the built-in URL is used."],
+                     'hint' => "For the image / 360view / video / handvideo / cert rows: Yes shows that item on Diamond Details (when Path is filled in); No hides it. If there's no row at all, the built-in URL is used."],
     ],
     'timings' => [
         'id'      => ['type' => 'readonly'],

@@ -346,6 +346,31 @@ input::placeholder, textarea::placeholder { color: var(--input-placeholder); }
     .footer-extra-right { text-align: left; }
 }
 
+/* Compact footer — Diamond Search and Results pages only.
+   Removes the gaps between company / address / contact / copyright
+   lines and puts Tel and email on one line. */
+body.ds-search-theme .site-footer p,
+body.results-page .site-footer p { margin: 0; }
+body.ds-search-theme .footer-inner,
+body.results-page .footer-inner { line-height: 1.5; }
+body.ds-search-theme .footer-contact,
+body.results-page .footer-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 8px;
+}
+body.ds-search-theme .footer-contact .footer-phone + .footer-email::before,
+body.results-page .footer-contact .footer-phone + .footer-email::before {
+    content: "|";
+    margin-right: 8px;
+    opacity: 0.6;
+}
+
+/* Results page: no empty band between the Rows-per-page row and the
+   footer — just the footer's top border line. */
+body.results-page .site-content { padding-bottom: 16px; }
+body.results-page .site-footer { margin-top: 0; }
+
 .admin-version {
     margin-top: 40px;
     padding-top: 16px;

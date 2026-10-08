@@ -17,13 +17,21 @@ $footerExtraRight = $footerExtraRight ?? '';
             <?php if (($addr = format_address($setup)) !== ''): ?>
                 <p class="footer-address"><?= e($addr) ?></p>
             <?php endif; ?>
-            <?php if (($phone = primary_phone($setup)) !== ''): ?>
-                <p class="footer-phone">Tel: <?= e($phone) ?></p>
-            <?php endif; ?>
-            <?php if (($email = primary_email($setup)) !== ''): ?>
-                <p class="footer-email">
-                    <a href="mailto:<?= e($email) ?>"><?= e($email) ?></a>
-                </p>
+            <?php
+            $phone = primary_phone($setup);
+            $email = primary_email($setup);
+            ?>
+            <?php if ($phone !== '' || $email !== ''): ?>
+                <div class="footer-contact">
+                    <?php if ($phone !== ''): ?>
+                        <p class="footer-phone">Tel: <?= e($phone) ?></p>
+                    <?php endif; ?>
+                    <?php if ($email !== ''): ?>
+                        <p class="footer-email">
+                            <a href="mailto:<?= e($email) ?>"><?= e($email) ?></a>
+                        </p>
+                    <?php endif; ?>
+                </div>
             <?php endif; ?>
             <p class="footer-copy">&copy; <?= date('Y') ?> <?= e($setup['company'] ?? APP_NAME) ?>. All rights reserved. <span class="footer-version"><?= e(APP_VERSION) ?></span></p>
         </div>

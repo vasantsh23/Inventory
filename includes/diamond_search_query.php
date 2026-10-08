@@ -328,6 +328,8 @@ function media_path_origin(?string $base): ?string
  *   https://certs.example.com/{Lab}/{CertificateNo}.pdf
  * Folder form — no placeholders: "/{StockNo}{ext}" is appended:
  *   https://media.example.com/videos   →   …/videos/25233.mp4
+ * Extension placeholder — ".xxx" is replaced by {ext} (see below):
+ *   https://media.example.com/images/xxx.xxx  →  …/images/25233.jpg
  *
  * A value starting with "/" is a path on this site's own domain.
  * Returns null (→ "No media found") when the value is blank or a
@@ -338,6 +340,23 @@ function expand_media_path(string $base, string $ext, array $vars): ?string
     $base = trim($base);
     if ($base === '') {
         return null;
+    }
+
+    // ".xxx" is an extension placeholder: it becomes $ext (.jpg for
+    // images — the page then retries with .jpeg; .mp4 for video; .pdf
+    // for certificates). Without {placeholders}, the file name in front
+    // of .xxx is replaced by the StockNo, e.g.
+    //   https://site.com/images/xxx.xxx      → …/images/NC26-329.jpg
+    //   https://site.com/images/StockNo.xxx  → …/images/NC26-329.jpg
+    $xxx = '/\.xxx(?=$|[?#])/i';
+    if (preg_match($xxx, $base)) {
+        if (strpos($base, '{') === false) {
+            $slash = strrpos($base, '/');
+            $folder = $slash === false ? '' : substr($base, 0, $slash + 1);
+            $suffix = preg_match('/\.xxx([?#].*)?$/i', $base, $m) ? ($m[1] ?? '') : '';
+            $base = $folder . '{StockNo}.xxx' . $suffix;
+        }
+        $base = preg_replace($xxx, $ext, $base);
     }
 
     if (strpos($base, '{') !== false) {

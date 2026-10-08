@@ -21,7 +21,19 @@ session_name('IMS_SESSID');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https://v3601425.v360.in; frame-src 'self' https://v3601425.v360.in https://veeradimon.be; media-src 'self' https://onlinemediafiles.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'");
+/**
+ * Send the Content-Security-Policy header. Pages that embed media from
+ * hosts configured at runtime (the `path` table's 'cert' / 'video'
+ * rows on Diamond Details) call this again, before any output, with
+ * those extra origins — a later call replaces the earlier header.
+ */
+function send_csp(array $extraFrameHosts = [], array $extraMediaHosts = []): void
+{
+    $frame = array_unique(array_merge(["'self'", 'https://v3601425.v360.in', 'https://veeradimon.be'], $extraFrameHosts));
+    $media = array_unique(array_merge(["'self'", 'https://onlinemediafiles.com'], $extraMediaHosts));
+    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https://v3601425.v360.in; frame-src " . implode(' ', $frame) . '; media-src ' . implode(' ', $media) . "; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'");
+}
+send_csp();
 
 // ---- Database credentials --------------------------------------------------
 // Read from dbconn.php rather than kept here, so the actual

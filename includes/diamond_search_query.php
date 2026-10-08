@@ -299,6 +299,28 @@ function media_path_override(string $description): ?string
 }
 
 /**
+ * The origin (scheme://host[:port]) of a `path` table value, for
+ * adding to the page's Content-Security-Policy so the browser lets it
+ * be embedded. Null for blank or same-site ("/…") values, which the
+ * policy already allows as 'self'.
+ */
+function media_path_origin(?string $base): ?string
+{
+    $base = trim((string)$base);
+    if ($base === '' || $base[0] === '/') {
+        return null;
+    }
+    $parts = parse_url($base);
+    if (!isset($parts['scheme'], $parts['host'])
+        || !in_array(strtolower($parts['scheme']), ['http', 'https'], true)
+        || !preg_match('/^[A-Za-z0-9.-]+$/', $parts['host'])) {
+        return null;
+    }
+    return strtolower($parts['scheme']) . '://' . strtolower($parts['host'])
+        . (isset($parts['port']) ? ':' . (int)$parts['port'] : '');
+}
+
+/**
  * Turn a `path` table value into the URL for one diamond.
  *
  * Template form — the value contains placeholders, which are replaced:

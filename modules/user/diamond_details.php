@@ -57,6 +57,16 @@ if ($diamond !== null) {
     $certNoMedia = $certUrl === null && media_path_override('cert') !== null;
 }
 
+// Let the browser embed the hosts configured in the `path` table —
+// without this the site's security policy blocks them inside the page
+// ("This content is blocked"), even though they open fine in a new tab.
+$certOrigin = media_path_origin(media_path_override('cert'));
+$videoOrigin = media_path_origin(media_path_override('video'));
+send_csp(
+    $certOrigin !== null ? [$certOrigin] : [],
+    $videoOrigin !== null ? [$videoOrigin] : []
+);
+
 /**
  * Display value for one Diamond Info/Price Info/Measurement field —
  * applies the same blank-instead-of-zero formatting used on

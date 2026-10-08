@@ -82,6 +82,26 @@
         });
     }
 
+    // If an item that was on screen turns out to be broken and gets
+    // hidden, move on to the next item that's still available.
+    function showFirstAvailable() {
+        for (var i = 0; i < items.length; i++) {
+            if (!items[i].thumb.hidden) {
+                showItem(items[i]);
+                return;
+            }
+        }
+    }
+    function hideItem(item) {
+        var wasActive = item.thumb.classList.contains('is-active');
+        item.thumb.hidden = true;
+        item.content.hidden = true;
+        item.thumb.classList.remove('is-active');
+        if (wasActive) {
+            showFirstAvailable();
+        }
+    }
+
     items.forEach(function (item) {
         item.thumb.addEventListener('click', function () {
             showItem(item);
@@ -92,15 +112,22 @@
         var errorTarget = item.kind === 'iframe' ? null : item.content;
         if (errorTarget) {
             errorTarget.addEventListener('error', function () {
-                item.thumb.hidden = true;
-                item.content.hidden = true;
+                hideItem(item);
             }, true);
             // The still image may have failed (both .jpg and .jpeg)
             // before this script ran, so its error event was missed.
             if (item.kind === 'img' && isBroken(item.content) && !item.content.getAttribute('data-alt-src')) {
-                item.thumb.hidden = true;
-                item.content.hidden = true;
+                hideItem(item);
             }
         }
     });
+
+    // No Image icon (its `path` row is inactive or blank): open the
+    // first icon that is shown instead, so the media box isn't empty.
+    var anyActive = items.some(function (item) {
+        return item.thumb.classList.contains('is-active') && !item.thumb.hidden;
+    });
+    if (!anyActive) {
+        showFirstAvailable();
+    }
 })();

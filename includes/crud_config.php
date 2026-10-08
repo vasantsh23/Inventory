@@ -114,7 +114,9 @@ const CRUD_COLUMN_OVERRIDES = [
         ],
     ],
     'path' => [
-        'id' => ['type' => 'readonly'],
+        'id'     => ['type' => 'readonly'],
+        'active' => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No'],
+                     'hint' => "For the image / video / cert rows: Yes shows that item on Diamond Details (when Path is filled in); No hides it. If there's no row at all, the built-in URL is used."],
     ],
     'timings' => [
         'id'      => ['type' => 'readonly'],
@@ -311,7 +313,7 @@ const CRUD_LIST_COLUMNS = [
     'user'           => ['id', 'username', 'emailid', 'company', 'usertype', 'approval', 'last_login'],
     'user_types'     => ['id', 'usertype', 'level'],
     'setup'          => ['id', 'company', 'Page title', 'emailid1', 'telno-1'],
-    'path'           => ['id', 'description', 'path'],
+    'path'           => ['id', 'description', 'path', 'active'],
     'uploadref'      => ['id', 'colname', 'excolname', 'active'],
     'rounding_rules' => ['id', 'rule_name', 'method', 'increment', 'active', 'sort_order'],
     'fancycolor'     => ['id', 'fncycolor', 'active'],

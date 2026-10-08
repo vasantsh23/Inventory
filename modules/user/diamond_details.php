@@ -44,17 +44,15 @@ if ($id !== '' && ctype_digit($id)) {
 // simply doesn't show this section.
 //
 // If the `path` table has a row with description = 'cert', that row
-// decides the URL instead (see build_certificate_url); a blank path
-// there shows "No media found" in the Certificate panel.
+// decides the URL instead (see build_certificate_url); if that row is
+// not active, or its path is blank, the Certificate panel is hidden.
 $certUrl = null;
-$certNoMedia = false;
 if ($diamond !== null) {
     $certUrl = build_certificate_url(
         $diamond['Lab'] ?? null,
         $diamond['CertificateNo'] ?? null,
         $diamond['StockNo'] ?? null
     );
-    $certNoMedia = $certUrl === null && media_path_override('cert') !== null;
 }
 
 // Let the browser embed the hosts configured in the `path` table —
@@ -146,7 +144,8 @@ require_once __DIR__ . '/../../includes/header.php';
                     ];
                     // Image: `path` table row description = 'image' wins if present
                     // (folder form → {StockNo}.jpg, retried as .jpeg by the page
-                    // script; blank path → "No media found"); otherwise V360 still.
+                    // script; row inactive or path blank → no Image icon);
+                    // otherwise V360 still.
                     $imageOverride = media_path_override('image');
                     if ($imageOverride === null) {
                         $stillUrl = 'https://v3601425.v360.in/imaged/' . $stockNoEnc . '/still.jpg';
@@ -155,7 +154,8 @@ require_once __DIR__ . '/../../includes/header.php';
                     }
                     $videoUrl = 'https://v3601425.v360.in/vision360.html?d=' . $stockNoEnc;
                     // Video: `path` table row description = 'video' wins if present
-                    // (blank path → "No media found"); otherwise the built-in URL.
+                    // (row inactive or path blank → no Video icon); otherwise
+                    // the built-in URL.
                     $videoOverride = media_path_override('video');
                     if ($videoOverride === null) {
                         $video2Url = 'https://onlinemediafiles.com/info-videos/' . $stockNoEnc . '.mp4';
@@ -166,21 +166,21 @@ require_once __DIR__ . '/../../includes/header.php';
                 ?>
                     <div class="dd-media-panel">
                         <div class="dd-media-thumbs">
-                            <button type="button" class="dd-thumb-btn is-active" id="ddThumbImage" title="Image">
-                                <?php if ($stillUrl !== null): ?>
+                            <?php if ($stillUrl !== null): ?>
+                                <button type="button" class="dd-thumb-btn is-active" id="ddThumbImage" title="Image">
                                     <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="">
-                                <?php else: ?>
-                                    <span class="dd-play-label">Image</span>
-                                <?php endif; ?>
-                            </button>
+                                </button>
+                            <?php endif; ?>
                             <button type="button" class="dd-thumb-btn" id="ddThumbVideo" title="360° View" data-media-url="<?= e($videoUrl) ?>">
                                 <span class="dd-play-icon">&#9654;</span>
                                 <span class="dd-play-label">360</span>
                             </button>
-                            <button type="button" class="dd-thumb-btn" id="ddThumbVideo2" title="Video"<?= $video2Url !== null ? ' data-media-url="' . e($video2Url) . '"' : '' ?>>
-                                <span class="dd-play-icon">&#9654;</span>
-                                <span class="dd-play-label">Video</span>
-                            </button>
+                            <?php if ($video2Url !== null): ?>
+                                <button type="button" class="dd-thumb-btn" id="ddThumbVideo2" title="Video" data-media-url="<?= e($video2Url) ?>">
+                                    <span class="dd-play-icon">&#9654;</span>
+                                    <span class="dd-play-label">Video</span>
+                                </button>
+                            <?php endif; ?>
                             <button type="button" class="dd-thumb-btn" id="ddThumbHandVideo" title="Hand Video" data-media-url="<?= e($handVideoUrl) ?>">
                                 <span class="dd-play-icon">&#9654;</span>
                                 <span class="dd-play-label">Hand</span>
@@ -189,14 +189,10 @@ require_once __DIR__ . '/../../includes/header.php';
                         <div class="dd-media-box">
                             <?php if ($stillUrl !== null): ?>
                                 <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="" class="dd-media-content" id="ddMediaImage">
-                            <?php else: ?>
-                                <div class="dd-media-content dd-no-media" id="ddMediaImage">No media found</div>
                             <?php endif; ?>
                             <iframe class="dd-media-content" id="ddMediaFrame" hidden allowfullscreen></iframe>
                             <?php if ($video2Url !== null): ?>
                                 <video class="dd-media-content" id="ddMediaVideo2" hidden controls></video>
-                            <?php else: ?>
-                                <div class="dd-media-content dd-no-media" id="ddMediaVideo2" hidden>No media found</div>
                             <?php endif; ?>
                             <video class="dd-media-content" id="ddMediaHandVideo" hidden controls></video>
                         </div>
@@ -272,11 +268,6 @@ require_once __DIR__ . '/../../includes/header.php';
                         <iframe src="<?= e($certUrl) ?>" class="dd-cert-frame" title="Diamond certificate"></iframe>
                     </div>
                     <p class="dd-cert-fallback-link"><a href="<?= e($certUrl) ?>" target="_blank" rel="noopener">Open certificate in a new tab &rarr;</a></p>
-                </div>
-            <?php elseif ($certNoMedia): ?>
-                <div class="dd-cert-panel">
-                    <div class="dd-section-header"><h2>Certificate</h2></div>
-                    <p class="dd-no-media dd-cert-no-media">No media found</p>
                 </div>
             <?php endif; ?>
         <?php endif; ?>

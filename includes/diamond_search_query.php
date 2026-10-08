@@ -278,10 +278,13 @@ function get_stockno_bg_color(?string $avail, ?string $notforweb): ?string
 
 /**
  * Media/certificate location configured in the `path` table, looked up
- * by description ('video' or 'cert').
+ * by description ('image', 'video' or 'cert').
  *   null  → no such row: callers fall back to their built-in URLs
- *   ''    → row exists but path is blank: show "No media found"
+ *   ''    → row exists but active is not 'yes', or path is blank:
+ *           don't show that item at all (and don't fetch anything)
  *   other → the configured base URL / template (see expand_media_path)
+ * Before sql/migration_path_active.sql has been run there's no
+ * `active` column yet; rows are then treated as active.
  * Cached per request, since Results/View Cart call this once per row.
  */
 function media_path_override(string $description): ?string
@@ -289,11 +292,17 @@ function media_path_override(string $description): ?string
     static $cache = [];
     if (!array_key_exists($description, $cache)) {
         $stmt = get_db()->prepare(
-            'SELECT `path` FROM path WHERE `description` = :d ORDER BY id LIMIT 1'
+            'SELECT * FROM path WHERE `description` = :d ORDER BY id LIMIT 1'
         );
         $stmt->execute([':d' => $description]);
         $row = $stmt->fetch();
-        $cache[$description] = $row ? trim((string)$row['path']) : null;
+        if (!$row) {
+            $cache[$description] = null;
+        } else {
+            $active = !array_key_exists('active', $row)
+                || strtolower(trim((string)$row['active'])) === 'yes';
+            $cache[$description] = $active ? trim((string)$row['path']) : '';
+        }
     }
     return $cache[$description];
 }
@@ -399,7 +408,7 @@ function build_certificate_url(?string $lab, ?string $certNo, ?string $stockNo):
     }
 
     // `path` table row with description = 'cert' takes priority over the
-    // Lab-based logic below. Row present but path blank → no certificate.
+    // Lab-based logic below. Row inactive or path blank → no certificate.
     $override = media_path_override('cert');
     if ($override !== null) {
         return expand_media_path($override, '.pdf', [

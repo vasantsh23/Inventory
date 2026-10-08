@@ -62,9 +62,11 @@ if ($diamond !== null) {
 // ("This content is blocked"), even though they open fine in a new tab.
 $certOrigin = media_path_origin(media_path_override('cert'));
 $videoOrigin = media_path_origin(media_path_override('video'));
+$imageOrigin = media_path_origin(media_path_override('image'));
 send_csp(
     $certOrigin !== null ? [$certOrigin] : [],
-    $videoOrigin !== null ? [$videoOrigin] : []
+    $videoOrigin !== null ? [$videoOrigin] : [],
+    $imageOrigin !== null ? [$imageOrigin] : []
 );
 
 /**
@@ -137,7 +139,20 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="dd-layout">
                 <?php if (!empty($diamond['StockNo'])):
                     $stockNoEnc = urlencode((string)$diamond['StockNo']);
-                    $stillUrl = 'https://v3601425.v360.in/imaged/' . $stockNoEnc . '/still.jpg';
+                    $mediaVars = [
+                        'StockNo'       => (string)$diamond['StockNo'],
+                        'CertificateNo' => format_certificate_no_display($diamond['CertificateNo'] ?? null),
+                        'Lab'           => strtoupper(trim((string)($diamond['Lab'] ?? ''))),
+                    ];
+                    // Image: `path` table row description = 'image' wins if present
+                    // (folder form → {StockNo}.jpg, retried as .jpeg by the page
+                    // script; blank path → "No media found"); otherwise V360 still.
+                    $imageOverride = media_path_override('image');
+                    if ($imageOverride === null) {
+                        $stillUrl = 'https://v3601425.v360.in/imaged/' . $stockNoEnc . '/still.jpg';
+                    } else {
+                        $stillUrl = expand_media_path($imageOverride, '.jpg', $mediaVars);
+                    }
                     $videoUrl = 'https://v3601425.v360.in/vision360.html?d=' . $stockNoEnc;
                     // Video: `path` table row description = 'video' wins if present
                     // (blank path → "No media found"); otherwise the built-in URL.
@@ -145,18 +160,18 @@ require_once __DIR__ . '/../../includes/header.php';
                     if ($videoOverride === null) {
                         $video2Url = 'https://onlinemediafiles.com/info-videos/' . $stockNoEnc . '.mp4';
                     } else {
-                        $video2Url = expand_media_path($videoOverride, '.mp4', [
-                            'StockNo'       => (string)$diamond['StockNo'],
-                            'CertificateNo' => format_certificate_no_display($diamond['CertificateNo'] ?? null),
-                            'Lab'           => strtoupper(trim((string)($diamond['Lab'] ?? ''))),
-                        ]);
+                        $video2Url = expand_media_path($videoOverride, '.mp4', $mediaVars);
                     }
                     $handVideoUrl = 'https://onlinemediafiles.com/hvideos/' . $stockNoEnc . '.mp4';
                 ?>
                     <div class="dd-media-panel">
                         <div class="dd-media-thumbs">
                             <button type="button" class="dd-thumb-btn is-active" id="ddThumbImage" title="Image">
-                                <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="">
+                                <?php if ($stillUrl !== null): ?>
+                                    <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="">
+                                <?php else: ?>
+                                    <span class="dd-play-label">Image</span>
+                                <?php endif; ?>
                             </button>
                             <button type="button" class="dd-thumb-btn" id="ddThumbVideo" title="360° View" data-media-url="<?= e($videoUrl) ?>">
                                 <span class="dd-play-icon">&#9654;</span>
@@ -172,7 +187,11 @@ require_once __DIR__ . '/../../includes/header.php';
                             </button>
                         </div>
                         <div class="dd-media-box">
-                            <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="" class="dd-media-content" id="ddMediaImage">
+                            <?php if ($stillUrl !== null): ?>
+                                <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="" class="dd-media-content" id="ddMediaImage">
+                            <?php else: ?>
+                                <div class="dd-media-content dd-no-media" id="ddMediaImage">No media found</div>
+                            <?php endif; ?>
                             <iframe class="dd-media-content" id="ddMediaFrame" hidden allowfullscreen></iframe>
                             <?php if ($video2Url !== null): ?>
                                 <video class="dd-media-content" id="ddMediaVideo2" hidden controls></video>

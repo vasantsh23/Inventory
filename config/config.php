@@ -27,11 +27,12 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
  * rows on Diamond Details) call this again, before any output, with
  * those extra origins — a later call replaces the earlier header.
  */
-function send_csp(array $extraFrameHosts = [], array $extraMediaHosts = []): void
+function send_csp(array $extraFrameHosts = [], array $extraMediaHosts = [], array $extraImgHosts = []): void
 {
+    $img = array_unique(array_merge(["'self'", 'data:', 'https://v3601425.v360.in'], $extraImgHosts));
     $frame = array_unique(array_merge(["'self'", 'https://v3601425.v360.in', 'https://veeradimon.be'], $extraFrameHosts));
     $media = array_unique(array_merge(["'self'", 'https://onlinemediafiles.com'], $extraMediaHosts));
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https://v3601425.v360.in; frame-src " . implode(' ', $frame) . '; media-src ' . implode(' ', $media) . "; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'");
+    header("Content-Security-Policy: default-src 'self'; img-src " . implode(' ', $img) . '; frame-src ' . implode(' ', $frame) . '; media-src ' . implode(' ', $media) . "; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'");
 }
 send_csp();
 

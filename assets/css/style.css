@@ -1182,11 +1182,15 @@ table.results-table tbody tr:hover td { background-color: var(--table-row-hover)
     margin-bottom: 14px;
 }
 
+/* Results / View Cart sit on a light background, so these messages use
+   fixed dark-on-light colours instead of the theme's success colours
+   (which are pale mint, meant for dark backgrounds, and were unreadable). */
 .copy-status,
 .cart-status {
-    background: var(--success-bg);
-    border: 1px solid var(--success-border);
-    color: var(--success-text);
+    background: #e7f7ef;
+    border: 1px solid #8fd5b6;
+    color: #0b5e40;
+    font-weight: 600;
     padding: 10px 14px;
     border-radius: var(--radius-sm);
     margin-bottom: 14px;
@@ -1194,9 +1198,9 @@ table.results-table tbody tr:hover td { background-color: var(--table-row-hover)
 }
 .copy-status.copy-status-error,
 .cart-status.copy-status-error {
-    background: var(--danger-bg);
-    border-color: var(--error-box-border);
-    color: var(--error-box-text);
+    background: #fdecec;
+    border-color: #f2a7a7;
+    color: #a61b1b;
 }
 
 @media (max-width: 720px) {

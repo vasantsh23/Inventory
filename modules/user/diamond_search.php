@@ -170,7 +170,7 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
 $pageTitle = 'Diamond Search';
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
-$bodyClass = 'ds-search-theme'; // scoped light/teal restyle — only this page
+$bodyClass = 'ds-search-theme compact-footer'; // light/teal restyle + tight footer
 
 require_once __DIR__ . '/../../includes/header.php';
 ?>

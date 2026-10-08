@@ -133,6 +133,7 @@ $pageTitle = $viewTitle;
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
 $wideContent = true; // this table can have many columns — use the full viewport width
+$bodyClass = 'compact-footer no-footer-gap'; // tight footer, no band above it
 
 $rsetup = get_rsetup();
 

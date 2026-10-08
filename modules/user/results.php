@@ -155,7 +155,7 @@ $pageSubtitle = '';
 $activeNav = 'diamond_search';
 $wideContent = true; // this table has many columns — use the full viewport width
 $compactTop = true;  // less space between the site header and the Results buttons
-$bodyClass = 'results-page'; // scoped tweaks: no gap above footer, compact footer
+$bodyClass = 'compact-footer no-footer-gap'; // tight footer, no band above it
 
 $rsetup = get_rsetup();
 

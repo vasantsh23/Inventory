@@ -346,30 +346,28 @@ input::placeholder, textarea::placeholder { color: var(--input-placeholder); }
     .footer-extra-right { text-align: left; }
 }
 
-/* Compact footer — Diamond Search and Results pages only.
+/* Compact footer — opt-in per page with $bodyClass = 'compact-footer'
+   (Diamond Search, Diamond Details, Results, View Cart/Selected).
    Removes the gaps between company / address / contact / copyright
    lines and puts Tel and email on one line. */
-body.ds-search-theme .site-footer p,
-body.results-page .site-footer p { margin: 0; }
-body.ds-search-theme .footer-inner,
-body.results-page .footer-inner { line-height: 1.5; }
-body.ds-search-theme .footer-contact,
-body.results-page .footer-contact {
+body.compact-footer .site-footer p { margin: 0; }
+body.compact-footer .footer-inner { line-height: 1.5; }
+body.compact-footer .footer-contact {
     display: flex;
     flex-wrap: wrap;
     gap: 0 8px;
 }
-body.ds-search-theme .footer-contact .footer-phone + .footer-email::before,
-body.results-page .footer-contact .footer-phone + .footer-email::before {
+body.compact-footer .footer-contact .footer-phone + .footer-email::before {
     content: "|";
     margin-right: 8px;
     opacity: 0.6;
 }
 
-/* Results page: no empty band between the Rows-per-page row and the
-   footer — just the footer's top border line. */
-body.results-page .site-content { padding-bottom: 16px; }
-body.results-page .site-footer { margin-top: 0; }
+/* No empty band between the page content and the footer — just the
+   footer's top border line. Opt in with the 'no-footer-gap' class
+   (Results, View Cart/Selected). */
+body.no-footer-gap .site-content { padding-bottom: 16px; }
+body.no-footer-gap .site-footer { margin-top: 0; }
 
 .admin-version {
     margin-top: 40px;

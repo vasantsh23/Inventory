@@ -102,7 +102,7 @@ if (APP_ENCRYPTION_KEY === '' || APP_HMAC_KEY === '') {
 define('APP_NAME', 'Inventory Management System');
 // Bump this on each deploy — shown in the footer of every page so
 // support can quickly confirm which build is currently live.
-define('APP_VERSION', '22-Sep-26V1.18');
+define('APP_VERSION', '08-Oct-26V1.19');
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_MINUTES', 15);
 

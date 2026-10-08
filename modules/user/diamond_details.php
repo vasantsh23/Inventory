@@ -68,6 +68,30 @@ send_csp(
 );
 
 /**
+ * The same image URL with the other JPEG extension (.jpg <-> .jpeg),
+ * so the page can retry with it if the first one doesn't load.
+ * Null when the URL doesn't end in .jpg/.jpeg (query string allowed).
+ */
+function dd_alt_jpeg_url(string $url): ?string
+{
+    if (!preg_match('/^(.*?)\.(jpe?g)((?:[?#].*)?)$/i', $url, $m)) {
+        return null;
+    }
+    $ext = strtolower($m[2]) === 'jpg' ? 'jpeg' : 'jpg';
+    if (ctype_upper($m[2])) {
+        $ext = strtoupper($ext);
+    }
+    return $m[1] . '.' . $ext . $m[3];
+}
+
+/** ` data-alt-src="…"` attribute for an <img>, or '' if there's no alternative. */
+function dd_alt_src_attr(string $url): string
+{
+    $alt = dd_alt_jpeg_url($url);
+    return $alt !== null ? ' data-alt-src="' . e($alt) . '"' : '';
+}
+
+/**
  * Display value for one Diamond Info/Price Info/Measurement field —
  * applies the same blank-instead-of-zero formatting used on
  * Results/View Cart for CertificateNo and Measurements, falling back
@@ -132,7 +156,7 @@ require_once __DIR__ . '/../../includes/header.php';
                     <div class="dd-media-panel">
                         <div class="dd-media-thumbs">
                             <button type="button" class="dd-thumb-btn is-active" id="ddThumbImage" title="Image">
-                                <img src="<?= e($stillUrl) ?>" alt="">
+                                <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="">
                             </button>
                             <button type="button" class="dd-thumb-btn" id="ddThumbVideo" title="360° View" data-media-url="<?= e($videoUrl) ?>">
                                 <span class="dd-play-icon">&#9654;</span>
@@ -148,7 +172,7 @@ require_once __DIR__ . '/../../includes/header.php';
                             </button>
                         </div>
                         <div class="dd-media-box">
-                            <img src="<?= e($stillUrl) ?>" alt="" class="dd-media-content" id="ddMediaImage">
+                            <img src="<?= e($stillUrl) ?>"<?= dd_alt_src_attr($stillUrl) ?> alt="" class="dd-media-content" id="ddMediaImage">
                             <iframe class="dd-media-content" id="ddMediaFrame" hidden allowfullscreen></iframe>
                             <?php if ($video2Url !== null): ?>
                                 <video class="dd-media-content" id="ddMediaVideo2" hidden controls></video>
@@ -160,7 +184,7 @@ require_once __DIR__ . '/../../includes/header.php';
                     </div>
                 <?php elseif (!empty($diamond['imglink'])): ?>
                     <div class="dd-image-panel">
-                        <img src="<?= e($diamond['imglink']) ?>" alt="" class="dd-image">
+                        <img src="<?= e($diamond['imglink']) ?>"<?= dd_alt_src_attr((string)$diamond['imglink']) ?> alt="" class="dd-image">
                     </div>
                 <?php endif; ?>
 
@@ -238,7 +262,7 @@ require_once __DIR__ . '/../../includes/header.php';
             <?php endif; ?>
         <?php endif; ?>
     </section>
-    <?php if ($diamond !== null && !empty($diamond['StockNo'])): ?>
+    <?php if ($diamond !== null): ?>
         <script src="<?= e(asset_url_versioned('/assets/js/diamond_media.js')) ?>"></script>
     <?php endif; ?>
 <?php

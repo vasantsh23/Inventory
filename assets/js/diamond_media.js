@@ -11,6 +11,34 @@
  * icon/alt text.
  */
 (function () {
+    // .jpg / .jpeg retry: any <img> with a data-alt-src gets one second
+    // try with the other extension before it counts as broken. Runs
+    // before the hide-on-error handlers below and stops the first error
+    // reaching them. Also catches images that already failed before
+    // this script ran.
+    function isBroken(img) {
+        return img.complete && img.naturalWidth === 0 && !!img.getAttribute('src');
+    }
+    function tryAltSrc(img) {
+        var alt = img.getAttribute('data-alt-src');
+        if (!alt) {
+            return false;
+        }
+        img.removeAttribute('data-alt-src'); // only one retry
+        img.setAttribute('src', alt);
+        return true;
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('img[data-alt-src]'), function (img) {
+        img.addEventListener('error', function (ev) {
+            if (tryAltSrc(img)) {
+                ev.stopImmediatePropagation();
+            }
+        }, true); // capture, so it runs before the hide handler below
+        if (isBroken(img)) {
+            tryAltSrc(img);
+        }
+    });
+
     var items = [
         { thumb: 'ddThumbImage', content: 'ddMediaImage', kind: 'img' },
         { thumb: 'ddThumbVideo', content: 'ddMediaFrame', kind: 'iframe' },
@@ -67,6 +95,12 @@
                 item.thumb.hidden = true;
                 item.content.hidden = true;
             }, true);
+            // The still image may have failed (both .jpg and .jpeg)
+            // before this script ran, so its error event was missed.
+            if (item.kind === 'img' && isBroken(item.content) && !item.content.getAttribute('data-alt-src')) {
+                item.thumb.hidden = true;
+                item.content.hidden = true;
+            }
         }
     });
 })();

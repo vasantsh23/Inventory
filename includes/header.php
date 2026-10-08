@@ -32,24 +32,5 @@ $logoUrl = preg_match('#^https?://#i', $logoPath) ? $logoPath : asset_url($logoP
     <link rel="stylesheet" href="<?= e(asset_url_versioned('/assets/css/style.css')) ?>">
 </head>
 <body<?= !empty($bodyClass) ? ' class="' . e($bodyClass) . '"' : '' ?>>
-<header class="site-header">
-    <div class="brand">
-        <img src="<?= e($logoUrl) ?>" alt="<?= e($companyName) ?> logo" class="logo">
-        <span class="company-name"><?= e($companyName) ?></span>
-    </div>
-    <nav class="main-nav">
-        <ul>
-            <li><a href="<?= e(asset_url('/index.php')) ?>">Home</a></li>
-            <li><a href="<?= e(asset_url('/about.php')) ?>">About Us</a></li>
-            <li><a href="<?= e(asset_url('/inventory.php')) ?>">Inventory</a></li>
-            <li><a href="<?= e(asset_url('/contact.php')) ?>">Contact Us</a></li>
-            <?php if (is_logged_in()): ?>
-                <li class="nav-account">
-                    Signed in as <?= e(current_user()['username']) ?>
-                    &middot; <a href="<?= e(asset_url('/logout.php')) ?>">Log out</a>
-                </li>
-            <?php endif; ?>
-        </ul>
-    </nav>
-</header>
+<?php require __DIR__ . '/partials/header_bar.php'; ?>
 <main class="site-content<?= !empty($wideContent) ? ' site-content--wide' : '' ?><?= !empty($compactTop) ? ' site-content--compact' : '' ?>">

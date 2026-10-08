@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/auth.php';      // config, db, session, security, functions
 require_once __DIR__ . '/../includes/ThemeSettings.php';
+require_once __DIR__ . '/../includes/theme.php';       // theme_scoped_head_tags()
 require_once __DIR__ . '/Site.php';
 require_once __DIR__ . '/icons.php';
 require_once __DIR__ . '/contact_form.php';
@@ -148,11 +149,18 @@ function site_render(string $page): void
 <?php if ($favicon !== ''): ?><link rel="icon" href="<?= e($favicon) ?>">
 <?php endif; ?>
 <?= site_head_tags($template) ?>
+<?= theme_scoped_head_tags('.inv-chrome') ?>
 </head>
 <body class="site tpl-<?= e($template) ?> hdr-<?= e($headerFamily) ?> hero-<?= e($heroFamily) ?> page-<?= e($page) ?><?= Site::isDarkColor(Site::paletteValues($template)['bg']) ? ' is-dark' : '' ?><?= $startsWithHero ? ' starts-with-hero' : '' ?>">
 <a class="skip-link" href="#main">Skip to content</a>
 <?php
-    site_include(__DIR__ . "/templates/$headerFamily/header.php", $vars);
+    // Header and footer: the same bars as the inventory pages (Results,
+    // View Cart…), not the template's own — see includes/partials/.
+    // Run in their own scope so they can't overwrite this function's
+    // variables.
+    echo '<div class="inv-chrome">';
+    (static function (): void { require __DIR__ . '/../includes/partials/header_bar.php'; })();
+    echo '</div>';
     echo '<main id="main" class="site-main">';
     foreach ($blocks as [$b, $family, $file]) {
         echo '<div class="part part--' . e($family) . ' part-' . e($b->type) . '">';
@@ -160,7 +168,9 @@ function site_render(string $page): void
         echo '</div>';
     }
     echo '</main>';
-    site_include(__DIR__ . "/templates/$footerFamily/footer.php", $vars);
+    echo '<div class="inv-chrome">';
+    (static function (): void { require __DIR__ . '/../includes/partials/footer_bar.php'; })();
+    echo '</div>';
 
     if (Site::previewTemplate() !== null) {
         site_include(__DIR__ . '/templates/_shared/preview_bar.php', $vars);

@@ -1522,3 +1522,17 @@ a.media-icon--cert { color: #d9534f; }
     .results-table td.results-media-col .media-icons { gap: 12px; }
     .results-table td.results-media-col .media-icon--empty { display: none; }
 }
+
+/* Results / View Cart: fit every column on screen without sideways scrolling.
+   Tight cell padding + a font that scales with the window; results_fit.js
+   shrinks the font a little further if a very wide column set still overflows. */
+@media (min-width: 721px) {
+    .results-table-wrap { overflow-x: hidden; }
+    .results-table { min-width: 0; width: 100%; table-layout: auto; }
+    table.data-table.results-table { font-size: min(var(--results-table-font-size), max(10px, 0.78vw)); }
+    table.data-table.results-table th { padding: 7px 5px; font-size: inherit; letter-spacing: 0.01em; }
+    table.data-table.results-table td { padding: 6px 5px; max-width: 14em; }
+    .results-table .results-checkbox-col { width: 22px; padding-left: 4px; padding-right: 2px; }
+    .media-icons { gap: 3px; }
+    .media-icon, .media-icon svg { width: 17px; height: 17px; }
+}

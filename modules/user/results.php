@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/diamond_search_query.php';
+require_once __DIR__ . '/../../includes/media_check.php';
 require_once __DIR__ . '/../../includes/xlsx_lite.php';
 
 require_module_access('user');
@@ -160,6 +161,7 @@ $bodyClass = 'compact-footer no-footer-gap'; // tight footer, no band above it
 $rsetup = get_rsetup();
 
 require_once __DIR__ . '/../../includes/partials/media_icons.php';
+$mediaLinks = build_result_media_links_for_rows($rows);
 require_once __DIR__ . '/../../includes/header.php';
 ?>
     <section class="ds-page">
@@ -271,8 +273,8 @@ require_once __DIR__ . '/../../includes/header.php';
                                 <td class="results-checkbox-col" data-label="Select"><input type="checkbox" class="memo-row-select" value="<?= e((string)$row['id']) ?>" data-stockno="<?= e((string)($row['StockNo'] ?? '')) ?>"></td>
                                 <?php
                                 $stockNoBg = get_stockno_bg_color($row['avail'] ?? null, $row['notforweb'] ?? null);
-                                $rowCertUrl = build_certificate_url($row['Lab'] ?? null, $row['CertificateNo'] ?? null, $row['StockNo'] ?? null);
-                                $rowMedia = build_result_media_links($row['StockNo'] ?? null, $row['Lab'] ?? null, $row['CertificateNo'] ?? null);
+                                $rowMedia = $mediaLinks[(string)$row['id']] ?? ['video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
+                                $rowCertUrl = $rowMedia['cert'];
                                 ?>
                                 <?php foreach ($columns as $col): ?>
                                     <?php if ($col['field'] === 'StockNo'): ?>
@@ -326,5 +328,6 @@ require_once __DIR__ . '/../../includes/header.php';
     </section>
 
     <script src="<?= e(asset_url_versioned('/assets/js/memo_actions.js')) ?>"></script>
+    <script src="<?= e(asset_url_versioned('/assets/js/results_fit.js')) ?>"></script>
 <?php
 require_once __DIR__ . '/../../includes/footer.php';

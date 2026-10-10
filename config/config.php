@@ -116,6 +116,8 @@ define('APP_NAME', 'Inventory Management System');
 // Bump this on each deploy — shown in the footer of every page so
 // support can quickly confirm which build is currently live.
 define('APP_VERSION', '08-Oct-26V1.19');
+// Check that Results / View Cart media + certificate links can be opened before showing their icons.
+define('MEDIA_VALIDATE', filter_var(getenv('MEDIA_VALIDATE') ?: 'true', FILTER_VALIDATE_BOOLEAN));
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_MINUTES', 15);
 

@@ -39,20 +39,49 @@
         }
     });
 
+    // The page decides the element: a video file gets <video>, a player
+    // page (or a URL with no video extension) gets <iframe>. The kind
+    // is read from the element itself.
     var items = [
-        { thumb: 'ddThumbImage', content: 'ddMediaImage', kind: 'img' },
-        { thumb: 'ddThumbVideo', content: 'ddMediaFrame', kind: 'iframe' },
-        { thumb: 'ddThumbVideo2', content: 'ddMediaVideo2', kind: 'video' },
-        { thumb: 'ddThumbHandVideo', content: 'ddMediaHandVideo', kind: 'video' }
+        { thumb: 'ddThumbImage', content: 'ddMediaImage' },
+        { thumb: 'ddThumbVideo', content: 'ddMediaFrame' },
+        { thumb: 'ddThumbVideo2', content: 'ddMediaVideo2' },
+        { thumb: 'ddThumbHandVideo', content: 'ddMediaHandVideo' }
     ].map(function (item) {
+        var content = document.getElementById(item.content);
         return {
             thumb: document.getElementById(item.thumb),
-            content: document.getElementById(item.content),
-            kind: item.kind
+            content: content,
+            kind: content ? content.tagName.toLowerCase() : ''
         };
     }).filter(function (item) {
         return item.thumb && item.content;
     });
+
+    // A <video> that can't play its URL (not really a video file, or a
+    // format this browser can't decode) gets one more try as an iframe,
+    // where the browser or the host's own player can show it.
+    function retryAsFrame(item) {
+        if (item.kind !== 'video' || item.retried) {
+            return false;
+        }
+        var url = item.thumb.getAttribute('data-media-url');
+        if (!url) {
+            return false;
+        }
+        item.retried = true;
+        var frame = document.createElement('iframe');
+        frame.className = item.content.className;
+        frame.id = item.content.id;
+        frame.hidden = item.content.hidden;
+        frame.setAttribute('allowfullscreen', '');
+        frame.setAttribute('allow', 'autoplay; fullscreen');
+        item.content.parentNode.replaceChild(frame, item.content);
+        item.content = frame;
+        item.kind = 'iframe';
+        frame.setAttribute('src', url);
+        return true;
+    }
 
     if (items.length === 0) {
         return;
@@ -112,7 +141,9 @@
         var errorTarget = item.kind === 'iframe' ? null : item.content;
         if (errorTarget) {
             errorTarget.addEventListener('error', function () {
-                hideItem(item);
+                if (!retryAsFrame(item)) {
+                    hideItem(item);
+                }
             }, true);
             // The still image may have failed (both .jpg and .jpeg)
             // before this script ran, so its error event was missed.

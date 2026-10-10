@@ -114,10 +114,29 @@ $cspOrigins = static function (array $descriptions, array $urls): array {
     return array_values(array_unique(array_filter($out, fn($o) => $o !== null)));
 };
 send_csp(
-    $cspOrigins(['cert', '360view'], [$certUrl, $videoUrl]),
+    $cspOrigins(['cert', '360view', 'video', 'handvideo'], [$certUrl, $videoUrl, $video2Url, $handVideoUrl]),
     $cspOrigins(['video', 'handvideo'], [$video2Url, $handVideoUrl]),
     $cspOrigins(['image'], [$stillUrl])
 );
+
+/**
+ * True when a URL points straight at a video file (.mp4, .webm…),
+ * which plays in a <video> element. Anything else — a player page,
+ * a viewer link, a URL without an extension — is shown in an iframe.
+ */
+function dd_is_video_file(string $url): bool
+{
+    $path = (string)(parse_url($url, PHP_URL_PATH) ?? '');
+    return (bool)preg_match('/\.(mp4|m4v|webm|mov|ogv|ogg)$/i', $path);
+}
+
+/** The media element for a video URL: <video> for a file, <iframe> for a page. */
+function dd_video_element(string $id, string $url): string
+{
+    return dd_is_video_file($url)
+        ? '<video class="dd-media-content" id="' . e($id) . '" hidden controls playsinline preload="metadata"></video>'
+        : '<iframe class="dd-media-content" id="' . e($id) . '" hidden allowfullscreen allow="autoplay; fullscreen"></iframe>';
+}
 
 /**
  * The same image URL with the other JPEG extension (.jpg <-> .jpeg),
@@ -223,10 +242,10 @@ require_once __DIR__ . '/../../includes/header.php';
                                 <iframe class="dd-media-content" id="ddMediaFrame" hidden allowfullscreen></iframe>
                             <?php endif; ?>
                             <?php if ($video2Url !== null): ?>
-                                <video class="dd-media-content" id="ddMediaVideo2" hidden controls></video>
+                                <?= dd_video_element('ddMediaVideo2', $video2Url) ?>
                             <?php endif; ?>
                             <?php if ($handVideoUrl !== null): ?>
-                                <video class="dd-media-content" id="ddMediaHandVideo" hidden controls></video>
+                                <?= dd_video_element('ddMediaHandVideo', $handVideoUrl) ?>
                             <?php endif; ?>
                         </div>
                     </div>

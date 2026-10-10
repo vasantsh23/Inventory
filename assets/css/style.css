@@ -1508,3 +1508,17 @@ table.data-table.ts-table tr.is-dirty td { background: var(--warning-bg); }
 .ts-stack h2 { margin: 0; }
 .ts-inline { display: inline; margin: 0; }
 @media (max-width: 960px) { .ts-two-col { grid-template-columns: 1fr; } }
+
+/* Media icons (video / hand video / info video / certificate) beside Stock# */
+.media-icons { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.media-icon { display: inline-block; width: 20px; height: 20px; line-height: 0; }
+.media-icon svg { fill: currentColor; display: block; }
+a.media-icon { color: var(--stockno-link-color); transition: transform .12s ease, opacity .12s ease; }
+a.media-icon:hover { transform: scale(1.18); }
+a.media-icon--cert { color: #d9534f; }
+.media-icons--head .media-icon { opacity: .75; }
+.results-media-col { width: 1%; }
+@media (max-width: 760px) {
+    .results-table td.results-media-col .media-icons { gap: 12px; }
+    .results-table td.results-media-col .media-icon--empty { display: none; }
+}

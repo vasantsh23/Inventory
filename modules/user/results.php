@@ -159,6 +159,7 @@ $bodyClass = 'compact-footer no-footer-gap'; // tight footer, no band above it
 
 $rsetup = get_rsetup();
 
+require_once __DIR__ . '/../../includes/partials/media_icons.php';
 require_once __DIR__ . '/../../includes/header.php';
 ?>
     <section class="ds-page">
@@ -255,12 +256,15 @@ require_once __DIR__ . '/../../includes/header.php';
                             <th class="results-checkbox-col"><input type="checkbox" id="memoSelectAll" title="Select all"></th>
                             <?php foreach ($columns as $col): ?>
                                 <th><?= e($col['label']) ?></th>
+                                <?php if ($col['field'] === 'StockNo'): ?>
+                                    <th class="results-media-col"><?= render_media_icons(null) ?></th>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($rows === []): ?>
-                            <tr><td colspan="<?= count($columns) + 1 ?>" class="results-empty">No diamonds match your criteria.</td></tr>
+                            <tr><td colspan="<?= count($columns) + 2 ?>" class="results-empty">No diamonds match your criteria.</td></tr>
                         <?php endif; ?>
                         <?php foreach ($rows as $row): ?>
                             <tr>
@@ -268,12 +272,14 @@ require_once __DIR__ . '/../../includes/header.php';
                                 <?php
                                 $stockNoBg = get_stockno_bg_color($row['avail'] ?? null, $row['notforweb'] ?? null);
                                 $rowCertUrl = build_certificate_url($row['Lab'] ?? null, $row['CertificateNo'] ?? null, $row['StockNo'] ?? null);
+                                $rowMedia = build_result_media_links($row['StockNo'] ?? null, $row['Lab'] ?? null, $row['CertificateNo'] ?? null);
                                 ?>
                                 <?php foreach ($columns as $col): ?>
                                     <?php if ($col['field'] === 'StockNo'): ?>
                                         <td data-label="<?= e($col['label']) ?>"<?= $stockNoBg !== null ? ' style="background-color:' . e($stockNoBg) . ';"' : '' ?>>
                                             <a class="results-stockno-link" href="<?= e(asset_url('/modules/user/diamond_details.php?id=' . urlencode((string)$row['id']))) ?>"><?= e((string)($row[$col['field']] ?? '')) ?></a>
                                         </td>
+                                        <td class="results-media-col" data-label="Media"><?= render_media_icons($rowMedia) ?></td>
                                     <?php elseif ($col['field'] === 'CertificateNo'):
                                         $certDisplay = format_certificate_no_display($row['CertificateNo'] ?? null);
                                     ?>

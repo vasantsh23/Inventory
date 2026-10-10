@@ -593,3 +593,71 @@ function get_diamond_details_sections(string $dataType): array
     }
     return $out;
 }
+
+/**
+ * True when $url is a usable absolute http(s) URL (has a host, no
+ * whitespace/control characters). Blank or malformed values → false.
+ */
+function is_valid_media_url(?string $url): bool
+{
+    $url = trim((string)$url);
+    if ($url === '' || preg_match('/[\s\x00-\x1f]/', $url)) {
+        return false;
+    }
+    $parts = parse_url($url);
+    if (!is_array($parts) || !isset($parts['scheme'], $parts['host'])
+        || !in_array(strtolower($parts['scheme']), ['http', 'https'], true)
+        || !preg_match('/^[A-Za-z0-9.-]+$/', $parts['host'])) {
+        return false;
+    }
+    return filter_var($url, FILTER_VALIDATE_URL) !== false;
+}
+
+/**
+ * The four media links shown as icons beside the Stock# on Results and
+ * View Cart/Selected. Uses exactly the same rules as Diamond Details
+ * (the `path` table rows '360view', 'handvideo', 'video', 'cert' win;
+ * row inactive or path blank → no icon; otherwise the built-in URL).
+ * A link that is blank or not a valid http(s) URL comes back as null,
+ * and the page then doesn't draw that icon.
+ *
+ * @return array{video: ?string, handvideo: ?string, infovideo: ?string, cert: ?string}
+ */
+function build_result_media_links(?string $stockNo, ?string $lab, ?string $certNo): array
+{
+    $stockNo = trim((string)$stockNo);
+    $out = ['video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
+    if ($stockNo === '') {
+        return $out;
+    }
+    $vars = [
+        'StockNo'       => $stockNo,
+        'CertificateNo' => format_certificate_no_display($certNo),
+        'Lab'           => strtoupper(trim((string)$lab)),
+    ];
+    $enc = urlencode($stockNo);
+
+    $o = media_path_override('360view');
+    $out['video'] = $o === null
+        ? 'https://v3601425.v360.in/vision360.html?d=' . $enc
+        : expand_media_path($o, '.html', $vars);
+
+    $o = media_path_override('handvideo');
+    $out['handvideo'] = $o === null
+        ? 'https://onlinemediafiles.com/hvideos/' . $enc . '.mp4'
+        : expand_media_path($o, '.mp4', $vars);
+
+    $o = media_path_override('video');
+    $out['infovideo'] = $o === null
+        ? 'https://onlinemediafiles.com/info-videos/' . $enc . '.mp4'
+        : expand_media_path($o, '.mp4', $vars);
+
+    $out['cert'] = build_certificate_url($lab, $certNo, $stockNo);
+
+    foreach ($out as $k => $url) {
+        if (!is_valid_media_url($url)) {
+            $out[$k] = null;
+        }
+    }
+    return $out;
+}

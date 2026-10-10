@@ -57,24 +57,66 @@ if ($diamond !== null) {
     );
 }
 
+// Media URLs (image, 360 view, video, hand video), built here — before
+// any output — so the security policy below can allow their real hosts.
+$stillUrl = $videoUrl = $video2Url = $handVideoUrl = null;
+if ($diamond !== null && !empty($diamond['StockNo'])) {
+    $stockNoEnc = urlencode((string)$diamond['StockNo']);
+    // Values for {ColumnName} placeholders in the `path` table
+    $mediaVars = media_vars_from_row($diamond);
+    // Image: `path` table row description = 'image' wins if present
+    // (folder form → {StockNo}.jpg, retried as .jpeg by the page
+    // script; row inactive or path blank → no Image icon);
+    // otherwise V360 still.
+    $imageOverride = media_path_override('image');
+    if ($imageOverride === null) {
+        $stillUrl = 'https://v3601425.v360.in/imaged/' . $stockNoEnc . '/still.jpg';
+    } else {
+        $stillUrl = expand_media_path($imageOverride, '.jpg', $mediaVars);
+    }
+    // 360 View: `path` row description = '360view' (row inactive or
+    // path blank → no 360 icon); otherwise the V360 viewer.
+    $view360Override = media_path_override('360view');
+    $videoUrl = $view360Override === null
+        ? 'https://v3601425.v360.in/vision360.html?d=' . $stockNoEnc
+        : expand_media_path($view360Override, '.html', $mediaVars);
+    // Video: `path` table row description = 'video' wins if present
+    // (row inactive or path blank → no Video icon); otherwise
+    // the built-in URL.
+    $videoOverride = media_path_override('video');
+    if ($videoOverride === null) {
+        $video2Url = 'https://onlinemediafiles.com/info-videos/' . $stockNoEnc . '.mp4';
+    } else {
+        $video2Url = expand_media_path($videoOverride, '.mp4', $mediaVars);
+    }
+    // Hand Video: `path` row description = 'handvideo' (row inactive
+    // or path blank → no Hand icon); otherwise the built-in URL.
+    $handOverride = media_path_override('handvideo');
+    $handVideoUrl = $handOverride === null
+        ? 'https://onlinemediafiles.com/hvideos/' . $stockNoEnc . '.mp4'
+        : expand_media_path($handOverride, '.mp4', $mediaVars);
+}
+
 // Let the browser embed the hosts configured in the `path` table —
 // without this the site's security policy blocks them inside the page
 // ("This content is blocked"), even though they open fine in a new tab.
 // Frames: certificate + 360 view. Videos: video + hand video. Images: image.
-$cspOrigins = static function (array $descriptions): array {
+// The hosts are taken from the finished URLs as well as from the `path`
+// values, so a path like {imglink} (host stored in maindata) works too.
+$cspOrigins = static function (array $descriptions, array $urls): array {
     $out = [];
     foreach ($descriptions as $d) {
-        $origin = media_path_origin(media_path_override($d));
-        if ($origin !== null) {
-            $out[] = $origin;
-        }
+        $out[] = media_path_origin(media_path_override($d));
     }
-    return $out;
+    foreach ($urls as $u) {
+        $out[] = media_path_origin($u);
+    }
+    return array_values(array_unique(array_filter($out, fn($o) => $o !== null)));
 };
 send_csp(
-    $cspOrigins(['cert', '360view']),
-    $cspOrigins(['video', 'handvideo']),
-    $cspOrigins(['image'])
+    $cspOrigins(['cert', '360view'], [$certUrl, $videoUrl]),
+    $cspOrigins(['video', 'handvideo'], [$video2Url, $handVideoUrl]),
+    $cspOrigins(['image'], [$stillUrl])
 );
 
 /**
@@ -146,40 +188,6 @@ require_once __DIR__ . '/../../includes/header.php';
 
             <div class="dd-layout">
                 <?php if (!empty($diamond['StockNo'])):
-                    $stockNoEnc = urlencode((string)$diamond['StockNo']);
-                    // Values for {ColumnName} placeholders in the `path` table
-                    $mediaVars = media_vars_from_row($diamond);
-                    // Image: `path` table row description = 'image' wins if present
-                    // (folder form → {StockNo}.jpg, retried as .jpeg by the page
-                    // script; row inactive or path blank → no Image icon);
-                    // otherwise V360 still.
-                    $imageOverride = media_path_override('image');
-                    if ($imageOverride === null) {
-                        $stillUrl = 'https://v3601425.v360.in/imaged/' . $stockNoEnc . '/still.jpg';
-                    } else {
-                        $stillUrl = expand_media_path($imageOverride, '.jpg', $mediaVars);
-                    }
-                    // 360 View: `path` row description = '360view' (row inactive or
-                    // path blank → no 360 icon); otherwise the V360 viewer.
-                    $view360Override = media_path_override('360view');
-                    $videoUrl = $view360Override === null
-                        ? 'https://v3601425.v360.in/vision360.html?d=' . $stockNoEnc
-                        : expand_media_path($view360Override, '.html', $mediaVars);
-                    // Video: `path` table row description = 'video' wins if present
-                    // (row inactive or path blank → no Video icon); otherwise
-                    // the built-in URL.
-                    $videoOverride = media_path_override('video');
-                    if ($videoOverride === null) {
-                        $video2Url = 'https://onlinemediafiles.com/info-videos/' . $stockNoEnc . '.mp4';
-                    } else {
-                        $video2Url = expand_media_path($videoOverride, '.mp4', $mediaVars);
-                    }
-                    // Hand Video: `path` row description = 'handvideo' (row inactive
-                    // or path blank → no Hand icon); otherwise the built-in URL.
-                    $handOverride = media_path_override('handvideo');
-                    $handVideoUrl = $handOverride === null
-                        ? 'https://onlinemediafiles.com/hvideos/' . $stockNoEnc . '.mp4'
-                        : expand_media_path($handOverride, '.mp4', $mediaVars);
                 ?>
                     <div class="dd-media-panel">
                         <div class="dd-media-thumbs">

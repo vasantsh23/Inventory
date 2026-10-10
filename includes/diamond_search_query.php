@@ -385,6 +385,29 @@ function media_path_origin(?string $base): ?string
 }
 
 /**
+ * Encode one placeholder value for use inside a URL.
+ *
+ * A value that is itself a link — a full http(s):// URL or a path on
+ * this site starting with "/" (e.g. a column holding
+ * https://bucket.s3.amazonaws.com/imaged/2048157/still.jpg) — goes in
+ * as it is, so its ":" and "/" stay intact; only characters that are
+ * never valid in a URL (spaces, quotes, < >…) are percent-encoded.
+ * Any other value (StockNo, Lab, Shape…) is fully encoded, so a "/" or
+ * "?" inside it can't change the shape of the URL.
+ */
+function media_placeholder_encode(string $value): string
+{
+    if (preg_match('#^(https?://|/)#i', $value)) {
+        return preg_replace_callback(
+            "#[^A-Za-z0-9\\-._~:/?\\#\\[\\]@!$&'()*+,;=%]#",
+            fn($c) => rawurlencode($c[0]),
+            $value
+        );
+    }
+    return rawurlencode($value);
+}
+
+/**
  * Turn a `path` table value into the URL for one diamond.
  *
  * Template form — the value contains placeholders, which are replaced:
@@ -393,6 +416,8 @@ function media_path_origin(?string $base): ?string
  *   https://media.example.com/{Shape}/{StockNo}.jpg
  * Any maindata column name can be used in {} (exact spelling and
  * case, e.g. {StockNo}); $vars comes from media_vars_from_row().
+ * A column that already holds a full link can be used on its own,
+ * e.g. a path of just {imglink} (see media_placeholder_encode()).
  * Folder form — no placeholders: "/{StockNo}{ext}" is appended:
  *   https://media.example.com/videos   →   …/videos/25233.mp4
  * Extension placeholder — ".xxx" is replaced by {ext} (see below):
@@ -433,7 +458,7 @@ function expand_media_path(string $base, string $ext, array $vars): ?string
             if ($value === '') {
                 $missing = true;
             }
-            return rawurlencode($value);
+            return media_placeholder_encode($value);
         }, $base);
         if ($missing) {
             return null;

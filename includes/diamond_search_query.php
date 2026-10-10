@@ -278,7 +278,7 @@ function get_stockno_bg_color(?string $avail, ?string $notforweb): ?string
 
 /**
  * Media/certificate location configured in the `path` table, looked up
- * by description ('image', 'video' or 'cert').
+ * by description ('image', 'video', '360view', 'handvideo' or 'cert').
  *   null  → no such row: callers fall back to their built-in URLs
  *   ''    → row exists but active is not 'yes', or path is blank:
  *           don't show that item at all (and don't fetch anything)
@@ -305,6 +305,61 @@ function media_path_override(string $description): ?string
         }
     }
     return $cache[$description];
+}
+
+/** The `path` descriptions whose value can contain {placeholders}. */
+const MEDIA_PATH_DESCRIPTIONS = ['image', 'video', '360view', 'handvideo', 'cert'];
+
+/**
+ * The maindata columns that the media rows of the `path` table refer
+ * to as {ColumnName} placeholders, plus StockNo, Lab and CertificateNo
+ * (always needed for the built-in URLs and the certificate rules).
+ * Only exact, real maindata column names are returned — the names are
+ * admin-editable text, so they're never trusted as SQL identifiers
+ * without this check. Pages add these to their SELECT list so every
+ * placeholder has a value to fill in.
+ *
+ * @return string[]
+ */
+function media_placeholder_fields(): array
+{
+    static $fields = null;
+    if ($fields !== null) {
+        return $fields;
+    }
+    $validCols = get_maindata_columns();
+    $wanted = ['StockNo', 'Lab', 'CertificateNo'];
+    foreach (MEDIA_PATH_DESCRIPTIONS as $description) {
+        $base = (string)media_path_override($description);
+        if ($base !== '' && preg_match_all('/\{(\w+)\}/', $base, $m)) {
+            array_push($wanted, ...$m[1]);
+        }
+    }
+    $fields = array_values(array_intersect(array_unique($wanted), $validCols));
+    return $fields;
+}
+
+/**
+ * Placeholder values for one maindata row: every column the row
+ * carries, by its exact column name, with the usual clean-up for the
+ * three standard ones (StockNo trimmed, Lab in capitals, a
+ * CertificateNo of 0 treated as blank).
+ *
+ * @param array<string,mixed> $row
+ * @return array<string,string>
+ */
+function media_vars_from_row(array $row): array
+{
+    $vars = [];
+    foreach ($row as $key => $value) {
+        if (is_string($key) && (is_scalar($value) || $value === null)) {
+            $vars[$key] = trim((string)$value);
+        }
+    }
+    $vars['StockNo']       = trim((string)($row['StockNo'] ?? ''));
+    $vars['CertificateNo'] = format_certificate_no_display(isset($row['CertificateNo']) ? (string)$row['CertificateNo'] : null);
+    $vars['Lab']           = strtoupper(trim((string)($row['Lab'] ?? '')));
+    return $vars;
 }
 
 /**
@@ -335,6 +390,9 @@ function media_path_origin(?string $base): ?string
  * Template form — the value contains placeholders, which are replaced:
  *   https://media.example.com/videos/{StockNo}.mp4
  *   https://certs.example.com/{Lab}/{CertificateNo}.pdf
+ *   https://media.example.com/{Shape}/{StockNo}.jpg
+ * Any maindata column name can be used in {} (exact spelling and
+ * case, e.g. {StockNo}); $vars comes from media_vars_from_row().
  * Folder form — no placeholders: "/{StockNo}{ext}" is appended:
  *   https://media.example.com/videos   →   …/videos/25233.mp4
  * Extension placeholder — ".xxx" is replaced by {ext} (see below):
@@ -398,7 +456,7 @@ function expand_media_path(string $base, string $ext, array $vars): ?string
  * or a CertificateNo of exactly "0" (treated the same as blank),
  * returns null — nothing to link to.
  */
-function build_certificate_url(?string $lab, ?string $certNo, ?string $stockNo): ?string
+function build_certificate_url(?string $lab, ?string $certNo, ?string $stockNo, array $row = []): ?string
 {
     $lab = strtoupper(trim((string)$lab));
     $certNo = trim((string)$certNo);
@@ -411,11 +469,12 @@ function build_certificate_url(?string $lab, ?string $certNo, ?string $stockNo):
     // Lab-based logic below. Row inactive or path blank → no certificate.
     $override = media_path_override('cert');
     if ($override !== null) {
-        return expand_media_path($override, '.pdf', [
+        // $row (optional) supplies any other {ColumnName} placeholders.
+        return expand_media_path($override, '.pdf', array_merge(media_vars_from_row($row), [
             'StockNo'       => $stockNo,
             'CertificateNo' => $certNo,
             'Lab'           => $lab,
-        ]);
+        ]));
     }
 
     if ($certNo !== '' && in_array($lab, ['HRD', 'IGI'], true)) {
@@ -623,18 +682,19 @@ function is_valid_media_url(?string $url): bool
  *
  * @return array{video: ?string, handvideo: ?string, infovideo: ?string, cert: ?string}
  */
-function build_result_media_links(?string $stockNo, ?string $lab, ?string $certNo): array
+function build_result_media_links(?string $stockNo, ?string $lab, ?string $certNo, array $row = []): array
 {
     $stockNo = trim((string)$stockNo);
     $out = ['video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
     if ($stockNo === '') {
         return $out;
     }
-    $vars = [
+    // $row (optional) supplies any other {ColumnName} placeholders.
+    $vars = array_merge(media_vars_from_row($row), [
         'StockNo'       => $stockNo,
         'CertificateNo' => format_certificate_no_display($certNo),
         'Lab'           => strtoupper(trim((string)$lab)),
-    ];
+    ]);
     $enc = urlencode($stockNo);
 
     $o = media_path_override('360view');
@@ -652,7 +712,7 @@ function build_result_media_links(?string $stockNo, ?string $lab, ?string $certN
         ? 'https://onlinemediafiles.com/info-videos/' . $enc . '.mp4'
         : expand_media_path($o, '.mp4', $vars);
 
-    $out['cert'] = build_certificate_url($lab, $certNo, $stockNo);
+    $out['cert'] = build_certificate_url($lab, $certNo, $stockNo, $row);
 
     foreach ($out as $k => $url) {
         if (!is_valid_media_url($url)) {

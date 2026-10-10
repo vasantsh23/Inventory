@@ -29,7 +29,8 @@ $validCols = get_maindata_columns();
 $wanted = array_values(array_unique(array_merge(
     ...array_map(fn($s) => array_column($s, 'field'), array_values($sectionFields)),
     ...[array_intersect(['StockNo', 'imglink', 'avail', 'notforweb', 'Lab', 'CertificateNo',
-        'Shape', 'Weight', 'Color', 'Clarity'], $validCols)]
+        'Shape', 'Weight', 'Color', 'Clarity'], $validCols)],
+    ...[media_placeholder_fields()] // {placeholders} used in the `path` table
 )));
 $fieldList = '`id`' . implode('', array_map(fn($f) => ", `$f`", $wanted));
 $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE id = :id");
@@ -85,6 +86,6 @@ api_json([
     'availColor' => get_stockno_bg_color($d['avail'] ?? null, $d['notforweb'] ?? null),
     'media'     => $media,
     'sections'  => $sections,
-    'certUrl'   => build_certificate_url($d['Lab'] ?? null, $d['CertificateNo'] ?? null, $stockNo),
+    'certUrl'   => build_certificate_url($d['Lab'] ?? null, $d['CertificateNo'] ?? null, $stockNo, $d),
     'webUrl'    => full_url('/modules/user/diamond_details.php?id=' . (int)$d['id']),
 ]);

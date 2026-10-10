@@ -27,7 +27,8 @@ if ($id !== '' && ctype_digit($id)) {
         array_column($diSections, 'field'),
         array_column($piSections, 'field'),
         array_column($miSections, 'field'),
-        array_intersect(['StockNo', 'imglink', 'avail', 'Lab', 'CertificateNo'], $validCols)
+        array_intersect(['StockNo', 'imglink', 'avail', 'Lab', 'CertificateNo'], $validCols),
+        media_placeholder_fields() // columns used as {placeholders} in the `path` table
     ));
 
     if ($wantedFields !== []) {
@@ -51,7 +52,8 @@ if ($diamond !== null) {
     $certUrl = build_certificate_url(
         $diamond['Lab'] ?? null,
         $diamond['CertificateNo'] ?? null,
-        $diamond['StockNo'] ?? null
+        $diamond['StockNo'] ?? null,
+        $diamond
     );
 }
 
@@ -145,11 +147,8 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="dd-layout">
                 <?php if (!empty($diamond['StockNo'])):
                     $stockNoEnc = urlencode((string)$diamond['StockNo']);
-                    $mediaVars = [
-                        'StockNo'       => (string)$diamond['StockNo'],
-                        'CertificateNo' => format_certificate_no_display($diamond['CertificateNo'] ?? null),
-                        'Lab'           => strtoupper(trim((string)($diamond['Lab'] ?? ''))),
-                    ];
+                    // Values for {ColumnName} placeholders in the `path` table
+                    $mediaVars = media_vars_from_row($diamond);
                     // Image: `path` table row description = 'image' wins if present
                     // (folder form → {StockNo}.jpg, retried as .jpeg by the page
                     // script; row inactive or path blank → no Image icon);

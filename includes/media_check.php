@@ -205,6 +205,7 @@ function media_urls_reachable(array $urls): array
  * link that can't be opened set to null.
  *
  * @param array<int,array<string,mixed>> $rows rows with id, StockNo, Lab, CertificateNo
+ *        and the media_placeholder_fields() columns
  * @return array<string,array{video:?string,handvideo:?string,infovideo:?string,cert:?string}> keyed by row id
  */
 function build_result_media_links_for_rows(array $rows): array
@@ -213,7 +214,7 @@ function build_result_media_links_for_rows(array $rows): array
     $probe = []; // [rowId][key] => url actually requested for the check
     foreach ($rows as $row) {
         $id = (string)($row['id'] ?? '');
-        $l = build_result_media_links($row['StockNo'] ?? null, $row['Lab'] ?? null, $row['CertificateNo'] ?? null);
+        $l = build_result_media_links($row['StockNo'] ?? null, $row['Lab'] ?? null, $row['CertificateNo'] ?? null, $row);
         $links[$id] = $l;
         foreach ($l as $key => $url) {
             if ($url === null) {

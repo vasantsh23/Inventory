@@ -202,7 +202,8 @@ function api_results_field_list(array $columns): string
         'Shape', 'Weight', 'Color', 'Clarity', 'CutGrade', 'Polish', 'Symmetry', 'FluorescenceIntensity', 'totamt'];
     $fields = array_values(array_unique(array_merge(
         array_column($columns, 'field'),
-        array_intersect($always, $validCols)
+        array_intersect($always, $validCols),
+        media_placeholder_fields() // {placeholders} used in the `path` table
     )));
     $list = '`id`';
     foreach ($fields as $f) {
@@ -251,7 +252,7 @@ function api_result_row(array $row, array $columns): array
         'headline'    => implode(' ', $headlineParts),
         'grades'      => implode(' · ', $gradeParts),
         'amount'      => $amount,
-        'certUrl'     => build_certificate_url($row['Lab'] ?? null, $row['CertificateNo'] ?? null, $row['StockNo'] ?? null),
+        'certUrl'     => build_certificate_url($row['Lab'] ?? null, $row['CertificateNo'] ?? null, $row['StockNo'] ?? null, $row),
         'cells'       => array_map(fn($c) => api_cell_value($row, $c['field']), $columns),
     ];
 }

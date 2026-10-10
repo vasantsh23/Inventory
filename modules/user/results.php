@@ -126,11 +126,12 @@ if ($columns !== []) {
 
     $fieldList = implode(', ', array_map(fn($c) => "`{$c['field']}`", $columns));
     // Always fetch avail/notforweb (background color) and
-    // Lab/CertificateNo/StockNo (certificate hyperlink) too, even if
+    // Lab/CertificateNo/StockNo (certificate hyperlink) and any
+    // column used as a {placeholder} in the `path` table too, even if
     // not shown as visible columns.
     $validColsForBg = get_maindata_columns();
     $extraBgFields = array_diff(
-        array_intersect(['avail', 'notforweb', 'Lab', 'CertificateNo', 'StockNo'], $validColsForBg),
+        array_intersect(array_unique(array_merge(['avail', 'notforweb', 'Lab', 'CertificateNo', 'StockNo'], media_placeholder_fields())), $validColsForBg),
         array_column($columns, 'field')
     );
     if ($extraBgFields !== []) {

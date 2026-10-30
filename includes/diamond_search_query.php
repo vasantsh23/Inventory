@@ -202,7 +202,9 @@ function build_maindata_search_where(array $filters): array
 
     // --- Held stones are left out of search results, regardless of
     //     any other filter (see Admin > Hold Selection) — but only while
-    //     setup.hold_restrict = 'yes'. 'no' shows every stone. ---
+    //     setup.hold_restrict = 'yes' AND the viewer is a plain user
+    //     type (not memo / memo-dubai / Admin / Super Admin — see
+    //     HOLD_EXEMPT_LEVELS). Everyone sees every stone when it's 'no'. ---
     if (in_array('hold', $validCols, true) && is_hold_restrict_enabled()) {
         $clauses[] = "(`hold` IS NULL OR `hold` <> 'yes')";
     }
@@ -212,10 +214,28 @@ function build_maindata_search_where(array $filters): array
 }
 
 /**
- * Whether held stones (maindata.hold = 'yes') are hidden from search
- * results: true only when setup.hold_restrict is 'yes' (any case).
- * If the column doesn't exist yet (migration_setup_hold_restrict.sql
- * not run), the old always-hide behaviour is kept.
+ * user_types.level values that always see held stones, whatever
+ * setup.hold_restrict says:
+ *   4 = memo-dubai (Memo uses the `dmemo` table)
+ *   5 = memo       (Memo uses the `memo` table)
+ *   8 = Admin
+ *   9 = Super Admin
+ * Same levels the Memo feature uses (see require_memo_level()).
+ */
+const HOLD_EXEMPT_LEVELS = [4, 5, 8, 9];
+
+/**
+ * Whether held stones (maindata.hold = 'yes') are hidden from the
+ * current viewer's search results. True only when BOTH:
+ *   - setup.hold_restrict is 'yes' (any case), and
+ *   - the viewer's user type level is NOT in HOLD_EXEMPT_LEVELS, i.e.
+ *     a plain user type (levels 0-3, 6, 7). Guests count as users, via
+ *     GUEST_RESULTS_USERTYPE_ID.
+ * memo, memo-dubai, Admin and Super Admin always see every stone.
+ * If the viewer's user type can't be determined, they are treated as a
+ * user (the safer choice). If the hold_restrict column doesn't exist
+ * yet (migration_setup_hold_restrict.sql not run), the old
+ * always-hide-for-everyone behaviour is kept.
  */
 function is_hold_restrict_enabled(): bool
 {
@@ -223,7 +243,12 @@ function is_hold_restrict_enabled(): bool
     if (!array_key_exists('hold_restrict', $setup)) {
         return true;
     }
-    return strcasecmp(trim((string)$setup['hold_restrict']), 'yes') === 0;
+    if (strcasecmp(trim((string)$setup['hold_restrict']), 'yes') !== 0) {
+        return false;
+    }
+    $usertype = current_results_usertype();
+    $level = (int)($usertype['level'] ?? 0);
+    return !in_array($level, HOLD_EXEMPT_LEVELS, true);
 }
 
 /**
@@ -576,7 +601,8 @@ final class ResultsConfigException extends RuntimeException
 }
 
 /**
- * The viewer's user type as ['id' => int, 'label' => string], or null
+ * The viewer's user type as ['id' => int, 'label' => string,
+ * 'level' => int], or null
  * if it can't be determined.
  *
  * Logged in: read fresh from the `user` table rather than the session,
@@ -598,7 +624,7 @@ function current_results_usertype(): ?array
 
     if ($user !== null) {
         $stmt = $db->prepare(
-            'SELECT t.id, t.usertype
+            'SELECT t.id, t.usertype, t.level
              FROM user u
              JOIN user_types t ON t.id = u.usertype
              WHERE u.id = :id
@@ -607,7 +633,7 @@ function current_results_usertype(): ?array
         $stmt->execute([':id' => (int)($user['id'] ?? 0)]);
         $row = $stmt->fetch();
         if ($row) {
-            return $cached = ['id' => (int)$row['id'], 'label' => (string)$row['usertype']];
+            return $cached = ['id' => (int)$row['id'], 'label' => (string)$row['usertype'], 'level' => (int)$row['level']];
         }
         // Account row gone (deleted mid-session) — fall back to what the
         // session recorded at login.
@@ -615,15 +641,16 @@ function current_results_usertype(): ?array
             return $cached = [
                 'id'    => (int)$user['usertype_id'],
                 'label' => (string)($user['usertype_label'] ?? ''),
+                'level' => (int)($user['level'] ?? 0),
             ];
         }
         return $cached = null;
     }
 
-    $stmt = $db->prepare('SELECT id, usertype FROM user_types WHERE id = :id LIMIT 1');
+    $stmt = $db->prepare('SELECT id, usertype, level FROM user_types WHERE id = :id LIMIT 1');
     $stmt->execute([':id' => (int)GUEST_RESULTS_USERTYPE_ID]);
     $row = $stmt->fetch();
-    return $cached = $row ? ['id' => (int)$row['id'], 'label' => (string)$row['usertype']] : null;
+    return $cached = $row ? ['id' => (int)$row['id'], 'label' => (string)$row['usertype'], 'level' => (int)$row['level']] : null;
 }
 
 /**

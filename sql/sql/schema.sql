@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS setup (
     `text-1`  TEXT NULL, `text-2`  TEXT NULL, `text-3`  TEXT NULL, `text-4`  TEXT NULL, `text-5`  TEXT NULL,
     `text-6`  TEXT NULL, `text-7`  TEXT NULL, `text-8`  TEXT NULL, `text-9`  TEXT NULL, `text-10` TEXT NULL,
     `loginscrn` VARCHAR(10) NOT NULL DEFAULT 'yes',
-    `hold_restrict` VARCHAR(10) NOT NULL DEFAULT 'yes' -- 'yes' = hide stones with maindata.hold = 'yes' from search results
+    `hold_restrict` VARCHAR(10) NOT NULL DEFAULT 'yes' -- 'yes' = hide stones with maindata.hold = 'yes' from plain-user search results (not memo/admin levels 4,5,8,9)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------

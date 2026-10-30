@@ -110,8 +110,8 @@ const CRUD_COLUMN_OVERRIDES = [
             'type' => 'select',
             'label' => 'Hold Restriction',
             'required' => true,
-            'options' => ['yes' => 'Yes — hide stones on hold', 'no' => 'No — show all stones'],
-            'hint' => 'When Yes, stones whose Hold value is "yes" in Main Data are left out of Diamond Search results (Results page, its Excel export and the app). When No, every matching stone is shown, held or not. Applies to all user types.',
+            'options' => ['yes' => 'Yes — hide stones on hold from users', 'no' => 'No — show all stones to everyone'],
+            'hint' => 'When Yes, stones whose Hold value is "yes" in Main Data are left out of Diamond Search results (Results page, its Excel export and the app) for plain user types and guests. memo (level 5), memo-dubai (level 4), Admin and Super Admin always see every stone. When No, everyone sees every matching stone, held or not.',
         ],
         'Fancyfilter' => [
             'type' => 'select',

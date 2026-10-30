@@ -106,6 +106,13 @@ const CRUD_COLUMN_OVERRIDES = [
             'options' => ['yes' => 'Yes — show on Results', 'no' => 'No — hide everywhere'],
             'hint' => 'When Yes, the customer picker plus Memo-1 and Memo-3 buttons appear on the Results page, but only for logged-in users whose role level is 4 or 5. When No, those are hidden for everyone regardless of level.',
         ],
+        'hold_restrict' => [
+            'type' => 'select',
+            'label' => 'Hold Restriction',
+            'required' => true,
+            'options' => ['yes' => 'Yes — hide stones on hold', 'no' => 'No — show all stones'],
+            'hint' => 'When Yes, stones whose Hold value is "yes" in Main Data are left out of Diamond Search results (Results page, its Excel export and the app). When No, every matching stone is shown, held or not. Applies to all user types.',
+        ],
         'Fancyfilter' => [
             'type' => 'select',
             'label' => 'Fancy Filter',

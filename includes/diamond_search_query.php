@@ -200,14 +200,30 @@ function build_maindata_search_where(array $filters): array
         }
     }
 
-    // --- Held stones are never shown in search results, regardless
-    //     of any other filter (see Admin > Hold Selection). ---
-    if (in_array('hold', $validCols, true)) {
+    // --- Held stones are left out of search results, regardless of
+    //     any other filter (see Admin > Hold Selection) — but only while
+    //     setup.hold_restrict = 'yes'. 'no' shows every stone. ---
+    if (in_array('hold', $validCols, true) && is_hold_restrict_enabled()) {
         $clauses[] = "(`hold` IS NULL OR `hold` <> 'yes')";
     }
 
     $where = $clauses !== [] ? implode(' AND ', $clauses) : '1=1';
     return [$where, $params];
+}
+
+/**
+ * Whether held stones (maindata.hold = 'yes') are hidden from search
+ * results: true only when setup.hold_restrict is 'yes' (any case).
+ * If the column doesn't exist yet (migration_setup_hold_restrict.sql
+ * not run), the old always-hide behaviour is kept.
+ */
+function is_hold_restrict_enabled(): bool
+{
+    $setup = get_setup() ?? [];
+    if (!array_key_exists('hold_restrict', $setup)) {
+        return true;
+    }
+    return strcasecmp(trim((string)$setup['hold_restrict']), 'yes') === 0;
 }
 
 /**

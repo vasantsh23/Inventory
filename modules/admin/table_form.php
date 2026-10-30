@@ -90,7 +90,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                         </select>
 
                     <?php elseif ($col['type'] === 'select'): ?>
-                        <select id="<?= e($fieldId) ?>" name="<?= e($fieldId) ?>">
+                        <select id="<?= e($fieldId) ?>" name="<?= e($fieldId) ?>"<?= $col['required'] ? ' required' : '' ?>>
                             <option value="">—</option>
                             <?php foreach ((array)$col['options'] as $optKey => $opt):
                                 // Associative options (e.g. ['A' => 'Ascending']) use the key as

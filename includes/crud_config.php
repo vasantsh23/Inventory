@@ -106,6 +106,18 @@ const CRUD_COLUMN_OVERRIDES = [
             'options' => ['yes' => 'Yes — show on Results', 'no' => 'No — hide everywhere'],
             'hint' => 'When Yes, the customer picker plus Memo-1 and Memo-3 buttons appear on the Results page, but only for logged-in users whose role level is 4 or 5. When No, those are hidden for everyone regardless of level.',
         ],
+        'registration' => [
+            'type' => 'select',
+            'label' => 'Registration',
+            'required' => true,
+            'options' => ['yes' => 'Yes — show Register button on login screen', 'no' => 'No — registration closed'],
+            'hint' => 'When Yes, the login screen shows a Register button that opens the registration form. New accounts are created with Approval = pending and the default user type, so they can\'t log in until you approve them in Admin > User. When No, the button is hidden and the registration page is closed.',
+        ],
+        'Admin emailid' => [
+            'type' => 'email',
+            'label' => 'Admin Email (registrations)',
+            'hint' => 'Receives an email with the details of every new registration. If left blank, Email 1 / Email 2 above are used instead.',
+        ],
         'hold_restrict' => [
             'type' => 'select',
             'label' => 'Hold Restriction',

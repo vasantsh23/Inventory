@@ -384,6 +384,10 @@ function crud_build_values(string $table, array $meta, array $input, bool $isNew
 
         $raw = array_key_exists($name, $input) ? trim((string)$input[$name]) : '';
 
+        if ($col['type'] === 'email' && $raw !== '' && !filter_var($raw, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException("\"{$col['label']}\" is not a valid email address.");
+        }
+
         if ($col['type'] === 'password') {
             if ($raw === '') {
                 continue; // keep existing hash on edit; caller enforces "required" on insert
@@ -471,6 +475,31 @@ function crud_save(string $table, int|string|null $id, array $input): string
     $values = crud_build_values($table, $meta, $input, $id === null);
 
     $db = get_db();
+
+    // user table: friendly message instead of a raw SQL error when the
+    // username or email already belongs to another account (the same
+    // check self-registration does).
+    if ($table === 'user') {
+        $checks = [
+            'username'     => 'Another user already has this username.',
+            'emailid_hash' => 'Another user already has this email address.',
+        ];
+        foreach ($checks as $col => $message) {
+            if (!isset($values[$col]) || $values[$col] === '') {
+                continue;
+            }
+            $sql = "SELECT 1 FROM `user` WHERE `$col` = :v" . ($id !== null ? " AND `{$meta['pk']}` <> :id" : '') . ' LIMIT 1';
+            $dup = $db->prepare($sql);
+            $dup->bindValue(':v', $values[$col]);
+            if ($id !== null) {
+                $dup->bindValue(':id', $id);
+            }
+            $dup->execute();
+            if ($dup->fetchColumn()) {
+                throw new InvalidArgumentException($message);
+            }
+        }
+    }
 
     if ($id === null) {
         if ($values === []) {

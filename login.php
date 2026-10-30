@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/registration.php'; // registration_enabled()
 
 if (is_logged_in()) {
     header('Location: ' . asset_url('/inventory.php'));
@@ -72,6 +73,13 @@ require_once __DIR__ . '/includes/header.php';
             </label>
 
             <button type="submit">Log In</button>
+
+            <?php if (registration_enabled()): ?>
+                <div class="login-register">
+                    <span>New customer?</span>
+                    <a class="btn login-register-btn" href="<?= e(asset_url('/register.php')) ?>">Register</a>
+                </div>
+            <?php endif; ?>
         </form>
     </section>
 

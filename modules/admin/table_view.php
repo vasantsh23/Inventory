@@ -11,7 +11,12 @@ $meta = get_table_meta($table);
 
 $search = trim((string)($_GET['q'] ?? ''));
 $page = max(1, (int)($_GET['page'] ?? 1));
-$result = crud_list($table, $search, $page);
+// "Show only…" dropdowns (CRUD_LIST_FILTERS), e.g. User Type on Results.
+$filters = crud_active_list_filters($table, $meta, $_GET['filter'] ?? []);
+$result = crud_list($table, $search, $page, 20, $filters);
+// Query-string fragment that keeps the active filters on pagination,
+// search and "+ Add New" links.
+$filterQuery = $filters === [] ? '' : '&' . http_build_query(['filter' => $filters]);
 
 $listColumns = crud_list_columns($table, $meta);
 
@@ -22,13 +27,13 @@ $activeNav = 'table:' . $table;
 $dashActionsHtml =
     '<a class="btn" href="' . e(asset_url('/modules/admin/table_export.php?table=' . urlencode($table))) . '">Export to Excel</a>'
     . '<a class="btn" href="#import-panel">Import from Excel</a>'
-    . '<a class="btn btn-accent" href="' . e(asset_url('/modules/admin/table_form.php?table=' . urlencode($table))) . '">+ Add New</a>';
+    . '<a class="btn btn-accent" href="' . e(asset_url('/modules/admin/table_form.php?table=' . urlencode($table) . $filterQuery)) . '">+ Add New</a>';
 
 require_once __DIR__ . '/../../includes/admin_header.php';
 
 $errorMessages = [
     'self_delete'      => 'You can\'t delete your own logged-in account.',
-    'still_referenced' => 'This record can\'t be deleted because other records still depend on it (e.g. a user type still assigned to one or more accounts).',
+    'still_referenced' => 'This record can\'t be deleted because other records still depend on it (e.g. a user type still assigned to one or more accounts, or still used by rows in the Results table).',
     'delete_failed'    => 'This record could not be deleted.',
 ];
 $errorCode = (string)($_GET['error'] ?? '');
@@ -40,6 +45,22 @@ $errorCode = (string)($_GET['error'] ?? '');
         <div class="table-toolbar">
             <form method="get" action="<?= e(asset_url('/modules/admin/table_view.php')) ?>">
                 <input type="hidden" name="table" value="<?= e($table) ?>">
+                <?php foreach (CRUD_LIST_FILTERS[$table] ?? [] as $filterCol):
+                    $filterMeta = $meta['columns'][$filterCol] ?? null;
+                    if ($filterMeta === null) {
+                        continue;
+                    }
+                ?>
+                    <select name="filter[<?= e($filterCol) ?>]" class="search-input" style="width:auto; margin-right:8px;"
+                            aria-label="Filter by <?= e($filterMeta['label']) ?>" data-auto-submit>
+                        <option value="">All <?= e($filterMeta['label']) ?>s</option>
+                        <?php foreach ((array)$filterMeta['options'] as $optKey => $opt):
+                            $optValue = ($filterMeta['type'] === 'select' && is_int($optKey)) ? (string)$opt : (string)$optKey;
+                        ?>
+                            <option value="<?= e($optValue) ?>" <?= ($filters[$filterCol] ?? null) === $optValue ? 'selected' : '' ?>><?= e((string)$opt) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endforeach; ?>
                 <input type="text" name="q" class="search-input" placeholder="Search..." value="<?= e($search) ?>">
             </form>
         </div>
@@ -100,7 +121,7 @@ $errorCode = (string)($_GET['error'] ?? '');
                     <?php if ($p === $result['page']): ?>
                         <span class="current"><?= $p ?></span>
                     <?php else: ?>
-                        <a href="<?= e(asset_url('/modules/admin/table_view.php?table=' . urlencode($table) . '&q=' . urlencode($search) . '&page=' . $p)) ?>"><?= $p ?></a>
+                        <a href="<?= e(asset_url('/modules/admin/table_view.php?table=' . urlencode($table) . '&q=' . urlencode($search) . $filterQuery . '&page=' . $p)) ?>"><?= $p ?></a>
                     <?php endif; ?>
                 <?php endfor; ?>
             </div>
@@ -126,5 +147,8 @@ $errorCode = (string)($_GET['error'] ?? '');
             </div>
         </form>
     </div>
+    <?php if ((CRUD_LIST_FILTERS[$table] ?? []) !== []): ?>
+        <script src="<?= e(asset_url_versioned('/assets/js/auto_submit.js')) ?>"></script>
+    <?php endif; ?>
 <?php
 require_once __DIR__ . '/../../includes/admin_footer.php';

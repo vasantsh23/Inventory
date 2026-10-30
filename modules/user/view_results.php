@@ -47,7 +47,19 @@ if ($cartEnabled && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?
     exit;
 }
 
-$columns = get_results_columns();
+// Columns come from the `results` rows for this viewer's user type. If
+// that user type has no rows, show an error instead of the table.
+$resultsError = '';
+try {
+    $columns = get_results_columns();
+} catch (ResultsConfigException $e) {
+    $columns = [];
+    $resultsError = $e->getMessage();
+    if (($_GET['export'] ?? '') === 'xlsx') {
+        http_response_code(400);
+        exit($resultsError);
+    }
+}
 $rows = [];
 $total = 0;
 
@@ -186,7 +198,9 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="alert alert-success" style="margin-bottom:18px;">Your cart has been cleared.</div>
         <?php endif; ?>
 
-        <?php if ($columns === []): ?>
+        <?php if ($resultsError !== ''): ?>
+            <div class="alert alert-error" role="alert"><?= e($resultsError) ?></div>
+        <?php elseif ($columns === []): ?>
             <div class="panel">
                 <p class="panel-desc">No result columns are configured yet. An administrator can enable columns in the Results table (active = yes) to control what appears here.</p>
             </div>

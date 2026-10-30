@@ -184,10 +184,19 @@ function api_absolute_url(?string $pathOrUrl): ?string
     return full_url($pathOrUrl);
 }
 
-/** Columns for the Results / Cart screens, in the shape the app expects. */
+/**
+ * Columns for the Results / Cart screens, in the shape the app expects —
+ * the `results` rows for the caller's user type. Ends the request with
+ * a 409 error if that user type has no rows in `results`.
+ */
 function api_results_columns(): array
 {
-    return array_map(fn($c) => ['field' => $c['field'], 'label' => $c['label']], get_results_columns());
+    try {
+        $columns = get_results_columns();
+    } catch (ResultsConfigException $e) {
+        api_error(409, $e->getMessage(), 'results_not_configured');
+    }
+    return array_map(fn($c) => ['field' => $c['field'], 'label' => $c['label']], $columns);
 }
 
 /**

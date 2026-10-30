@@ -543,16 +543,108 @@ function format_measurements_display(?string $measurements): string
 }
 
 /**
- * Read the `results` table's active columns (label = colname, data
- * source = fldname), validated against maindata's real columns —
- * fldname is admin-editable, so it must never be trusted directly as
- * a SQL identifier. Shared by the Results page and the Cart/View
- * Results page, so both render the same set of columns.
+ * User type used for the Results pages when nobody is logged in (guest
+ * browsing, setup.loginscrn = 'no'). Normally set in config/config.php;
+ * this fallback keeps the site working if that line hasn't been added.
+ */
+if (!defined('GUEST_RESULTS_USERTYPE_ID')) {
+    define('GUEST_RESULTS_USERTYPE_ID', 1);
+}
+
+/**
+ * Thrown by get_results_columns() when the Results pages can't be built
+ * for the viewer's user type. The message is safe to show to the user.
+ */
+final class ResultsConfigException extends RuntimeException
+{
+}
+
+/**
+ * The viewer's user type as ['id' => int, 'label' => string], or null
+ * if it can't be determined.
+ *
+ * Logged in: read fresh from the `user` table rather than the session,
+ * so an admin changing someone's user type takes effect on their next
+ * page load, not only after they log out and back in.
+ * Guest: the GUEST_RESULTS_USERTYPE_ID user type.
+ */
+function current_results_usertype(): ?array
+{
+    static $resolved = false;
+    static $cached = null;
+    if ($resolved) {
+        return $cached;
+    }
+    $resolved = true;
+
+    $db = get_db();
+    $user = function_exists('current_user') ? current_user() : null;
+
+    if ($user !== null) {
+        $stmt = $db->prepare(
+            'SELECT t.id, t.usertype
+             FROM user u
+             JOIN user_types t ON t.id = u.usertype
+             WHERE u.id = :id
+             LIMIT 1'
+        );
+        $stmt->execute([':id' => (int)($user['id'] ?? 0)]);
+        $row = $stmt->fetch();
+        if ($row) {
+            return $cached = ['id' => (int)$row['id'], 'label' => (string)$row['usertype']];
+        }
+        // Account row gone (deleted mid-session) — fall back to what the
+        // session recorded at login.
+        if (isset($user['usertype_id'])) {
+            return $cached = [
+                'id'    => (int)$user['usertype_id'],
+                'label' => (string)($user['usertype_label'] ?? ''),
+            ];
+        }
+        return $cached = null;
+    }
+
+    $stmt = $db->prepare('SELECT id, usertype FROM user_types WHERE id = :id LIMIT 1');
+    $stmt->execute([':id' => (int)GUEST_RESULTS_USERTYPE_ID]);
+    $row = $stmt->fetch();
+    return $cached = $row ? ['id' => (int)$row['id'], 'label' => (string)$row['usertype']] : null;
+}
+
+/**
+ * Read the `results` table's active columns for the viewer's user type
+ * (label = colname, data source = fldname), validated against
+ * maindata's real columns — fldname is admin-editable, so it must never
+ * be trusted directly as a SQL identifier. Shared by the Results page,
+ * the Cart/View Selected page and the app API, so all render the same
+ * set of columns.
+ *
+ * Throws ResultsConfigException when the viewer's user type can't be
+ * determined, or when `results` has no rows at all for that user type.
+ * (Rows that exist but are all inactive are not an error — that returns
+ * [] and the pages show their usual "no columns configured" notice.)
  */
 function get_results_columns(): array
 {
+    $usertype = current_results_usertype();
+    if ($usertype === null) {
+        throw new ResultsConfigException(
+            'Your user type could not be determined, so results cannot be displayed. Please contact the administrator.'
+        );
+    }
+
+    $db = get_db();
+    $existsStmt = $db->prepare('SELECT 1 FROM results WHERE usertype = :ut LIMIT 1');
+    $existsStmt->execute([':ut' => $usertype['id']]);
+    if (!$existsStmt->fetchColumn()) {
+        throw new ResultsConfigException(sprintf(
+            'Results have not been set up for your user type (%s). Please contact the administrator.',
+            $usertype['label'] !== '' ? $usertype['label'] : '#' . $usertype['id']
+        ));
+    }
+
     $validCols = get_maindata_columns();
-    $stmt = get_db()->query("SELECT colname, fldname FROM results WHERE active = 'yes' ORDER BY orderid ASC");
+    $stmt = $db->prepare("SELECT colname, fldname FROM results WHERE usertype = :ut AND active = 'yes' ORDER BY orderid ASC");
+    $stmt->execute([':ut' => $usertype['id']]);
     $out = [];
     foreach ($stmt->fetchAll() as $row) {
         if (in_array($row['fldname'], $validCols, true)) {

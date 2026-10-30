@@ -145,6 +145,9 @@ const CRUD_COLUMN_OVERRIDES = [
     ],
     'results' => [
         'id'     => ['type' => 'readonly'],
+        'usertype' => ['type' => 'lookup', 'label' => 'User Type', 'required' => true,
+                       'lookup_table' => 'user_types', 'lookup_value' => 'id', 'lookup_display' => 'usertype',
+                       'hint' => 'Which user type sees this column on Results and View Cart / View Selected. Every user type needs at least one row here, otherwise its users get an error on those pages.'],
         'active' => ['type' => 'select', 'label' => 'Active', 'options' => ['yes', 'no']],
         'orderid' => ['label' => 'Order Id', 'hint' => 'Controls display order — lower numbers appear first.'],
     ],
@@ -299,6 +302,23 @@ const CRUD_COLUMN_OVERRIDES = [
     ],
 ];
 
+/**
+ * List-view filter dropdowns, per table: each listed column (must be a
+ * 'lookup' or 'select' column) gets a "show only…" dropdown above the
+ * table, and the same filter carries through search and pagination.
+ */
+const CRUD_LIST_FILTERS = [
+    'results' => ['usertype'],
+];
+
+/**
+ * List-view sort order, per table (raw ORDER BY — fixed config only,
+ * never user input). Tables not listed sort by primary key, newest first.
+ */
+const CRUD_LIST_ORDER = [
+    'results' => '`usertype` ASC, `orderid` ASC, `id` ASC',
+];
+
 /** Columns of type 'forecolor-N' / 'backcolor-N' render as color pickers. */
 function crud_is_color_column(string $column): bool
 {
@@ -323,7 +343,7 @@ const CRUD_LIST_COLUMNS = [
     'upload'         => ['id', 'API', 'API link', 'Excel', 'CSV'],
     'maindata'       => ['id', 'StockNo', 'Shape', 'Weight', 'Color', 'Clarity', 'CutGrade', 'Price', 'avail'],
     'diamond_search' => ['id', 'colname', 'fldname', 'active', 'orderid'],
-    'results'        => ['id', 'colname', 'fldname', 'active', 'orderid'],
+    'results'        => ['id', 'usertype', 'colname', 'fldname', 'active', 'orderid'],
     'diamond_details' => ['id', 'colname', 'fldname', 'data_type', 'active', 'orderid'],
     'adv_filter'      => ['id', 'colname', 'fldname', 'active', 'orderid'],
     'customer'        => ['custid', 'custnm', 'shortnm', 'email', 'address'],

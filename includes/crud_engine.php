@@ -81,6 +81,67 @@ function crud_lookup_options(string $lookupTable, string $valueCol, string $disp
     return $options;
 }
 
+/**
+ * Resolve a submitted/imported value for a 'lookup' column to the
+ * referenced row's id. Accepts the id itself or — handy for Excel
+ * imports — its display label (case-insensitive, e.g. "Admin").
+ * Returns null if it matches neither.
+ */
+function crud_resolve_lookup(array $col, string $raw): ?string
+{
+    $raw = trim($raw);
+    if ($raw === '') {
+        return null;
+    }
+    $options = (array)$col['options'];
+    if (array_key_exists($raw, $options)) {
+        return (string)$raw;
+    }
+    foreach ($options as $optId => $optLabel) {
+        if (strcasecmp(trim((string)$optLabel), $raw) === 0) {
+            return (string)$optId;
+        }
+    }
+    return null;
+}
+
+/**
+ * The list-view filters for $table that are actually in effect, taken
+ * from $query (normally $_GET['filter']) — only columns allowed by
+ * CRUD_LIST_FILTERS, and only values that are real options of that
+ * column. Returns [column => stored value].
+ */
+function crud_active_list_filters(string $table, array $meta, mixed $query): array
+{
+    $out = [];
+    if (!is_array($query)) {
+        return $out;
+    }
+    foreach (CRUD_LIST_FILTERS[$table] ?? [] as $colName) {
+        $col = $meta['columns'][$colName] ?? null;
+        if ($col === null || !isset($query[$colName]) || !is_scalar($query[$colName])) {
+            continue;
+        }
+        $raw = trim((string)$query[$colName]);
+        if ($raw === '') {
+            continue;
+        }
+        if ($col['type'] === 'lookup') {
+            if (array_key_exists($raw, (array)$col['options'])) {
+                $out[$colName] = $raw;
+            }
+        } elseif ($col['type'] === 'select' && is_array($col['options'])) {
+            foreach ($col['options'] as $optKey => $opt) {
+                if ((is_int($optKey) ? $opt : (string)$optKey) === $raw) {
+                    $out[$colName] = $raw;
+                    break;
+                }
+            }
+        }
+    }
+    return $out;
+}
+
 /** Discover column metadata for $table (auto + overrides from crud_config.php). */
 function get_table_meta(string $table): array
 {
@@ -117,6 +178,7 @@ function get_table_meta(string $table): array
             'type'      => $overrides[$name]['type'] ?? ($isBinary ? 'text' : ($isLongText ? 'textarea' : 'text')),
             'options'   => $overrides[$name]['options'] ?? null,
             'hint'      => $overrides[$name]['hint'] ?? null,
+            'required'  => (bool)($overrides[$name]['required'] ?? false),
             'encrypted' => $overrides[$name]['encrypted'] ?? $isBinary,
             'nullable'  => $col['IS_NULLABLE'] === 'YES',
             'auto'      => str_contains($col['EXTRA'], 'auto_increment'),
@@ -193,34 +255,78 @@ function crud_decrypt_row(array $meta, array $row): array
     return $row;
 }
 
-/** Paginated, optionally-searched list of rows. */
-function crud_list(string $table, string $search, int $page, int $perPage = 20): array
+/**
+ * Paginated, optionally-searched list of rows. $filters is
+ * [column => exact value], already validated by
+ * crud_active_list_filters().
+ */
+function crud_list(string $table, string $search, int $page, int $perPage = 20, array $filters = []): array
 {
     $meta = get_table_meta($table);
     $db = get_db();
     $page = max(1, $page);
     $offset = ($page - 1) * $perPage;
 
-    $where = '';
+    $conditions = [];
     $params = [];
+
+    $f = 0;
+    foreach ($filters as $colName => $value) {
+        if (!array_key_exists($colName, $meta['columns'])) {
+            continue;
+        }
+        $conditions[] = "`$colName` = :f$f";
+        $params[":f$f"] = (string)$value;
+        $f++;
+    }
+
     if ($search !== '') {
         $searchable = crud_searchable_columns($meta);
-        if ($searchable !== []) {
-            $clauses = [];
-            foreach ($searchable as $i => $col) {
-                $clauses[] = "`$col` LIKE :s$i";
-                $params[":s$i"] = '%' . $search . '%';
+        $clauses = [];
+        foreach ($searchable as $i => $col) {
+            $clauses[] = "`$col` LIKE :s$i";
+            $params[":s$i"] = '%' . $search . '%';
+        }
+        // Lookup columns store an id, so match the search text against
+        // their display labels instead (e.g. searching "Admin" finds rows
+        // whose User Type is Admin).
+        $l = 0;
+        foreach ($meta['columns'] as $colName => $col) {
+            if ($col['type'] !== 'lookup') {
+                continue;
             }
-            $where = 'WHERE ' . implode(' OR ', $clauses);
+            $matchIds = [];
+            foreach ((array)$col['options'] as $optId => $optLabel) {
+                if (stripos((string)$optLabel, $search) !== false) {
+                    $matchIds[] = (string)$optId;
+                }
+            }
+            if ($matchIds === []) {
+                continue;
+            }
+            $phs = [];
+            foreach ($matchIds as $id) {
+                $ph = ":l{$l}";
+                $phs[] = $ph;
+                $params[$ph] = $id;
+                $l++;
+            }
+            $clauses[] = "`$colName` IN (" . implode(', ', $phs) . ')';
+        }
+        if ($clauses !== []) {
+            $conditions[] = '(' . implode(' OR ', $clauses) . ')';
         }
     }
+
+    $where = $conditions === [] ? '' : 'WHERE ' . implode(' AND ', $conditions);
+    $orderBy = CRUD_LIST_ORDER[$table] ?? "`{$meta['pk']}` DESC";
 
     $countStmt = $db->prepare("SELECT COUNT(*) AS c FROM `$table` $where");
     $countStmt->execute($params);
     $total = (int)$countStmt->fetch()['c'];
 
     $stmt = $db->prepare(
-        "SELECT * FROM `$table` $where ORDER BY `{$meta['pk']}` DESC LIMIT :lim OFFSET :off"
+        "SELECT * FROM `$table` $where ORDER BY $orderBy LIMIT :lim OFFSET :off"
     );
     foreach ($params as $k => $v) {
         $stmt->bindValue($k, $v, PDO::PARAM_STR);
@@ -327,11 +433,24 @@ function crud_build_values(string $table, array $meta, array $input, bool $isNew
         }
 
         if ($col['type'] === 'lookup') {
-            if ($raw === '' || !array_key_exists($raw, (array)$col['options'])) {
-                continue; // must be a real id from the referenced table
+            $resolved = crud_resolve_lookup($col, $raw);
+            if ($resolved === null) {
+                // Must be a real id (or label) from the referenced table.
+                // A required lookup may not be left out of a new row, nor
+                // be blanked/invalid on an edit that includes it.
+                if ($col['required'] && ($isNew || array_key_exists($name, $input))) {
+                    throw new InvalidArgumentException($raw === ''
+                        ? "\"{$col['label']}\" is required."
+                        : "\"{$col['label']}\" value \"$raw\" doesn't match any existing option.");
+                }
+                continue;
             }
-            $values[$name] = (int)$raw;
+            $values[$name] = (int)$resolved;
             continue;
+        }
+
+        if ($col['required'] && $raw === '' && ($isNew || array_key_exists($name, $input))) {
+            throw new InvalidArgumentException("\"{$col['label']}\" is required.");
         }
 
         $values[$name] = $raw === '' && $col['nullable'] ? null : $raw;
@@ -568,6 +687,11 @@ function crud_import_rows(string $table, array $headerRow, array $dataRows): arr
             foreach ($input as $colName => $rawVal) {
                 $colMeta = $meta['columns'][$colName] ?? null;
                 $rawVal = trim((string)$rawVal);
+                if ($colMeta && $colMeta['type'] === 'lookup' && !$colMeta['required'] && $rawVal !== ''
+                    && crud_resolve_lookup($colMeta, $rawVal) === null) {
+                    $stats['errors'][] = 'Row ' . ($rowNum + 2) . ': "' . $colMeta['label'] . '" value "' . $rawVal
+                        . '" doesn\'t match any existing option — left unchanged.';
+                }
                 if ($colMeta && $colMeta['type'] === 'select' && $rawVal !== '' && is_array($colMeta['options'])) {
                     $matches = false;
                     foreach ($colMeta['options'] as $optKey => $opt) {

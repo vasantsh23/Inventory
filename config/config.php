@@ -118,6 +118,9 @@ define('APP_NAME', 'Inventory Management System');
 define('APP_VERSION', '08-Oct-26V1.19');
 // Check that Results / View Cart media + certificate links can be opened before showing their icons.
 define('MEDIA_VALIDATE', filter_var(getenv('MEDIA_VALIDATE') ?: 'true', FILTER_VALIDATE_BOOLEAN));
+// user_types.id whose `results` rows guests see on Results / View Selected
+// when setup.loginscrn = 'no' and nobody is logged in (1 = 'Standard User').
+define('GUEST_RESULTS_USERTYPE_ID', 1);
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_MINUTES', 15);
 

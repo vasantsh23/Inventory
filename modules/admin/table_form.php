@@ -34,7 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     $row = $input ?? [];
-} elseif (!$isNew) {
+} elseif ($isNew) {
+    // Preselect values passed from a filtered list's "+ Add New" link
+    // (e.g. the User Type currently shown on the Results list).
+    $row = crud_active_list_filters($table, $meta, $_GET['filter'] ?? []);
+} else {
     $row = crud_get($table, $id) ?? [];
     if ($row === []) {
         http_response_code(404);
@@ -69,7 +73,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                 $fieldId = crud_wire_name($colName);
             ?>
                 <div class="form-group<?= $col['type'] === 'textarea' ? ' full-width' : '' ?>">
-                    <label for="<?= e($fieldId) ?>"><?= e($col['label']) ?></label>
+                    <label for="<?= e($fieldId) ?>"><?= e($col['label']) ?><?= $col['required'] ? ' <span aria-hidden="true">*</span>' : '' ?></label>
 
                     <?php if ($col['type'] === 'readonly'): ?>
                         <div class="readonly-value"><?= e($value !== '' ? $value : '—') ?></div>
@@ -101,7 +105,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                         </select>
 
                     <?php elseif ($col['type'] === 'lookup'): ?>
-                        <select id="<?= e($fieldId) ?>" name="<?= e($fieldId) ?>">
+                        <select id="<?= e($fieldId) ?>" name="<?= e($fieldId) ?>"<?= $col['required'] ? ' required' : '' ?>>
                             <option value="">—</option>
                             <?php foreach ((array)$col['options'] as $optId => $optLabel): ?>
                                 <option value="<?= e((string)$optId) ?>" <?= (string)$value === (string)$optId ? 'selected' : '' ?>><?= e($optLabel) ?></option>

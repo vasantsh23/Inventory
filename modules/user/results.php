@@ -53,11 +53,23 @@ if (!is_array($filters)) {
     $filters = [];
 }
 [$where, $params] = build_maindata_search_where($filters);
-$columns = get_results_columns();
+// Columns come from the `results` rows for this viewer's user type. If
+// that user type has no rows, show an error instead of the table.
+$resultsError = '';
+try {
+    $columns = get_results_columns();
+} catch (ResultsConfigException $e) {
+    $columns = [];
+    $resultsError = $e->getMessage();
+}
 $appliedFilters = build_applied_filters_summary($filters);
 
 // ---- Excel export: same filters, no pagination ----
 if (($_GET['export'] ?? '') === 'xlsx') {
+    if ($resultsError !== '') {
+        http_response_code(400);
+        exit($resultsError);
+    }
     if ($columns === []) {
         http_response_code(400);
         exit('No result columns are configured.');
@@ -82,6 +94,10 @@ if (($_GET['export'] ?? '') === 'xlsx') {
 //      button's JS), ignoring the current search filters entirely —
 //      whatever the person selected is exactly what gets exported. ----
 if (($_GET['export'] ?? '') === 'xlsx_selected') {
+    if ($resultsError !== '') {
+        http_response_code(400);
+        exit($resultsError);
+    }
     if ($columns === []) {
         http_response_code(400);
         exit('No result columns are configured.');
@@ -208,7 +224,7 @@ require_once __DIR__ . '/../../includes/header.php';
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php if ($canMemo): ?>
+        <?php if ($canMemo && $resultsError === ''): ?>
             <div class="memo-bar">
                 <div class="memo-error" id="memoError" hidden></div>
                 <div class="memo-bar-row">
@@ -236,7 +252,9 @@ require_once __DIR__ . '/../../includes/header.php';
             </form>
         <?php endif; ?>
 
-        <?php if ($columns === []): ?>
+        <?php if ($resultsError !== ''): ?>
+            <div class="alert alert-error" role="alert"><?= e($resultsError) ?></div>
+        <?php elseif ($columns === []): ?>
             <div class="panel">
                 <p class="panel-desc">No result columns are configured yet. An administrator can enable columns in the Results table (active = yes) to control what appears here.</p>
             </div>

@@ -681,6 +681,23 @@ ALTER TABLE diamond_details ADD COLUMN data_type VARCHAR(50) NULL AFTER fldname;
 CREATE TABLE adv_filter LIKE diamond_search;
 INSERT INTO adv_filter SELECT * FROM diamond_search;
 
+-- RESULTS.usertype: the Results / View Cart columns are configured per
+-- user type (FK -> user_types.id, same id as user.usertype). Added only
+-- now, after diamond_details was cloned from results, so that table
+-- doesn't inherit it. Every user type starts with the same column set;
+-- a user type with no rows here gets an error on the Results pages.
+ALTER TABLE results
+    ADD COLUMN usertype INT UNSIGNED NULL AFTER id;
+UPDATE results SET usertype = 1;
+INSERT INTO results (usertype, colname, fldname, active, orderid)
+SELECT t.id, r.colname, r.fldname, r.active, r.orderid
+FROM user_types t CROSS JOIN results r
+WHERE r.usertype = 1 AND t.id <> 1;
+ALTER TABLE results
+    MODIFY COLUMN usertype INT UNSIGNED NOT NULL,
+    ADD INDEX idx_results_usertype_order (usertype, orderid),
+    ADD CONSTRAINT fk_results_usertype FOREIGN KEY (usertype) REFERENCES user_types(id);
+
 -- ------------------------------------------------------------
 -- LOOKUP TABLES (cut, fluorescence, polish, symmetry, shape,
 -- location) generated from data_dictionary.xlsx. `id` is the

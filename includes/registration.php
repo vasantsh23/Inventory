@@ -11,7 +11,8 @@
  * - On success a row is inserted into `user` (approval = 'pending',
  *   default user type), stored exactly like Admin > User stores it:
  *   bcrypt password, AES-encrypted email/addresses/phones, HMAC email
- *   hash. Then one e-mail goes to the new user and one to the admin
+ *   hash. The user type is set explicitly (see
+ *   registration_default_usertype_id()). Then one e-mail goes to the new user and one to the admin
  *   address in setup.`Admin emailid`.
  */
 
@@ -146,6 +147,26 @@ function registration_validate(array $post): array
 }
 
 /**
+ * user_types.id given to self-registered accounts: the "Standard User"
+ * type if it exists, otherwise the lowest-level type that isn't an
+ * admin (level < 8). Set explicitly on insert because databases
+ * upgraded with migration_user_types.sql have no DEFAULT on
+ * user.usertype (fresh schema.sql installs do).
+ */
+function registration_default_usertype_id(): int
+{
+    $db = get_db();
+    $id = $db->query("SELECT id FROM user_types WHERE usertype = 'Standard User' LIMIT 1")->fetchColumn();
+    if ($id === false) {
+        $id = $db->query('SELECT id FROM user_types WHERE level < 8 ORDER BY level ASC, id ASC LIMIT 1')->fetchColumn();
+    }
+    if ($id === false) {
+        throw new RuntimeException('No non-admin user type exists in user_types for new registrations.');
+    }
+    return (int)$id;
+}
+
+/**
  * Insert the new account. Returns the new user id. Throws
  * InvalidArgumentException with a user-facing message if the username
  * or email was taken in the moment between validation and insert.
@@ -168,6 +189,7 @@ function registration_create_user(array $v): int
         'address-5'    => encrypt_value($v['address-5']),
         'telephone'    => encrypt_value($v['telephone']),
         'gsm'          => encrypt_value($v['gsm']),
+        'usertype'     => registration_default_usertype_id(),
         'approval'     => 'pending',
     ];
     $names = [];

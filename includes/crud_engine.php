@@ -476,6 +476,20 @@ function crud_save(string $table, int|string|null $id, array $input): string
 
     $db = get_db();
 
+    // setup table: Registration = yes needs an Admin emailid, because
+    // that's where new-registration e-mails go (register.php refuses to
+    // run without it). Checks the row as it will be after saving.
+    if ($table === 'setup') {
+        $current = $id !== null ? (crud_get($table, $id) ?? []) : [];
+        $registration = array_key_exists('registration', $values) ? $values['registration'] : ($current['registration'] ?? 'yes');
+        $adminEmail = array_key_exists('Admin emailid', $values) ? $values['Admin emailid'] : ($current['Admin emailid'] ?? null);
+        if (array_key_exists('registration', $meta['columns'])
+            && strcasecmp(trim((string)$registration), 'yes') === 0
+            && trim((string)$adminEmail) === '') {
+            throw new InvalidArgumentException('"Admin Email (registrations)" is required while Registration is Yes — new registrations are emailed to it. Fill it in, or set Registration to No.');
+        }
+    }
+
     // user table: friendly message instead of a raw SQL error when the
     // username or email already belongs to another account (the same
     // check self-registration does).

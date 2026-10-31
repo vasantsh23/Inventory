@@ -116,7 +116,7 @@ const CRUD_COLUMN_OVERRIDES = [
         'Admin emailid' => [
             'type' => 'email',
             'label' => 'Admin Email (registrations)',
-            'hint' => 'Receives an email with the details of every new registration. If left blank, Email 1 / Email 2 above are used instead.',
+            'hint' => 'Receives an email with the details of every new registration. Required while Registration is Yes — without it the registration page shows an error and accepts no registrations. Use Admin > Email Test to check delivery.',
         ],
         'hold_restrict' => [
             'type' => 'select',

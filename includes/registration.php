@@ -56,16 +56,30 @@ function registration_enabled(): bool
         && strcasecmp(trim((string)$setup['registration']), 'yes') === 0;
 }
 
-/** Where the "new registration" e-mail goes: setup.`Admin emailid`, else emailid1/emailid2. */
+/**
+ * Where the "new registration" e-mail goes: setup.`Admin emailid`.
+ * Returns '' if it's blank or not a valid address.
+ */
 function registration_admin_email(): string
 {
     $setup = get_setup() ?? [];
     $admin = trim((string)($setup['Admin emailid'] ?? ''));
-    if ($admin !== '' && filter_var($admin, FILTER_VALIDATE_EMAIL)) {
-        return $admin;
+    return ($admin !== '' && filter_var($admin, FILTER_VALIDATE_EMAIL)) ? $admin : '';
+}
+
+/**
+ * Why registration can't run right now even though it's switched on,
+ * as a message for the person registering — or null if all is well.
+ * Currently: setup.`Admin emailid` must be filled in with a valid
+ * address, otherwise nobody would be told about new registrations.
+ */
+function registration_setup_error(): ?string
+{
+    if (registration_admin_email() === '') {
+        error_log('registration: setup.`Admin emailid` is blank or invalid; registration refused.');
+        return 'Registration is not available at the moment because the administrator email address has not been set up. Please contact us to open an account.';
     }
-    $fallback = trim(primary_email($setup));
-    return filter_var($fallback, FILTER_VALIDATE_EMAIL) ? $fallback : '';
+    return null;
 }
 
 /**
@@ -216,7 +230,8 @@ function registration_create_user(array $v): int
 
 /**
  * Send the two e-mails. Returns ['user' => bool, 'admin' => bool]
- * (true = handed to the mail system).
+ * (true = handed to the server's mail program; false = rejected
+ * straight away — the reason is written to the error log).
  */
 function registration_send_mails(array $v): array
 {
@@ -253,7 +268,7 @@ function registration_send_mails(array $v): array
         $adminSent = send_plain_mail($adminTo, 'New registration: ' . $v['username'] . ' (' . $v['company'] . ')',
             $adminBody, $company, $v['emailid']);
     } else {
-        error_log('registration: no Admin emailid (or emailid1/emailid2) in setup; admin was not notified.');
+        error_log('registration: setup.`Admin emailid` is blank or invalid; admin was not notified.');
     }
 
     return ['user' => $userSent, 'admin' => $adminSent];

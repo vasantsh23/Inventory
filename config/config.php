@@ -122,6 +122,15 @@ define('MEDIA_VALIDATE', filter_var(getenv('MEDIA_VALIDATE') ?: 'true', FILTER_V
 // when setup.loginscrn = 'no' and nobody is logged in (1 = 'Standard User').
 define('GUEST_RESULTS_USERTYPE_ID', 1);
 define('MAX_LOGIN_ATTEMPTS', 5);
+
+// Outgoing e-mail (registration confirmations, Admin > Email Test).
+// With a Postmark server token, mail goes through Postmark; leave it ''
+// to send with the server's own PHP mail() instead.
+// MAIL_FROM_ADDRESS must be a verified Sender Signature (or on a
+// verified domain) in Postmark — a gmail.com address can't be used.
+define('POSTMARK_SERVER_TOKEN', '');          // Postmark > your Server > API Tokens
+define('POSTMARK_MESSAGE_STREAM', 'outbound'); // 'outbound' = default transactional stream
+define('MAIL_FROM_ADDRESS', '');              // e.g. 'info@labtest02.site'
 define('LOCKOUT_MINUTES', 15);
 
 // ---- Base URL (auto-detected) -----------------------------------------

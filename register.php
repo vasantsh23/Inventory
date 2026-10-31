@@ -21,6 +21,8 @@ if (is_logged_in()) {
 const REGISTRATION_MIN_FILL_SECONDS = 3;
 
 $enabled = registration_enabled();
+// Switched on but not usable (e.g. Admin emailid blank) — show why.
+$setupError = $enabled ? registration_setup_error() : null;
 $fields = registration_fields();
 $errors = [];
 $old = [];
@@ -32,7 +34,7 @@ if (isset($_SESSION['registration_done'])) {
     unset($_SESSION['registration_done']);
 }
 
-if ($enabled && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($enabled && $setupError === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $started = (int)($_SESSION['registration_t'] ?? 0);
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
         $errors['form'] = 'Your session expired. Please try again.';
@@ -40,7 +42,7 @@ if ($enabled && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (trim((string)($_POST['website'] ?? '')) !== '' || $started === 0 || time() - $started < REGISTRATION_MIN_FILL_SECONDS) {
         // Bot: honeypot filled or submitted too fast. Pretend success, store nothing.
         unset($_SESSION['registration_t']);
-        $_SESSION['registration_done'] = ['user' => true];
+        $_SESSION['registration_done'] = ['user' => true, 'admin' => true, 'email' => ''];
         header('Location: ' . asset_url('/register.php'), true, 303);
         exit;
     } else {
@@ -51,7 +53,11 @@ if ($enabled && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 registration_create_user($values);
                 $mail = registration_send_mails($values);
                 unset($_SESSION['registration_t']);
-                $_SESSION['registration_done'] = ['user' => $mail['user']];
+                $_SESSION['registration_done'] = [
+                    'user'  => $mail['user'],
+                    'admin' => $mail['admin'],
+                    'email' => $values['emailid'],
+                ];
                 header('Location: ' . asset_url('/register.php'), true, 303);
                 exit;
             } catch (InvalidArgumentException $e) {
@@ -70,7 +76,7 @@ unset($old['password']); // never echo a password back into the form
 // Start the fill-time clock when the form is first shown. Not restarted
 // after a failed submit, so correcting a mistake and resubmitting
 // quickly isn't mistaken for a bot.
-if ($enabled && $done === null && empty($_SESSION['registration_t'])) {
+if ($enabled && $setupError === null && $done === null && empty($_SESSION['registration_t'])) {
     $_SESSION['registration_t'] = time();
 }
 
@@ -84,13 +90,27 @@ require_once __DIR__ . '/includes/header.php';
             <p>Online registration is currently closed. Please contact us to open an account.</p>
             <p><a href="<?= e(asset_url('/login.php')) ?>">Back to sign in</a></p>
 
+        <?php elseif ($setupError !== null): ?>
+            <div class="alert alert-error" role="alert"><?= e($setupError) ?></div>
+            <p style="margin-top:18px;"><a class="btn" href="<?= e(asset_url('/login.php')) ?>">Back to sign in</a></p>
+
         <?php elseif ($done !== null): ?>
             <div class="alert alert-success" role="status">
                 Thank you, your registration has been received. Your account is now awaiting approval, and you’ll be able to log in once it has been approved.
                 <?php if (!empty($done['user'])): ?>
-                    A confirmation has been sent to your email address.
+                    A confirmation has been sent to your email address. If you don’t see it within a few minutes, please check your spam folder.
                 <?php endif; ?>
             </div>
+            <?php if (empty($done['user'])): ?>
+                <div class="alert alert-warning" role="alert">
+                    We could not send the confirmation email<?= ($done['email'] ?? '') !== '' ? ' to ' . e((string)$done['email']) : '' ?>. Your registration has still been saved.
+                </div>
+            <?php endif; ?>
+            <?php if (empty($done['admin'])): ?>
+                <div class="alert alert-warning" role="alert">
+                    We could not notify our team about your registration automatically. Please contact us so we can approve your account.
+                </div>
+            <?php endif; ?>
             <p style="margin-top:18px;"><a class="btn" href="<?= e(asset_url('/login.php')) ?>">Back to sign in</a></p>
 
         <?php else: ?>

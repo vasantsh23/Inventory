@@ -469,6 +469,24 @@ function crud_build_values(string $table, array $meta, array $input, bool $isNew
 }
 
 /** Insert (id === null) or update (id set) a row. Returns the row's id. */
+/**
+ * Messages produced while saving (e.g. "approval email sent to …"),
+ * collected so the page that called crud_save() can show them.
+ * Each entry: ['type' => 'success'|'warning', 'message' => string].
+ */
+function crud_add_notice(string $type, string $message): void
+{
+    $GLOBALS['__crud_notices'][] = ['type' => $type, 'message' => $message];
+}
+
+/** Return the collected notices and clear the list. */
+function crud_take_notices(): array
+{
+    $notices = $GLOBALS['__crud_notices'] ?? [];
+    $GLOBALS['__crud_notices'] = [];
+    return $notices;
+}
+
 function crud_save(string $table, int|string|null $id, array $input): string
 {
     $meta = get_table_meta($table);
@@ -531,6 +549,15 @@ function crud_save(string $table, int|string|null $id, array $input): string
         return $db->lastInsertId();
     }
 
+    // user table: remember the Approval before this update, so an
+    // account moving to "approved" gets an approval email (below).
+    $previousApproval = null;
+    if ($table === 'user' && array_key_exists('approval', $values)) {
+        $prev = $db->prepare("SELECT approval FROM `user` WHERE `{$meta['pk']}` = :id");
+        $prev->execute([':id' => $id]);
+        $previousApproval = $prev->fetchColumn();
+    }
+
     if ($values !== []) {
         $sets = [];
         foreach (array_keys($values) as $c) {
@@ -544,6 +571,22 @@ function crud_save(string $table, int|string|null $id, array $input): string
         }
         $stmt->bindValue(':__id', $id);
         $stmt->execute();
+    }
+
+    // Approval changed to "approved": tell the user by email. The save
+    // has already succeeded; a mail failure is reported, not thrown.
+    if ($table === 'user' && $previousApproval !== false && $previousApproval !== null
+        && $previousApproval !== 'approved' && ($values['approval'] ?? null) === 'approved') {
+        require_once __DIR__ . '/registration.php';
+        $mail = user_send_approval_mail($id);
+        $who = (string)($values['username'] ?? ('user #' . $id));
+        if ($mail['ok']) {
+            crud_add_notice('success', 'Approval email sent to ' . $mail['email'] . ' (' . $who . ').');
+        } else {
+            crud_add_notice('warning', 'Account ' . $who . ' was approved, but the approval email could not be sent'
+                . ($mail['email'] !== '' ? ' to ' . $mail['email'] : '') . ': ' . rtrim($mail['error'], '. ')
+                . '. Please tell the user yourself.');
+        }
     }
     return $id;
 }
@@ -758,6 +801,9 @@ function crud_import_rows(string $table, array $headerRow, array $dataRows): arr
             try {
                 crud_save($table, $existingId, $input);
                 $existingId === null ? $stats['inserted']++ : $stats['updated']++;
+                foreach (crud_take_notices() as $notice) {
+                    $stats['errors'][] = 'Row ' . ($rowNum + 2) . ': ' . $notice['message'];
+                }
             } catch (Throwable $e) {
                 $stats['skipped']++;
                 $stats['errors'][] = 'Row ' . ($rowNum + 2) . ': ' . $e->getMessage();

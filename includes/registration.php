@@ -273,3 +273,48 @@ function registration_send_mails(array $v): array
 
     return ['user' => $userSent, 'admin' => $adminSent];
 }
+
+/**
+ * E-mail a user that their account has been approved. Called by
+ * crud_save() when Admin > User (or an Excel import) changes an
+ * account's Approval to "approved". Replies go to setup.`Admin emailid`,
+ * since the From address is normally a no-reply one.
+ *
+ * Returns ['ok' => bool, 'email' => recipient or '', 'error' => reason].
+ * Never throws.
+ */
+function user_send_approval_mail(int|string $userId): array
+{
+    try {
+        $stmt = get_db()->prepare('SELECT username, emailid, fname, lname FROM user WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $userId]);
+        $user = $stmt->fetch();
+        if (!$user) {
+            return ['ok' => false, 'email' => '', 'error' => 'user not found'];
+        }
+        $email = trim((string)decrypt_value($user['emailid'] ?? null));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return ['ok' => false, 'email' => $email, 'error' => 'the account has no valid email address'];
+        }
+
+        $setup = get_setup() ?? [];
+        $company = trim((string)($setup['company'] ?? '')) ?: 'our website';
+        $name = trim((string)$user['fname'] . ' ' . (string)$user['lname']) ?: (string)$user['username'];
+        $loginUrl = function_exists('full_url') ? full_url('/login.php') : asset_url('/login.php');
+
+        $body = "Dear {$name},\n\n"
+            . "Good news: your account with {$company} has been approved. You can now log in.\n\n"
+            . "Username:   {$user['username']}\n"
+            . "Login page: {$loginUrl}\n\n"
+            . "If you have forgotten your password, please contact us.\n\n"
+            . "Kind regards,\n{$company}\n";
+        $replyTo = registration_admin_email();
+
+        $ok = send_plain_mail($email, 'Your account with ' . $company . ' has been approved', $body, $company,
+            $replyTo !== '' ? $replyTo : null);
+        return ['ok' => $ok, 'email' => $email, 'error' => $ok ? '' : mail_last_error()];
+    } catch (Throwable $e) {
+        error_log('user_send_approval_mail failed: ' . $e->getMessage());
+        return ['ok' => false, 'email' => '', 'error' => 'unexpected error'];
+    }
+}

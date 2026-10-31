@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $savedId = crud_save($table, $isNew ? null : $id, $input);
+                $_SESSION['crud_flash'] = crud_take_notices(); // e.g. approval email result, shown on the list
                 header('Location: ' . asset_url('/modules/admin/table_view.php?table=' . urlencode($table) . '&saved=1'));
                 exit;
             } catch (Throwable $e) {

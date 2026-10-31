@@ -37,7 +37,12 @@ $errorMessages = [
     'delete_failed'    => 'This record could not be deleted.',
 ];
 $errorCode = (string)($_GET['error'] ?? '');
+$flashNotices = $_SESSION['crud_flash'] ?? [];
+unset($_SESSION['crud_flash']);
 ?>
+    <?php foreach ($flashNotices as $notice): ?>
+        <div class="alert <?= ($notice['type'] ?? '') === 'success' ? 'alert-success' : 'alert-warning' ?>" role="status" style="margin-bottom:18px;"><?= e((string)($notice['message'] ?? '')) ?></div>
+    <?php endforeach; ?>
     <?php if ($errorCode !== '' && isset($errorMessages[$errorCode])): ?>
         <div class="alert alert-error" style="margin-bottom:18px;"><?= e($errorMessages[$errorCode]) ?></div>
     <?php endif; ?>

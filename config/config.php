@@ -128,9 +128,9 @@ define('MAX_LOGIN_ATTEMPTS', 5);
 // to send with the server's own PHP mail() instead.
 // MAIL_FROM_ADDRESS must be a verified Sender Signature (or on a
 // verified domain) in Postmark — a gmail.com address can't be used.
-define('POSTMARK_SERVER_TOKEN', '');          // Postmark > your Server > API Tokens
+define('POSTMARK_SERVER_TOKEN', 'a3d9eebd-4ddd-46c4-92f6-d165920326e1');          // Postmark > your Server > API Tokens
 define('POSTMARK_MESSAGE_STREAM', 'outbound'); // 'outbound' = default transactional stream
-define('MAIL_FROM_ADDRESS', '');              // e.g. 'info@labtest02.site'
+define('MAIL_FROM_ADDRESS', 'no-reply@labtest02.site');              // e.g. 'info@labtest02.site'
 define('LOCKOUT_MINUTES', 15);
 
 // ---- Base URL (auto-detected) -----------------------------------------

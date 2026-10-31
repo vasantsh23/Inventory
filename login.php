@@ -65,6 +65,9 @@ require_once __DIR__ . '/includes/header.php';
                     </svg>
                 </button>
             </div>
+            <div class="forgot-password-row">
+                <a href="<?= e(asset_url('/forgot_password.php')) ?>">Forgot password?</a>
+            </div>
 
             <label class="remember-row" for="remember" style="margin-top:2px;">
                 <input type="checkbox" id="remember" name="remember" value="1"

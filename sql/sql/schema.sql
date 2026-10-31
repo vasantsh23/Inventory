@@ -1087,6 +1087,23 @@ CREATE TABLE IF NOT EXISTS remember_tokens (
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
+-- PASSWORD RESETS ("Forgot password?" on the login screen)
+-- Only a SHA-256 hash of each e-mailed link's secret is stored.
+-- Links expire after 60 minutes and work once.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_resets (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT UNSIGNED NOT NULL,
+    token_hash  CHAR(64)     NOT NULL UNIQUE,
+    expires_at  DATETIME     NOT NULL,
+    used_at     DATETIME     NULL,
+    ipadd       VARCHAR(45)  NOT NULL DEFAULT '',
+    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_password_resets_user (user_id, created_at),
+    CONSTRAINT fk_password_resets_user FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
 -- BACKUP LOG (record of backups taken from the admin dashboard)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS backup_log (

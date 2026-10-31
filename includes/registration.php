@@ -83,6 +83,25 @@ function registration_setup_error(): ?string
 }
 
 /**
+ * The site's password rule, shared by registration and password reset:
+ * at least REGISTRATION_PASSWORD_MIN characters, with at least one
+ * letter and one number. Returns an error message, or null if it's OK.
+ */
+function password_rule_error(string $password): ?string
+{
+    if (strlen($password) < REGISTRATION_PASSWORD_MIN) {
+        return 'Password must be at least ' . REGISTRATION_PASSWORD_MIN . ' characters.';
+    }
+    if (strlen($password) > 1024) {
+        return 'Password must be 1024 characters or fewer.';
+    }
+    if (!preg_match('/[A-Za-z]/', $password) || !preg_match('/\d/', $password)) {
+        return 'Password must contain at least one letter and one number.';
+    }
+    return null;
+}
+
+/**
  * Validate submitted values. Returns [cleanValues, errors] where
  * errors is field => message ('form' for errors not tied to a field).
  */
@@ -119,10 +138,9 @@ function registration_validate(array $post): array
     }
 
     if (!isset($errors['password'])) {
-        if (strlen($v['password']) < REGISTRATION_PASSWORD_MIN) {
-            $errors['password'] = 'Password must be at least ' . REGISTRATION_PASSWORD_MIN . ' characters.';
-        } elseif (!preg_match('/[A-Za-z]/', $v['password']) || !preg_match('/\d/', $v['password'])) {
-            $errors['password'] = 'Password must contain at least one letter and one number.';
+        $pwError = password_rule_error($v['password']);
+        if ($pwError !== null) {
+            $errors['password'] = $pwError;
         }
     }
 

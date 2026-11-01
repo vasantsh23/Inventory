@@ -2,7 +2,9 @@
 /**
  * api_keys.php
  * Admin > API: generate a customer's API key (and e-mail it to them),
- * see existing keys, and revoke a key. Logic: includes/apikey.php.
+ * see existing keys, regenerate (replace) a key, and revoke a key.
+ * Customers download the stock CSV with api/stock_csv.php?apikey=….
+ * Logic: includes/apikey.php.
  */
 
 declare(strict_types=1);
@@ -39,6 +41,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             error_log('api_keys generate failed: ' . $e->getMessage());
             $flash = ['type' => 'error', 'message' => 'The API key could not be generated. Has sql/migration_apikey.sql been run?'];
         }
+    } elseif ($action === 'regenerate') {
+        try {
+            $result = apikey_regenerate((int)($_POST['id'] ?? 0));
+            $_SESSION['apikey_flash'] = $result['ok']
+                ? ['type' => $result['mailed'] ? 'success' : 'warning', 'message' => $result['message'], 'apikey' => $result['apikey']]
+                : ['type' => 'error', 'message' => $result['message']];
+        } catch (Throwable $e) {
+            error_log('api_keys regenerate failed: ' . $e->getMessage());
+            $_SESSION['apikey_flash'] = ['type' => 'error', 'message' => 'The API key could not be regenerated. Please try again.'];
+        }
+        header('Location: ' . asset_url('/modules/admin/api_keys.php'), true, 303);
+        exit;
     } elseif ($action === 'revoke') {
         $row = apikey_revoke((int)($_POST['id'] ?? 0));
         $_SESSION['apikey_flash'] = $row
@@ -80,6 +94,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             <?= e($flash['message']) ?>
             <?php if ($newKey !== ''): ?>
                 <div style="margin-top:8px;">API key: <code style="font-size:1rem; user-select:all;"><?= e($newKey) ?></code></div>
+                <div style="margin-top:4px; word-break:break-all;">Download link: <code style="user-select:all;"><?= e(apikey_download_url($newKey)) ?></code></div>
             <?php endif; ?>
         </div>
     <?php endif; ?>
@@ -87,8 +102,9 @@ require_once __DIR__ . '/../../includes/admin_header.php';
     <div class="panel">
         <h2>Generate API key</h2>
         <p class="panel-desc">
-            The key is emailed to the customer’s email address from the Customers table, together with the URL
-            (<?= e(APIKEY_ENDPOINT_URL) ?>). Each customer can have one key; customers without an email address can’t be given one.
+            The key is emailed to the customer’s email address from the Customers table, with a link that downloads the
+            current stock list as a CSV file (the Results columns of the Standard User type; held stones follow the Hold Restriction setting).
+            Each customer can have one key; customers without an email address can’t be given one.
         </p>
         <form method="post" action="<?= e(asset_url('/modules/admin/api_keys.php')) ?>" class="crud-form">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -114,7 +130,8 @@ require_once __DIR__ . '/../../includes/admin_header.php';
 
     <div class="panel" style="margin-top:18px;">
         <h2>Existing API keys</h2>
-        <p class="panel-desc">Revoking a key stops it working immediately; you can then generate a new one for that customer.</p>
+        <p class="panel-desc"><strong>Regenerate</strong> replaces a key and emails the new one to the customer; the old key stops working immediately.
+            <strong>Revoke</strong> deletes the key without a replacement.</p>
         <?php if ($keys === []): ?>
             <p>No API keys yet.</p>
         <?php else: ?>
@@ -134,6 +151,13 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                                 <td data-label="API key"><code><?= e(apikey_mask((string)$k['apikey'])) ?></code></td>
                                 <td data-label="Created"><?= e((string)($k['created_at'] ?? '')) ?></td>
                                 <td class="row-actions" data-label="Actions">
+                                    <form method="post" action="<?= e(asset_url('/modules/admin/api_keys.php')) ?>" style="display:inline;"
+                                          data-confirm="Replace the API key for <?= e((string)$k['name']) ?> and email the new one? The current key will stop working immediately.">
+                                        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                        <input type="hidden" name="action" value="regenerate">
+                                        <input type="hidden" name="id" value="<?= (int)$k['id'] ?>">
+                                        <button type="submit" class="btn btn-sm">Regenerate</button>
+                                    </form>
                                     <form method="post" action="<?= e(asset_url('/modules/admin/api_keys.php')) ?>" style="display:inline;"
                                           data-confirm="Revoke the API key for <?= e((string)$k['name']) ?>? It will stop working immediately.">
                                         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">

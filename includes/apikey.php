@@ -14,7 +14,16 @@
  * - The key is made with a cryptographically secure generator (the old
  *   code used rand(), which is predictable) in the same format as
  *   before (15 letters/digits), so getapikey.php needs no change.
- * - On success the customer is e-mailed the endpoint URL and the key.
+ * - On success the customer is e-mailed a download link containing
+ *   the key (api/stock_csv.php?apikey=…) and the key itself.
+ * - Regenerate replaces a key: the old one stops working at once and
+ *   the customer is e-mailed the new one.
+ *
+ * The CSV (api/stock_csv.php) holds the stones and columns a user of
+ * type APIKEY_CSV_USERTYPE_ID sees on the Results page: that user
+ * type's active `results` columns (with their labels as headings),
+ * held stones left out according to setup.hold_restrict, sorted like
+ * the Results page.
  */
 
 declare(strict_types=1);
@@ -24,12 +33,14 @@ require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/mailer.php';
 require_once __DIR__ . '/registration.php'; // registration_admin_email()
 
+require_once __DIR__ . '/diamond_search_query.php'; // get_maindata_columns(), build_rsetup_order_by(), HOLD_EXEMPT_LEVELS
+
 /**
- * Where customers use their key — shown in the e-mail. Can be overridden
- * in config/config.php with define('APIKEY_ENDPOINT_URL', '...').
+ * User type whose Results columns (and hold rules) the CSV follows.
+ * Override in config/config.php: define('APIKEY_CSV_USERTYPE_ID', 2);
  */
-if (!defined('APIKEY_ENDPOINT_URL')) {
-    define('APIKEY_ENDPOINT_URL', 'https://veeradimon.be/admin-panel/getapikey.php');
+if (!defined('APIKEY_CSV_USERTYPE_ID')) {
+    define('APIKEY_CSV_USERTYPE_ID', defined('GUEST_RESULTS_USERTYPE_ID') ? (int)GUEST_RESULTS_USERTYPE_ID : 1);
 }
 
 const APIKEY_LENGTH = 15;
@@ -44,6 +55,100 @@ function apikey_generate(): string
         $key .= APIKEY_ALPHABET[random_int(0, $max)];
     }
     return $key;
+}
+
+/** Download link for a key: this site's api/stock_csv.php?apikey=… */
+function apikey_download_url(string $key): string
+{
+    $path = '/api/stock_csv.php?apikey=' . rawurlencode($key);
+    return function_exists('full_url') ? full_url($path) : asset_url($path);
+}
+
+/**
+ * The apikey row for $key, or null. Compared exactly (case-sensitive)
+ * in PHP, because the table's collation may ignore case. Empty keys
+ * never match.
+ */
+function apikey_find(string $key): ?array
+{
+    $key = trim($key);
+    if ($key === '' || strlen($key) > 25 || !preg_match('/^[A-Za-z0-9]+$/', $key)) {
+        return null;
+    }
+    $stmt = get_db()->prepare('SELECT id, custid, name, emailid, apikey FROM apikey WHERE apikey = :k');
+    $stmt->execute([':k' => $key]);
+    foreach ($stmt->fetchAll() as $row) {
+        if (hash_equals((string)$row['apikey'], $key)) {
+            return $row;
+        }
+    }
+    return null;
+}
+
+/**
+ * Columns for the CSV: [['label' => heading, 'field' => maindata column], …]
+ * from the active `results` rows of APIKEY_CSV_USERTYPE_ID, validated
+ * against maindata's real columns.
+ */
+function apikey_csv_columns(): array
+{
+    $stmt = get_db()->prepare("SELECT colname, fldname FROM results WHERE usertype = :ut AND active = 'yes' ORDER BY orderid ASC");
+    $stmt->execute([':ut' => (int)APIKEY_CSV_USERTYPE_ID]);
+    $valid = get_maindata_columns();
+    $out = [];
+    foreach ($stmt->fetchAll() as $row) {
+        if (in_array($row['fldname'], $valid, true)) {
+            $out[] = ['label' => (string)$row['colname'], 'field' => (string)$row['fldname']];
+        }
+    }
+    return $out;
+}
+
+/**
+ * WHERE clause for the CSV's rows: held stones are left out when
+ * setup.hold_restrict = 'yes' and the CSV's user type isn't one of the
+ * HOLD_EXEMPT_LEVELS (same rule as the Results page).
+ */
+function apikey_csv_where(): string
+{
+    if (!in_array('hold', get_maindata_columns(), true)) {
+        return '1';
+    }
+    $setup = get_setup() ?? [];
+    if (array_key_exists('hold_restrict', $setup)
+        && strcasecmp(trim((string)$setup['hold_restrict']), 'yes') !== 0) {
+        return '1';
+    }
+    $stmt = get_db()->prepare('SELECT level FROM user_types WHERE id = :id');
+    $stmt->execute([':id' => (int)APIKEY_CSV_USERTYPE_ID]);
+    $level = (int)($stmt->fetchColumn() ?: 0);
+    return in_array($level, HOLD_EXEMPT_LEVELS, true) ? '1' : "(`hold` IS NULL OR `hold` <> 'yes')";
+}
+
+/** E-mail a customer their (new) key and download link. Returns true if sent. */
+function apikey_send_key_mail(string $name, string $email, string $key, bool $replaced = false): bool
+{
+    $setup = get_setup() ?? [];
+    $company = trim((string)($setup['company'] ?? '')) ?: 'our company';
+    $replyTo = registration_admin_email();
+    $body = "Dear {$name},\n\n"
+        . ($replaced
+            ? "Your API key for {$company} has been replaced. Your previous key no longer works.\n\n"
+            : "Your API key for {$company} has been created.\n\n")
+        . "To download our current stock list as a CSV file (opens in Excel), open this link:\n"
+        . apikey_download_url($key) . "\n\n"
+        . "API key: {$key}\n\n"
+        . "The link always gives you the latest stock, so you can bookmark it or use it in your own software.\n"
+        . "Please keep the link and key confidential: anyone who has them can download the list. "
+        . "If you think they have been shared, contact us and we will replace the key.\n\n"
+        . "Kind regards,\n{$company}\n";
+    return send_plain_mail(
+        $email,
+        ($replaced ? 'Your new API key for ' : 'Your API key for ') . $company,
+        $body,
+        $company,
+        $replyTo !== '' ? $replyTo : null
+    );
 }
 
 /** All customers for the dropdown: [custid, custnm, email], by name. */
@@ -108,50 +213,26 @@ function apikey_create_for_customer(int $custid): array
         return $fail('Customer "' . $name . '" (' . $email . ') already has an API key, so no new key was generated.');
     }
 
-    // Generate and insert; retry on the (very unlikely) chance of a clash.
-    $key = '';
-    $ins = $db->prepare('INSERT INTO apikey (custid, name, company, emailid, apikey) VALUES (:cid, :n, :c, :e, :k)');
-    for ($attempt = 0; $attempt < 5; $attempt++) {
-        $candidate = apikey_generate();
-        $exists = $db->prepare('SELECT 1 FROM apikey WHERE apikey = :k LIMIT 1');
-        $exists->execute([':k' => $candidate]);
-        if ($exists->fetchColumn()) {
-            continue;
+    // Generate and insert.
+    $key = apikey_unique_key();
+    try {
+        $db->prepare('INSERT INTO apikey (custid, name, company, emailid, apikey) VALUES (:cid, :n, :c, :e, :k)')->execute([
+            ':cid' => $custid,
+            ':n'   => mb_substr($name, 0, 100),
+            ':c'   => mb_substr($name, 0, 100),
+            ':e'   => mb_substr($email, 0, 100),
+            ':k'   => $key,
+        ]);
+    } catch (PDOException $e) {
+        if ($e->getCode() === '23000') {
+            // Same custid inserted a moment ago by another request.
+            return $fail('Customer "' . $name . '" already has an API key, so no new key was generated.');
         }
-        try {
-            $ins->execute([
-                ':cid' => $custid,
-                ':n'   => mb_substr($name, 0, 100),
-                ':c'   => mb_substr($name, 0, 100),
-                ':e'   => mb_substr($email, 0, 100),
-                ':k'   => $candidate,
-            ]);
-            $key = $candidate;
-            break;
-        } catch (PDOException $e) {
-            if ($e->getCode() === '23000') {
-                // Same custid inserted a moment ago by another request.
-                return $fail('Customer "' . $name . '" already has an API key, so no new key was generated.');
-            }
-            throw $e;
-        }
-    }
-    if ($key === '') {
-        return $fail('Could not generate a unique API key. Please try again.');
+        throw $e;
     }
 
     // 7. Email the customer.
-    $setup = get_setup() ?? [];
-    $company = trim((string)($setup['company'] ?? '')) ?: 'our company';
-    $replyTo = registration_admin_email();
-    $body = "Dear {$name},\n\n"
-        . "Your API key for {$company} has been created.\n\n"
-        . 'URL:     ' . APIKEY_ENDPOINT_URL . "\n"
-        . "API key: {$key}\n\n"
-        . "Please keep this key confidential: anyone who has it can use it on your behalf. "
-        . "If you think it has been shared, contact us and we will replace it.\n\n"
-        . "Kind regards,\n{$company}\n";
-    $mailed = send_plain_mail($email, 'Your API key for ' . $company, $body, $company, $replyTo !== '' ? $replyTo : null);
+    $mailed = apikey_send_key_mail($name, $email, $key);
     if (!$mailed) {
         error_log('apikey: email to ' . $email . ' failed: ' . mail_last_error());
     }
@@ -162,6 +243,69 @@ function apikey_create_for_customer(int $custid): array
             ? 'API key generated for "' . $name . '" and emailed to ' . $email . '.'
             : 'API key generated for "' . $name . '", but the email to ' . $email . ' could not be sent ('
               . rtrim(mail_last_error(), '. ') . '). Please give the customer the key below yourself.',
+        'apikey'  => $key,
+        'mailed'  => $mailed,
+        'email'   => $email,
+    ];
+}
+
+/** A new key that isn't in use yet. */
+function apikey_unique_key(): string
+{
+    $exists = get_db()->prepare('SELECT 1 FROM apikey WHERE apikey = :k LIMIT 1');
+    for ($attempt = 0; $attempt < 5; $attempt++) {
+        $candidate = apikey_generate();
+        $exists->execute([':k' => $candidate]);
+        if (!$exists->fetchColumn()) {
+            return $candidate;
+        }
+    }
+    throw new RuntimeException('Could not generate a unique API key.');
+}
+
+/**
+ * Replace the key in apikey row $id with a new one (the old key stops
+ * working at once) and e-mail it. Uses the customer's current email
+ * from the customer table when the key is linked to a customer,
+ * otherwise the email stored with the key.
+ * Returns the same shape as apikey_create_for_customer().
+ */
+function apikey_regenerate(int $id): array
+{
+    $fail = fn(string $msg) => ['ok' => false, 'message' => $msg, 'apikey' => '', 'mailed' => false, 'email' => ''];
+    $db = get_db();
+    $stmt = $db->prepare(
+        'SELECT a.id, a.custid, a.name, a.emailid, c.custnm, c.email AS cust_email
+         FROM apikey a LEFT JOIN customer c ON c.custid = a.custid
+         WHERE a.id = :id LIMIT 1'
+    );
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        return $fail('That API key no longer exists.');
+    }
+    $name = trim((string)($row['custnm'] ?? '')) !== '' ? trim((string)$row['custnm']) : trim((string)$row['name']);
+    $email = trim((string)($row['custid'] !== null && $row['cust_email'] !== null ? $row['cust_email'] : $row['emailid']));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return $fail('"' . $name . '" has no valid email address' . ($email !== '' ? ' ("' . $email . '")' : '')
+            . ', so the key was not regenerated. '
+            . ($row['custid'] !== null ? 'Add the email in Manage Tables → Customers first.' : 'Revoke this older key and generate a new one for the customer instead.'));
+    }
+
+    $key = apikey_unique_key();
+    $db->prepare('UPDATE apikey SET apikey = :k, emailid = :e, created_at = NOW() WHERE id = :id')
+        ->execute([':k' => $key, ':e' => mb_substr($email, 0, 100), ':id' => $id]);
+
+    $mailed = apikey_send_key_mail($name, $email, $key, true);
+    if (!$mailed) {
+        error_log('apikey: regenerate email to ' . $email . ' failed: ' . mail_last_error());
+    }
+    return [
+        'ok'      => true,
+        'message' => $mailed
+            ? 'New API key generated for "' . $name . '" and emailed to ' . $email . '. The old key no longer works.'
+            : 'New API key generated for "' . $name . '" (the old key no longer works), but the email to ' . $email
+              . ' could not be sent (' . rtrim(mail_last_error(), '. ') . '). Please give the customer the key below yourself.',
         'apikey'  => $key,
         'mailed'  => $mailed,
         'email'   => $email,

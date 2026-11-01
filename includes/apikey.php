@@ -402,3 +402,106 @@ function apikey_revoke(int $id): ?array
     $db->prepare('DELETE FROM apikey WHERE id = :id')->execute([':id' => $id]);
     return $row;
 }
+
+/** Headings of the CSV-columns Excel file (export, and expected by import). */
+const APIKEY_EXTRACT_XLSX_HEADERS = ['ID', 'Column name', 'Field', 'Extract', 'On Results page'];
+
+/** Rows for the CSV-columns Excel export, matching APIKEY_EXTRACT_XLSX_HEADERS. */
+function apikey_extract_export_rows(): array
+{
+    $out = [];
+    foreach (apikey_extract_rows() as $r) {
+        $out[] = [
+            (string)$r['id'],
+            (string)$r['colname'],
+            (string)$r['fldname'],
+            $r['extract'],
+            strcasecmp(trim((string)$r['active']), 'yes') === 0 ? 'yes' : 'no',
+        ];
+    }
+    return $out;
+}
+
+/**
+ * Import Extract values from an Excel sheet (as read by XlsxReader).
+ * Rows are matched by the "ID" column, or by "Field" if there's no ID;
+ * only the "Extract" column is used (yes/no, also y/n). Other columns
+ * are ignored, and only rows of the CSV's user type can change.
+ *
+ * Returns ['changed' => n, 'unchanged' => n, 'skipped' => n, 'notes' => [text, …]].
+ */
+function apikey_import_extract(array $headerRow, array $dataRows): array
+{
+    $result = ['changed' => 0, 'unchanged' => 0, 'skipped' => 0, 'notes' => []];
+    $find = function (string $name) use ($headerRow): ?int {
+        foreach ($headerRow as $i => $h) {
+            if (strcasecmp(trim((string)$h), $name) === 0) {
+                return (int)$i;
+            }
+        }
+        return null;
+    };
+    $idCol = $find('ID');
+    $fieldCol = $find('Field');
+    $extractCol = $find('Extract');
+    if ($extractCol === null || ($idCol === null && $fieldCol === null)) {
+        $result['notes'][] = 'The first row must contain the headings "Extract" and "ID" (or "Field"). '
+            . 'Tip: use Export to Excel to get a file in the right layout.';
+        return $result;
+    }
+
+    $rows = apikey_extract_rows();
+    $byId = [];
+    $byField = [];
+    foreach ($rows as $r) {
+        $byId[(int)$r['id']] = $r;
+        $byField[strtolower((string)$r['fldname'])][] = $r;
+    }
+
+    $values = [];
+    foreach ($dataRows as $n => $cells) {
+        $rowNo = $n + 2; // Excel row number (row 1 = headings)
+        $raw = strtolower(trim((string)($cells[$extractCol] ?? '')));
+        $id = $idCol !== null ? trim((string)($cells[$idCol] ?? '')) : '';
+        $field = $fieldCol !== null ? trim((string)($cells[$fieldCol] ?? '')) : '';
+        if ($raw === '' && $id === '' && $field === '') {
+            continue; // blank line
+        }
+        $value = in_array($raw, ['yes', 'y'], true) ? 'yes' : (in_array($raw, ['no', 'n'], true) ? 'no' : null);
+        if ($value === null) {
+            $result['skipped']++;
+            $result['notes'][] = "Row {$rowNo}: Extract must be yes or no" . ($raw !== '' ? " (found \"{$raw}\")" : ' (it is empty)') . ' — skipped.';
+            continue;
+        }
+
+        $target = null;
+        if ($id !== '') {
+            $target = ctype_digit($id) ? ($byId[(int)$id] ?? null) : null;
+            if ($target === null) {
+                $result['skipped']++;
+                $result['notes'][] = "Row {$rowNo}: ID {$id} is not one of the CSV columns — skipped.";
+                continue;
+            }
+        } else {
+            $matches = $byField[strtolower($field)] ?? [];
+            if (count($matches) !== 1) {
+                $result['skipped']++;
+                $result['notes'][] = "Row {$rowNo}: field \"{$field}\" " . ($matches === [] ? 'was not found' : 'appears more than once; add the ID column')
+                    . ' — skipped.';
+                continue;
+            }
+            $target = $matches[0];
+        }
+
+        $tid = (int)$target['id'];
+        if (isset($values[$tid]) && $values[$tid] !== $value) {
+            $result['notes'][] = "Row {$rowNo}: \"{$target['colname']}\" is listed more than once; the last value ({$value}) was used.";
+        }
+        $values[$tid] = $value;
+    }
+
+    $changed = apikey_save_extract($values);
+    $result['changed'] = $changed;
+    $result['unchanged'] = count($values) - $changed;
+    return $result;
+}

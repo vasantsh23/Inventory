@@ -209,8 +209,17 @@ final class XlsxReader
             return [[], []];
         }
 
-        $headerRow = array_shift($rows);
-        return [$headerRow, $rows];
+        // The first non-empty row is the header. Data rows keep keys
+        // numbered so that key + 2 = the row number shown in Excel (as
+        // used in import messages), even when blank rows are skipped.
+        $headerKey = array_key_first($rows);
+        $headerRow = $rows[$headerKey];
+        unset($rows[$headerKey]);
+        $data = [];
+        foreach ($rows as $excelRow => $cells) {
+            $data[$excelRow - 2] = $cells;
+        }
+        return [$headerRow, $data];
     }
 
     private static function resolveFirstSheetPath(ZipArchive $zip): string
@@ -298,7 +307,13 @@ final class XlsxReader
         $sheet = simplexml_load_string($xml);
         $rows = [];
 
+        $position = 0;
         foreach ($sheet->sheetData->row as $row) {
+            $position++;
+            // Excel's own row number (r="7"); blank rows are often left out
+            // of the file entirely, so counting rows isn't enough.
+            $excelRow = isset($row['r']) && ctype_digit((string)$row['r']) ? (int)$row['r'] : $position;
+            $position = $excelRow;
             $rowData = [];
             foreach ($row->c as $cell) {
                 $ref = (string)$cell['r'];
@@ -328,7 +343,7 @@ final class XlsxReader
             for ($i = 0; $i <= $maxIdx; $i++) {
                 $aligned[$i] = $rowData[$i] ?? '';
             }
-            $rows[] = $aligned;
+            $rows[$excelRow] = $aligned;
         }
 
         return $rows;

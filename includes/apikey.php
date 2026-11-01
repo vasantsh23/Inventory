@@ -14,8 +14,9 @@
  * - The key is made with a cryptographically secure generator (the old
  *   code used rand(), which is predictable) in the same format as
  *   before (15 letters/digits), so getapikey.php needs no change.
- * - On success the customer is e-mailed a download link containing
- *   the key (api/stock_csv.php?apikey=…) and the key itself.
+ * - On success the customer is e-mailed the download page's link
+ *   (api/stock_csv.php — no key in it) and, separately, the key, which
+ *   they type into the form on that page.
  * - Regenerate replaces a key: the old one stops working at once and
  *   the customer is e-mailed the new one.
  *
@@ -57,11 +58,10 @@ function apikey_generate(): string
     return $key;
 }
 
-/** Download link for a key: this site's api/stock_csv.php?apikey=… */
-function apikey_download_url(string $key): string
+/** The download page (api/stock_csv.php). The key is never part of the URL. */
+function apikey_download_url(): string
 {
-    $path = '/api/stock_csv.php?apikey=' . rawurlencode($key);
-    return function_exists('full_url') ? full_url($path) : asset_url($path);
+    return function_exists('full_url') ? full_url('/api/stock_csv.php') : asset_url('/api/stock_csv.php');
 }
 
 /**
@@ -135,12 +135,13 @@ function apikey_send_key_mail(string $name, string $email, string $key, bool $re
         . ($replaced
             ? "Your API key for {$company} has been replaced. Your previous key no longer works.\n\n"
             : "Your API key for {$company} has been created.\n\n")
-        . "To download our current stock list as a CSV file (opens in Excel), open this link:\n"
-        . apikey_download_url($key) . "\n\n"
-        . "API key: {$key}\n\n"
-        . "The link always gives you the latest stock, so you can bookmark it or use it in your own software.\n"
-        . "Please keep the link and key confidential: anyone who has them can download the list. "
-        . "If you think they have been shared, contact us and we will replace the key.\n\n"
+        . "To download our current stock list as a CSV file (opens in Excel):\n"
+        . "1. Open this page: " . apikey_download_url() . "\n"
+        . "2. Enter your API key: {$key}\n"
+        . "3. Click Download.\n\n"
+        . "The page always gives you the latest stock, so you can bookmark it.\n"
+        . "Please keep your API key confidential: anyone who has it can download the list. "
+        . "If you think it has been shared, contact us and we will replace it.\n\n"
         . "Kind regards,\n{$company}\n";
     return send_plain_mail(
         $email,

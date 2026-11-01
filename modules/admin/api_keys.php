@@ -3,7 +3,7 @@
  * api_keys.php
  * Admin > API: generate a customer's API key (and e-mail it to them),
  * see existing keys, regenerate (replace) a key, and revoke a key.
- * Customers download the stock CSV with api/stock_csv.php?apikey=….
+ * Customers download the stock CSV from api/stock_csv.php by typing their key into its form.
  * Logic: includes/apikey.php.
  */
 
@@ -94,7 +94,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             <?= e($flash['message']) ?>
             <?php if ($newKey !== ''): ?>
                 <div style="margin-top:8px;">API key: <code style="font-size:1rem; user-select:all;"><?= e($newKey) ?></code></div>
-                <div style="margin-top:4px; word-break:break-all;">Download link: <code style="user-select:all;"><?= e(apikey_download_url($newKey)) ?></code></div>
+                <div style="margin-top:4px; word-break:break-all;">Download page: <code style="user-select:all;"><?= e(apikey_download_url()) ?></code> (the customer enters the key there)</div>
             <?php endif; ?>
         </div>
     <?php endif; ?>

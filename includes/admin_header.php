@@ -70,6 +70,7 @@ $pageSubtitle = $pageSubtitle ?? '';
         <a href="<?= e(asset_url('/modules/admin/diamond_data_upload.php')) ?>" class="<?= $activeNav === 'diamond_data_upload' ? 'active' : '' ?>">Diamond Data Upload</a>
         <a href="<?= e(asset_url('/modules/admin/maindata_hold.php')) ?>" class="<?= $activeNav === 'maindata_hold' ? 'active' : '' ?>">Hold Selection</a>
         <a href="<?= e(asset_url('/modules/admin/mail_test.php')) ?>" class="<?= $activeNav === 'mail_test' ? 'active' : '' ?>">Email Test</a>
+        <a href="<?= e(asset_url('/modules/admin/api_keys.php')) ?>" class="<?= $activeNav === 'api_keys' ? 'active' : '' ?>">API</a>
 
         <div class="sidebar-section">Appearance</div>
         <a href="<?= e(asset_url('/modules/admin/theme_settings.php')) ?>" class="<?= $activeNav === 'theme_settings' ? 'active' : '' ?>">Theme Settings</a>

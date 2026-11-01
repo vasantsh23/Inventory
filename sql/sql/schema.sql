@@ -1087,6 +1087,23 @@ CREATE TABLE IF NOT EXISTS remember_tokens (
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
+-- API KEYS (Admin > API). One key per customer (custid ->
+-- customer.custid; NULL for keys made before custid existed).
+-- Read by the external getapikey.php endpoint by `apikey` value.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS apikey (
+    id          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    custid      INT          NULL,
+    name        VARCHAR(100) NOT NULL,
+    company     VARCHAR(100) NOT NULL,
+    emailid     VARCHAR(100) NOT NULL,
+    apikey      VARCHAR(25)  NOT NULL,
+    created_at  DATETIME     NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_apikey_custid (custid),
+    KEY idx_apikey_apikey (apikey)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------
 -- PASSWORD RESETS ("Forgot password?" on the login screen)
 -- Only a SHA-256 hash of each e-mailed link's secret is stored.
 -- Links expire after 60 minutes and work once.

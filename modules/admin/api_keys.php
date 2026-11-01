@@ -110,6 +110,10 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="action" value="generate">
             <div class="form-group">
+                <label for="custid-search">Search customer</label>
+                <input type="search" id="custid-search" data-select-search="custid" autocomplete="off"
+                       placeholder="Type part of the name or email…" aria-controls="custid">
+                <small data-select-search-count="custid" aria-live="polite" style="color:var(--text-muted); margin:4px 0 10px; display:block;"></small>
                 <label for="custid">Customer</label>
                 <select id="custid" name="custid" required>
                     <option value="">— Select customer —</option>
@@ -173,5 +177,6 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             </div>
         <?php endif; ?>
     </div>
+    <script src="<?= e(asset_url_versioned('/assets/js/select_search.js')) ?>"></script>
 <?php
 require_once __DIR__ . '/../../includes/admin_footer.php';

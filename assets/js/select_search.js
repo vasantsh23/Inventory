@@ -12,6 +12,10 @@
  * exactly one option matches, it's selected automatically. Enter in the
  * box selects the first match instead of submitting the form.
  *
+ * The select is shown as an open list (data-select-search-size rows,
+ * default 8) right under the box, instead of a pop-up that would cover
+ * the search box while open.
+ *
  * Options are removed and re-added rather than just hidden, because
  * Safari ignores `hidden` on <option>. Without JavaScript the plain
  * select still works. A separate file because the Content-Security-
@@ -31,6 +35,7 @@
             return;
         }
         var counter = document.querySelector('[data-select-search-count="' + id + '"]');
+        var rows = parseInt(box.getAttribute('data-select-search-size') || '8', 10);
         var all = Array.prototype.slice.call(select.options);
         var prompt = all.length && all[0].value === '' ? all[0] : null;
         var items = all.filter(function (o) { return o !== prompt; });
@@ -56,6 +61,10 @@
             } else if (prompt) {
                 select.value = '';
             }
+
+            // Open list, sized to the matches (2 rows minimum so it never
+            // turns back into a pop-up).
+            select.size = Math.max(2, Math.min(rows, select.options.length));
 
             if (counter) {
                 counter.textContent = words.length

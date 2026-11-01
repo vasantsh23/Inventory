@@ -109,13 +109,13 @@ require_once __DIR__ . '/../../includes/admin_header.php';
         <form method="post" action="<?= e(asset_url('/modules/admin/api_keys.php')) ?>" class="crud-form">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="action" value="generate">
-            <div class="form-group">
+            <div class="form-group full-width" style="max-width:640px;">
                 <label for="custid-search">Search customer</label>
-                <input type="search" id="custid-search" data-select-search="custid" autocomplete="off"
+                <input type="search" id="custid-search" data-select-search="custid" data-select-search-size="10" autocomplete="off"
                        placeholder="Type part of the name or email…" aria-controls="custid">
                 <small data-select-search-count="custid" aria-live="polite" style="color:var(--text-muted); margin:4px 0 10px; display:block;"></small>
-                <label for="custid">Customer</label>
-                <select id="custid" name="custid" required>
+                <label for="custid">Customer <span style="color:var(--text-muted); font-weight:normal;">(click one)</span></label>
+                <select id="custid" name="custid" required style="height:auto;">
                     <option value="">— Select customer —</option>
                     <?php foreach ($customers as $c):
                         $cEmail = trim((string)$c['email']);

@@ -168,6 +168,8 @@ const CRUD_COLUMN_OVERRIDES = [
                        'lookup_table' => 'user_types', 'lookup_value' => 'id', 'lookup_display' => 'usertype',
                        'hint' => 'Which user type sees this column on Results and View Cart / View Selected. Every user type needs at least one row here, otherwise its users get an error on those pages.'],
         'active' => ['type' => 'select', 'label' => 'Active', 'options' => ['yes', 'no']],
+        'extract' => ['type' => 'select', 'label' => 'Extract (API CSV)', 'required' => true, 'options' => ['yes', 'no'],
+                      'hint' => 'Yes = this column is included in the customer stock CSV (Admin > API). Only the Standard User rows are used for the CSV. Independent of Active.'],
         'orderid' => ['label' => 'Order Id', 'hint' => 'Controls display order — lower numbers appear first.'],
     ],
     'diamond_details' => [
@@ -362,7 +364,7 @@ const CRUD_LIST_COLUMNS = [
     'upload'         => ['id', 'API', 'API link', 'Excel', 'CSV'],
     'maindata'       => ['id', 'StockNo', 'Shape', 'Weight', 'Color', 'Clarity', 'CutGrade', 'Price', 'avail'],
     'diamond_search' => ['id', 'colname', 'fldname', 'active', 'orderid'],
-    'results'        => ['id', 'usertype', 'colname', 'fldname', 'active', 'orderid'],
+    'results'        => ['id', 'usertype', 'colname', 'fldname', 'active', 'extract', 'orderid'],
     'diamond_details' => ['id', 'colname', 'fldname', 'data_type', 'active', 'orderid'],
     'adv_filter'      => ['id', 'colname', 'fldname', 'active', 'orderid'],
     'customer'        => ['custid', 'custnm', 'shortnm', 'email', 'address'],

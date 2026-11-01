@@ -85,6 +85,11 @@ $pageSubtitle = 'Generate API keys for customers';
 $activeNav = 'api_keys';
 require_once __DIR__ . '/../../includes/admin_header.php';
 ?>
+    <div class="api-tabs">
+        <a href="<?= e(asset_url('/modules/admin/api_keys.php')) ?>" class="active" aria-current="page">API keys</a>
+        <a href="<?= e(asset_url('/modules/admin/api_columns.php')) ?>">CSV columns</a>
+    </div>
+
     <?php if ($tableError !== ''): ?>
         <div class="alert alert-error" style="margin-bottom:18px;"><?= e($tableError) ?></div>
     <?php endif; ?>
@@ -103,7 +108,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
         <h2>Generate API key</h2>
         <p class="panel-desc">
             The key is emailed to the customer’s email address from the Customers table, with a link that downloads the
-            current stock list as a CSV file (the Results columns of the Standard User type; held stones follow the Hold Restriction setting).
+            current stock list as a CSV file (the columns set to Extract = Yes under <a href="<?= e(asset_url('/modules/admin/api_columns.php')) ?>">CSV columns</a>; held stones follow the Hold Restriction setting).
             Each customer can have one key; customers without an email address can’t be given one.
         </p>
         <form method="post" action="<?= e(asset_url('/modules/admin/api_keys.php')) ?>" class="crud-form">

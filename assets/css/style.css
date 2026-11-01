@@ -309,6 +309,14 @@ input::placeholder, textarea::placeholder { color: var(--input-placeholder); }
 }
 .login-form button:hover, .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 30px -10px var(--btn-primary-shadow-hover); }
 
+/* Admin > API: tabs (API keys | CSV columns) and form buttons */
+.api-tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--panel-border); }
+.api-tabs a { padding: 9px 16px; border: 1px solid transparent; border-bottom: none; border-radius: var(--radius-sm) var(--radius-sm) 0 0; color: var(--text-muted); text-decoration: none; margin-bottom: -1px; }
+.api-tabs a:hover { color: var(--text-color); }
+.api-tabs a.active { color: var(--text-color); background: var(--panel-bg, transparent); border-color: var(--panel-border); font-weight: 600; }
+.api-form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+form.api-form-actions { display: inline-flex; margin-right: 6px; }
+
 /* "Forgot password?" under the password box (login.php) */
 .forgot-password-row { display: flex; justify-content: flex-end; margin-top: 6px; font-size: 0.85rem; }
 .forgot-password-row a:hover,

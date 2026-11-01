@@ -700,6 +700,10 @@ ALTER TABLE results
     MODIFY COLUMN usertype INT UNSIGNED NOT NULL,
     ADD INDEX idx_results_usertype_order (usertype, orderid),
     ADD CONSTRAINT fk_results_usertype FOREIGN KEY (usertype) REFERENCES user_types(id);
+-- RESULTS.extract: 'yes' = the column goes into the customer stock CSV
+-- (Admin > API > CSV Columns). Independent of `active`.
+ALTER TABLE results
+    ADD COLUMN extract VARCHAR(10) NOT NULL DEFAULT 'yes' AFTER active;
 
 -- ------------------------------------------------------------
 -- LOOKUP TABLES (cut, fluorescence, polish, symmetry, shape,

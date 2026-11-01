@@ -85,14 +85,27 @@ function apikey_find(string $key): ?array
     return null;
 }
 
+/** Whether results.extract exists (sql/migration_results_extract.sql has been run). */
+function apikey_has_extract_column(): bool
+{
+    static $has = null;
+    if ($has === null) {
+        $has = (bool)get_db()->query("SHOW COLUMNS FROM results LIKE 'extract'")->fetch();
+    }
+    return $has;
+}
+
 /**
  * Columns for the CSV: [['label' => heading, 'field' => maindata column], …]
- * from the active `results` rows of APIKEY_CSV_USERTYPE_ID, validated
- * against maindata's real columns.
+ * — the `results` rows of APIKEY_CSV_USERTYPE_ID with extract = 'yes',
+ * in orderid order, validated against maindata's real columns.
+ * Before the extract column exists, the Results page's active columns
+ * are used instead.
  */
 function apikey_csv_columns(): array
 {
-    $stmt = get_db()->prepare("SELECT colname, fldname FROM results WHERE usertype = :ut AND active = 'yes' ORDER BY orderid ASC");
+    $flag = apikey_has_extract_column() ? 'extract' : 'active';
+    $stmt = get_db()->prepare("SELECT colname, fldname FROM results WHERE usertype = :ut AND `$flag` = 'yes' ORDER BY orderid ASC, id ASC");
     $stmt->execute([':ut' => (int)APIKEY_CSV_USERTYPE_ID]);
     $valid = get_maindata_columns();
     $out = [];
@@ -102,6 +115,69 @@ function apikey_csv_columns(): array
         }
     }
     return $out;
+}
+
+/** Name of the user type the CSV follows (for headings on admin pages). */
+function apikey_csv_usertype_label(): string
+{
+    $stmt = get_db()->prepare('SELECT usertype FROM user_types WHERE id = :id');
+    $stmt->execute([':id' => (int)APIKEY_CSV_USERTYPE_ID]);
+    return (string)($stmt->fetchColumn() ?: ('user type #' . APIKEY_CSV_USERTYPE_ID));
+}
+
+/**
+ * Every `results` row of the CSV's user type, for Admin > API > CSV
+ * Columns: id, colname, fldname, active, extract, orderid, and whether
+ * fldname is a real maindata column.
+ */
+function apikey_extract_rows(): array
+{
+    $stmt = get_db()->prepare(
+        'SELECT id, colname, fldname, active, extract, orderid
+         FROM results WHERE usertype = :ut ORDER BY orderid ASC, id ASC'
+    );
+    $stmt->execute([':ut' => (int)APIKEY_CSV_USERTYPE_ID]);
+    $valid = get_maindata_columns();
+    $rows = $stmt->fetchAll();
+    foreach ($rows as &$row) {
+        $row['valid'] = in_array($row['fldname'], $valid, true);
+        $row['extract'] = strcasecmp(trim((string)$row['extract']), 'yes') === 0 ? 'yes' : 'no';
+    }
+    unset($row);
+    return $rows;
+}
+
+/**
+ * Save Extract values from the form: $values is [results.id => 'yes'|'no'].
+ * Only rows of the CSV's user type are changed; anything else is
+ * ignored. Returns the number of rows changed.
+ */
+function apikey_save_extract(array $values): int
+{
+    $db = get_db();
+    $current = [];
+    foreach (apikey_extract_rows() as $row) {
+        $current[(int)$row['id']] = $row['extract'];
+    }
+    $update = $db->prepare('UPDATE results SET extract = :v WHERE id = :id AND usertype = :ut');
+    $changed = 0;
+    $db->beginTransaction();
+    try {
+        foreach ($values as $id => $value) {
+            $id = (int)$id;
+            $value = $value === 'yes' ? 'yes' : ($value === 'no' ? 'no' : null);
+            if ($value === null || !isset($current[$id]) || $current[$id] === $value) {
+                continue;
+            }
+            $update->execute([':v' => $value, ':id' => $id, ':ut' => (int)APIKEY_CSV_USERTYPE_ID]);
+            $changed += $update->rowCount();
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        $db->rollBack();
+        throw $e;
+    }
+    return $changed;
 }
 
 /**

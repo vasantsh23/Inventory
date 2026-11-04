@@ -1577,6 +1577,20 @@ a.media-icon:hover { transform: scale(1.18); }
 a.media-icon--cert { color: #d9534f; }
 .media-icons--head .media-icon { opacity: .75; }
 .results-media-col { width: 1%; }
+
+/* Location column: the location's flag from the `flags` table */
+.loc-flag {
+    display: block;
+    width: 2.4em;
+    height: 1.6em;
+    max-width: 30px;
+    max-height: 20px;
+    object-fit: fill;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+table.data-table td.results-flag-col { text-align: center; width: 1%; }
 @media (max-width: 760px) {
     .results-table td.results-media-col .media-icons { gap: 12px; }
     .results-table td.results-media-col .media-icon--empty { display: none; }
@@ -1593,5 +1607,22 @@ a.media-icon--cert { color: #d9534f; }
     table.data-table.results-table td { padding: 6px 5px; max-width: 14em; }
     .results-table .results-checkbox-col { width: 22px; padding-left: 4px; padding-right: 2px; }
     .media-icons { gap: 3px; }
-    .media-icon, .media-icon svg { width: 17px; height: 17px; }
+    /* em-based so the icons shrink with the table font (results_fit.js) */
+    .media-icon, .media-icon svg { width: min(17px, 1.45em); height: min(17px, 1.45em); }
+    .results-table .loc-flag { margin: 0 auto; }
+
+    /* results_fit.js, stage 2: still too wide at a small font — let
+       headers and long cells wrap at spaces, media icons go 2 × 2. */
+    table.data-table.results-table.results-table--wrap th,
+    table.data-table.results-table.results-table--wrap td { white-space: normal; overflow-wrap: normal; word-break: normal; }
+    .results-table--wrap .media-icons { display: inline-grid; grid-template-columns: repeat(2, auto); gap: 2px; }
+
+    /* results_fit.js, stage 3 (last resort): rows on one line, headers may
+       wrap, the widest columns are narrowed and cut with "…" (full text on hover). */
+    table.data-table.results-table.results-table--headwrap th { white-space: normal; overflow-wrap: break-word; }
+    table.data-table.results-table.results-table--measure th { overflow-wrap: anywhere; }
+    .results-table--headwrap .media-icons { display: inline-grid; grid-template-columns: repeat(2, auto); gap: 2px; }
+    table.data-table.results-table.results-table--fixed { table-layout: fixed; width: 100%; }
+    table.data-table.results-table.results-table--fixed td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: none; }
+    .results-table--fixed .loc-flag { width: 100%; max-width: 2.4em; height: auto; aspect-ratio: 3 / 2; }
 }

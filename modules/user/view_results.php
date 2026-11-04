@@ -257,6 +257,10 @@ require_once __DIR__ . '/../../includes/header.php';
                                         <td data-label="<?= e($col['label']) ?>">
                                             <?= e(format_measurements_display($row['Measurements'] ?? null)) ?>
                                         </td>
+                                    <?php elseif (strcasecmp($col['field'], 'location') === 0): ?>
+                                        <td class="results-flag-col" data-label="<?= e($col['label']) ?>">
+                                            <?= render_location_flag(isset($row[$col['field']]) ? (string)$row[$col['field']] : null) ?>
+                                        </td>
                                     <?php elseif ($col['field'] === 'totamt'): ?>
                                         <td data-label="<?= e($col['label']) ?>">
                                             <?= e(number_format(ds_display_amount($row['totamt'] ?? 0), 2)) ?>

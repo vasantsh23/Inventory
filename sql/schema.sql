@@ -1135,3 +1135,25 @@ CREATE TABLE IF NOT EXISTS backup_log (
     created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+
+-- ------------------------------------------------------------
+-- flags: flag image per location for the Results Location column
+-- (see migration_flags.sql)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `flags` (
+  `id`       INT NOT NULL AUTO_INCREMENT,
+  `location` VARCHAR(100) NOT NULL,
+  `image`    VARCHAR(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT IGNORE INTO `flags` (`id`, `location`, `image`) VALUES
+(1, 'IND', 'img/flags/india.svg'),
+(2, 'India - GF', 'img/flags/india.svg'),
+(3, 'UAE', 'img/flags/uae.svg'),
+(4, 'Belgium', 'img/flags/belgium.svg'),
+(5, 'Botswana', 'img/flags/botswana.svg'),
+(6, 'South Africa', 'img/flags/southafrica.svg'),
+(7, 'Angola', 'img/flags/angola.svg'),
+(8, 'USA', 'img/flags/usa.svg'),
+(9, 'Hong Kong', 'img/flags/hk.svg');

@@ -43,6 +43,7 @@ const CRUD_TABLES = [
     'symmetry'       => 'Symmetry',
     'shape'          => 'Shape',
     'location'       => 'Location',
+    'flags'          => 'Location Flags',
     'size'           => 'Size',
     'lab'            => 'Lab',
     'clarity'        => 'Clarity',
@@ -298,6 +299,11 @@ const CRUD_COLUMN_OVERRIDES = [
         'id'     => ['type' => 'readonly'],
         'active' => ['type' => 'select', 'options' => ['yes', 'no']],
     ],
+    'flags' => [
+        'id'       => ['type' => 'readonly'],
+        'location' => ['hint' => 'Must match the location value in maindata (case is ignored).'],
+        'image'    => ['label' => 'Flag image', 'hint' => 'Path from the site root, e.g. img/flags/india.svg'],
+    ],
     'availability' => [
         'id'      => ['type' => 'readonly'],
         'shortnm' => ['label' => 'Short Name', 'hint' => 'Matched against maindata\'s avail value to look up this row\'s color for the Stock No background on Results/View Cart.'],
@@ -377,6 +383,7 @@ const CRUD_LIST_COLUMNS = [
     'symmetry'       => ['id', 'sym_id', 'sym', 'order', 'active'],
     'shape'          => ['id', 'shape_id', 'shape', 'order', 'Display _nm', 'imgpath', 'active'],
     'location'       => ['id', 'location', 'loc_id', 'shortnm', 'active', 'order'],
+    'flags'          => ['id', 'location', 'image'],
     'size'           => ['id', 'sizedesc', 'sizefr', 'sizeto'],
     'lab'            => ['id', 'lab', 'active'],
     'clarity'        => ['id', 'clarity', 'active'],

@@ -12,8 +12,13 @@ $activeNav = 'dashboard';
 
 $stats = [];
 foreach (CRUD_TABLES as $tableKey => $label) {
-    $stmt = get_db()->query("SELECT COUNT(*) AS c FROM `$tableKey`");
-    $stats[$tableKey] = ['label' => $label, 'count' => (int)$stmt->fetch()['c']];
+    try {
+        $stmt = get_db()->query("SELECT COUNT(*) AS c FROM `$tableKey`");
+        $stats[$tableKey] = ['label' => $label, 'count' => (int)$stmt->fetch()['c']];
+    } catch (PDOException $e) {
+        // Table not created yet (its migration hasn't been run) — skip it
+        // rather than break the whole dashboard.
+    }
 }
 $recentBackups = array_slice(list_backups(), 0, 3);
 

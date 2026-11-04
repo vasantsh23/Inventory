@@ -619,3 +619,73 @@ function get_latest_upload_log(): ?array
     }
     return $cache;
 }
+
+/**
+ * Location → flag image, from the `flags` table (location, image).
+ * Matched case-insensitively and ignoring surrounding spaces, so
+ * maindata.location "uae " still finds the "UAE" row. Cached per
+ * request. If the table doesn't exist yet, returns [] so the Results
+ * page simply shows the location as text.
+ */
+function get_location_flags(): array
+{
+    static $map = null;
+    if ($map !== null) {
+        return $map;
+    }
+    $map = [];
+    try {
+        $rows = get_db()->query('SELECT `location`, `image` FROM `flags`')->fetchAll();
+    } catch (PDOException $e) {
+        return $map;
+    }
+    foreach ($rows as $r) {
+        $loc = strtolower(trim((string)($r['location'] ?? '')));
+        $img = trim((string)($r['image'] ?? ''));
+        if ($loc !== '' && $img !== '' && !isset($map[$loc])) {
+            $map[$loc] = $img;
+        }
+    }
+    return $map;
+}
+
+/**
+ * Turn a `flags.image` value into a URL the browser can load.
+ * A relative path such as "img/flags/india.svg" is relative to this
+ * app's root folder. Returns null when the file isn't on the server,
+ * so the caller can fall back to text instead of a broken image.
+ */
+function resolve_flag_url(string $image): ?string
+{
+    if (preg_match('~^(https?:)?//~i', $image)) {
+        return $image; // full URL — its host must also be allowed in send_csp()'s img-src
+    }
+    $rel = '/' . ltrim(str_replace('\\', '/', $image), '/');
+    if (str_contains($rel, '..')) {
+        return null;
+    }
+    $file = dirname(__DIR__) . $rel;
+    if (!is_file($file)) {
+        return null;
+    }
+    return asset_url($rel) . '?v=' . filemtime($file);
+}
+
+/**
+ * HTML for the Location cell on Results / View Cart: the location's
+ * flag (name shown on hover), or the plain location text when there
+ * is no flag for it.
+ */
+function render_location_flag(?string $location): string
+{
+    $name = trim((string)$location);
+    if ($name === '') {
+        return '';
+    }
+    $image = get_location_flags()[strtolower($name)] ?? null;
+    $url = $image !== null ? resolve_flag_url($image) : null;
+    if ($url === null) {
+        return e($name);
+    }
+    return '<img class="loc-flag" src="' . e($url) . '" alt="' . e($name) . '" title="' . e($name) . '" width="30" height="20" loading="lazy" decoding="async">';
+}

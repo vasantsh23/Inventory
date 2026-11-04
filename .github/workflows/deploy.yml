@@ -2,6 +2,7 @@ name: Deploy to all servers
 on:
   push:
     branches: [main]
+  workflow_dispatch:          # adds a "Run workflow" button to deploy the latest main on demand
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -17,6 +18,27 @@ jobs:
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ matrix.server.port }} ${{ matrix.server.host }} >> ~/.ssh/known_hosts
+
       - name: Pull and deploy on ${{ matrix.server.name }}
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ matrix.server.port }} ${{ matrix.server.user }}@${{ matrix.server.host }} "cd ${{ matrix.server.repo_path }} && git fetch --force origin main && git reset --hard origin/main && cp -R ${{ matrix.server.repo_path }}/* ${{ matrix.server.deploy_path }}"
+          ssh -i ~/.ssh/deploy_key -p ${{ matrix.server.port }} ${{ matrix.server.user }}@${{ matrix.server.host }} 'bash -s' <<'EOF'
+          set -euo pipefail
+          REPO='${{ matrix.server.repo_path }}'
+          DEST='${{ matrix.server.deploy_path }}'
+          echo "Server:      $(hostname)"
+          echo "Repo path:   $REPO"
+          echo "Deploy path: $DEST"
+          if [ ! -d "$DEST" ]; then
+            echo "::error::Deploy path $DEST does not exist on this server - check deploy_path in the SERVERS variable"
+            exit 1
+          fi
+          cd "$REPO"
+          git fetch --force origin main
+          git reset --hard origin/main
+          echo "Deployed commit: $(git log -1 --format='%h  %s  (%ci)')"
+          cp -R "$REPO"/* "$DEST"/
+          # cp * skips dotfiles: copy .htaccess explicitly (never .git)
+          if [ -f "$REPO/.htaccess" ]; then cp -f "$REPO/.htaccess" "$DEST/.htaccess"; fi
+          echo "Most recently changed files in $DEST:"
+          ls -lt "$DEST" | head -6
+          EOF

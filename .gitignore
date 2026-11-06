@@ -1,6 +1,8 @@
 # Per-server files: each site keeps its own copy, never overwritten by a deploy
 .env
 dbconn.php
+# Written by the deploy workflow on each server (build version)
+config/version.php
 /assets/img/logo.png
 
 # Logs, temp and cache

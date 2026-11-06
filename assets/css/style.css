@@ -1853,3 +1853,9 @@ body.ds-v2 .ds-submit-btn { height: 30px; }
 body.ds-v2 .ds-update-band { margin: 8px -20px 0; font-size: 16px; padding: 6px 16px; }
 body.ds-v2 .site-footer { margin-top: 0; padding: 6px 24px; font-size: 12px; }
 body.ds-v2 .site-footer .footer-inner { max-width: none; line-height: 1.35; }
+
+/* Blue band: upload details, then the copyright + version line */
+body.ds-v2 .ds-update-band {
+    display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 40px;
+}
+body.ds-v2 .ds-copyright { font-size: 14px; white-space: nowrap; }

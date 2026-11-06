@@ -11,6 +11,10 @@ declare(strict_types=1);
 
 $setup = $setup ?? (function_exists('get_setup') ? (get_setup() ?? []) : []);
 $footerExtraRight = $footerExtraRight ?? '';
+// Inventory pages (includes/footer.php) show only the copyright line;
+// the website pages (Home, About, Contact) keep company, address and
+// contact details above it.
+$footerCopyOnly = !empty($footerCopyOnly);
 
 // "Client login" link — controlled by Admin -> Website -> Page Content ->
 // Footer -> "Show a small Client login link" (website_content:
@@ -43,6 +47,7 @@ $showClientLogin = (static function (): bool {
 <footer class="site-footer">
     <div class="footer-inner<?= $footerExtraRight !== '' ? ' footer-inner-split' : '' ?>">
         <div class="footer-main">
+            <?php if (!$footerCopyOnly): ?>
             <p class="footer-company"><?= e($setup['company'] ?? APP_NAME) ?></p>
             <?php if (($addr = format_address($setup)) !== ''): ?>
                 <p class="footer-address"><?= e($addr) ?></p>
@@ -62,6 +67,7 @@ $showClientLogin = (static function (): bool {
                         </p>
                     <?php endif; ?>
                 </div>
+            <?php endif; ?>
             <?php endif; ?>
             <p class="footer-copy">&copy; <?= date('Y') ?> <?= e($setup['company'] ?? APP_NAME) ?>. All rights reserved. <span class="footer-version"><?= e(APP_VERSION) ?></span><?php if ($showClientLogin): ?>
                 &middot; <a class="footer-login" href="<?= e(asset_url('/login.php')) ?>">Client login</a><?php endif; ?></p>

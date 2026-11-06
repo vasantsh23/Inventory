@@ -113,9 +113,22 @@ if (APP_ENCRYPTION_KEY === '' || APP_HMAC_KEY === '') {
 }
 
 define('APP_NAME', 'Inventory Management System');
-// Bump this on each deploy — shown in the footer of every page so
-// support can quickly confirm which build is currently live.
-define('APP_VERSION', '08-Oct-26V1.19');
+// Build version shown in the footer of every page, so support can
+// confirm which build is live. The deploy workflow writes
+// config/version.php on each server for every deployed commit
+// (commit date + V1.<number>), so it changes automatically with each
+// code update; the fallback below is only used where no deploy has
+// written that file yet (e.g. a local copy).
+define('APP_VERSION', (static function (): string {
+    $file = __DIR__ . '/version.php';
+    if (is_file($file)) {
+        $v = include $file;
+        if (is_string($v) && trim($v) !== '') {
+            return trim($v);
+        }
+    }
+    return '08-Oct-26V1.19';
+})());
 // Check that Results / View Cart media + certificate links can be opened before showing their icons.
 define('MEDIA_VALIDATE', filter_var(getenv('MEDIA_VALIDATE') ?: 'true', FILTER_VALIDATE_BOOLEAN));
 // user_types.id whose `results` rows guests see on Results / View Selected

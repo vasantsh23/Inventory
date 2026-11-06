@@ -70,6 +70,21 @@ jobs:
           fi
           echo "All tracked files verified in $DEST"
 
+          # Build version shown in every footer: <commit date>V1.<n>, where n
+          # counts commits on main since b7ec871 ("Update-nov06", the last
+          # V1.19 build). Every new commit therefore raises the number by
+          # one; re-running a deploy of the same commit keeps it unchanged.
+          BASE_COMMIT='b7ec871'
+          BASE_NUMBER=19
+          if git cat-file -e "$BASE_COMMIT^{commit}" 2>/dev/null; then
+            BUILD=$(( BASE_NUMBER + $(git rev-list --count "$BASE_COMMIT..HEAD") ))
+          else
+            BUILD=$(git rev-list --count HEAD)
+          fi
+          VERSION="$(git log -1 --format=%cd --date=format:'%d-%b-%y')V1.${BUILD}"
+          printf "<?php\n// Written by the deploy workflow - do not edit.\nreturn '%s';\n" "$VERSION" > "$DEST/config/version.php"
+          echo "Build version: $VERSION"
+
           # Clear PHP OPcache / LiteSpeed cache if present, so the site serves the new code
           touch "$DEST/index.php" 2>/dev/null || true
           if [ -d "$DEST/.lscache" ]; then rm -rf "$DEST/.lscache"/* || true; fi

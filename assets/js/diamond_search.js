@@ -238,7 +238,7 @@
     var fitTarget = document.querySelector('.ds-page');
     var MIN_ZOOM = 0.7;
     function pageOverflows() {
-        return document.documentElement.scrollHeight > window.innerHeight + 1;
+        return document.documentElement.scrollHeight > window.innerHeight;
     }
     function fitToWindow() {
         if (!fitTarget) {

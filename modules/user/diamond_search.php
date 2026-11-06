@@ -224,6 +224,9 @@ $dsUserEmail = trim((string)($dsUser['emailid'] ?? '')) !== '' ? (string)$dsUser
 // get_latest_upload_log() in includes/functions.php). Omitted if no
 // upload has ever been logged.
 $latestUpload = get_latest_upload_log();
+$dsSetup = get_setup() ?? [];
+$dsCopyright = '© ' . date('Y') . ' ' . ($dsSetup['company'] ?? APP_NAME) . '. All rights reserved. ' . APP_VERSION;
+$hideFooterBar = true; // the copyright line is printed in the blue band instead
 $dsUploadBand = '';
 if ($latestUpload !== null) {
     $fmtDt = function (?string $date, ?string $time): string {
@@ -274,9 +277,12 @@ require_once __DIR__ . '/../../includes/header.php';
             <?php endif; ?>
         </form>
 
-        <?php if ($dsUploadBand !== ''): ?>
-            <div class="ds-update-band"><?= e($dsUploadBand) ?></div>
-        <?php endif; ?>
+        <div class="ds-update-band">
+            <?php if ($dsUploadBand !== ''): ?>
+                <span class="ds-update-info"><?= e($dsUploadBand) ?></span>
+            <?php endif; ?>
+            <span class="ds-copyright"><?= e($dsCopyright) ?></span>
+        </div>
     </section>
 
     <script src="<?= e(asset_url_versioned('/assets/js/diamond_search.js')) ?>"></script>

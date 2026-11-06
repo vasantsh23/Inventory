@@ -10,6 +10,9 @@ $setup = $setup ?? (function_exists('get_setup') ? (get_setup() ?? []) : []);
 $footerExtraRight = $footerExtraRight ?? '';
 ?>
 </main>
-<?php require __DIR__ . '/partials/footer_bar.php'; ?>
+<?php // A page that shows the copyright line itself (Diamond Search puts it
+      // in its blue band) sets $hideFooterBar = true. ?>
+<?php $footerCopyOnly = true; ?>
+<?php if (empty($hideFooterBar)) { require __DIR__ . '/partials/footer_bar.php'; } ?>
 </body>
 </html>

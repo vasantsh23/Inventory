@@ -85,74 +85,48 @@
         if (section.getAttribute('data-fldname') === 'Color') {
             applyColorFancyExclusivity(section);
         }
-        updatePresetHighlight();
+        handlePresetRules(input, section);
     });
 
-    // 3 EX / 3 VG / 3EX-VG shortcuts: select exactly those grades in
-    // Cut, Polish and Symmetry at once. Grades are matched on the
-    // option's value or label, so "EX" and "Excellent" both work.
-    var PRESET_SYNONYMS = {
-        EX: ['EX', 'EXC', 'EXCEL', 'EXCELLENT', 'ID', 'IDEAL'],
-        VG: ['VG', 'V.GOOD', 'VERY GOOD', 'VERYGOOD']
-    };
-    var PRESET_FIELDS = ['CutGrade', 'Polish', 'Symmetry'];
+    // 3 EX / 3 VG / 3EX-VG (row under Symmetry, section "CPS3"): one at
+    // a time. The server applies them to Cut, Polish and Symmetry
+    // together, so choosing one puts those three back on "All", and
+    // choosing a specific Cut/Polish/Symmetry grade clears the shortcut.
+    var CPS_FIELDS = ['CutGrade', 'Polish', 'Symmetry'];
+    var presetSection = form.querySelector('.ds-section[data-fldname="CPS3"]');
 
-    function optionGrade(cb) {
-        var label = cb.closest('.ds-pill');
-        var texts = [cb.value, label ? label.textContent : ''].map(function (t) {
-            return String(t).trim().toUpperCase();
+    function setSectionToAll(fld) {
+        var section = form.querySelector('.ds-section[data-fldname="' + fld + '"]');
+        if (!section) {
+            return;
+        }
+        section.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+            cb.checked = (cb.value === '__ALL__');
+            setSelectedClass(cb);
         });
-        var found = null;
-        Object.keys(PRESET_SYNONYMS).forEach(function (grade) {
-            if (texts.some(function (t) { return PRESET_SYNONYMS[grade].indexOf(t) >= 0; })) {
-                found = grade;
+    }
+
+    function clearPresets(except) {
+        if (!presetSection) {
+            return;
+        }
+        presetSection.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+            if (cb !== except && cb.checked) {
+                cb.checked = false;
+                setSelectedClass(cb);
             }
         });
-        return found;
     }
 
-    function presetSections() {
-        return PRESET_FIELDS.map(function (f) {
-            return form.querySelector('.ds-section[data-fldname="' + f + '"]');
-        }).filter(Boolean);
-    }
-
-    function applyPreset(grades) {
-        presetSections().forEach(function (section) {
-            section.querySelectorAll('.ds-pill input[type=checkbox]').forEach(function (cb) {
-                cb.checked = grades.indexOf(optionGrade(cb)) >= 0;
-                setSelectedClass(cb);
-            });
-        });
-        updatePresetHighlight();
-    }
-
-    function updatePresetHighlight() {
-        var sections = presetSections();
-        form.querySelectorAll('.ds-preset-btn').forEach(function (btn) {
-            var grades = btn.getAttribute('data-preset').split(',');
-            var on = sections.length === PRESET_FIELDS.length && sections.every(function (section) {
-                var checked = Array.prototype.filter.call(
-                    section.querySelectorAll('.ds-pill input[type=checkbox]'),
-                    function (cb) { return cb.checked; }
-                );
-                var gotGrades = checked.map(optionGrade);
-                return checked.length > 0
-                    && gotGrades.every(function (g) { return grades.indexOf(g) >= 0; })
-                    && grades.every(function (g) { return gotGrades.indexOf(g) >= 0; });
-            });
-            btn.classList.toggle('ds-selected', on);
-            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-        });
-    }
-
-    form.addEventListener('click', function (e) {
-        var btn = e.target.closest('.ds-preset-btn');
-        if (btn) {
-            applyPreset(btn.getAttribute('data-preset').split(','));
+    function handlePresetRules(input, section) {
+        var fld = section.getAttribute('data-fldname');
+        if (fld === 'CPS3' && input.checked) {
+            clearPresets(input);
+            CPS_FIELDS.forEach(setSectionToAll);
+        } else if (CPS_FIELDS.indexOf(fld) >= 0 && input.checked && input.value !== '__ALL__') {
+            clearPresets(null);
         }
-    });
-    updatePresetHighlight();
+    }
 
     // Apply the Fancy/Others exclusivity immediately on page load too
     // — e.g. after "Back to Search" restores a prior search that had
@@ -180,7 +154,6 @@
             form.querySelectorAll('input[type=number], input[type=text]').forEach(function (inp) {
                 inp.value = '';
             });
-            updatePresetHighlight();
             if (colorSection) {
                 applyColorFancyExclusivity(colorSection);
             }
@@ -209,7 +182,6 @@
             section.querySelectorAll('input[type=number]').forEach(function (inp) {
                 inp.value = '';
             });
-            updatePresetHighlight();
         });
     });
 

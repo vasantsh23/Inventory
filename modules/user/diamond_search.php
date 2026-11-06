@@ -194,19 +194,35 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
                     <input type="number" step="0.01" min="0" placeholder="99.99" class="ds-range-input" aria-label="<?= e($label) ?> to" name="f[Weight_to]" value="<?= e((string)($priorFilters['Weight_to'] ?? '')) ?>">
                 </div>
             <?php endif; ?>
-            <?php // 3 EX / 3 VG / 3EX-VG shortcuts, under Symmetry, when
-                  // Cut, Polish and Symmetry are all on this page. ?>
-            <?php if ($fld === 'Symmetry' && in_array('CutGrade', $pageFldnames, true) && in_array('Polish', $pageFldnames, true)): ?>
-                <div class="ds-pill-row ds-preset-row">
-                    <button type="button" class="ds-pill ds-preset-btn" data-preset="EX">3 EX</button>
-                    <button type="button" class="ds-pill ds-preset-btn" data-preset="VG">3 VG</button>
-                    <button type="button" class="ds-pill ds-preset-btn" data-preset="EX,VG">3EX-VG</button>
-                </div>
-            <?php endif; ?>
         <?php endif; ?>
         </div>
     </div>
     <?php
+    // 3 EX / 3 VG / 3EX-VG: its own unlabeled row right under Symmetry
+    // (when Cut and Polish are on the page too). Submitted as f[CPS3][]
+    // and applied by build_maindata_search_where(): 3 EX = Cut, Polish
+    // and Symmetry all EX; 3 VG = all three VG; 3EX-VG = all three EX
+    // OR all three VG.
+    if ($fld === 'Symmetry' && in_array('CutGrade', $pageFldnames, true) && in_array('Polish', $pageFldnames, true)) {
+        $priorPreset = (array)($priorFilters['CPS3'] ?? []);
+        ?>
+        <div class="ds-section ds-row ds-row--presets" data-fldname="CPS3">
+            <div class="ds-label-col" aria-hidden="true"></div>
+            <div class="ds-control-col">
+                <div class="ds-pill-row" role="group" aria-label="Cut, Polish and Symmetry shortcuts">
+                    <?php foreach (['EX' => '3 EX', 'VG' => '3 VG', 'EXVG' => '3EX-VG'] as $val => $text):
+                        $on = in_array($val, $priorPreset, true);
+                    ?>
+                        <label class="ds-pill<?= $on ? ' ds-selected' : '' ?>">
+                            <input type="checkbox" name="f[CPS3][]" value="<?= e($val) ?>" class="ds-visually-hidden-input" data-preset="1" <?= $on ? 'checked' : '' ?>>
+                            <?= e($text) ?>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
 }
 
 $pageTitle = 'Diamond Search';

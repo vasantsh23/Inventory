@@ -114,6 +114,39 @@ function build_maindata_search_where(array $filters): array
         }
     }
 
+    // --- 3 EX / 3 VG / 3EX-VG shortcut (f[CPS3][], from the Diamond
+    //     Search row under Symmetry). The grade must hold for Cut,
+    //     Polish AND Symmetry of the same stone:
+    //       EX   -> all three EX
+    //       VG   -> all three VG
+    //       EXVG -> all three EX, OR all three VG (not mixed EX/VG)
+    //     Grades are compared case-insensitively, ignoring spaces, and
+    //     the spelled-out forms ("Excellent", "Very Good") count too. ---
+    $cpsSelected = array_values(array_intersect(['EX', 'VG', 'EXVG'], array_filter((array)($filters['CPS3'] ?? []), 'is_string')));
+    $cpsCols = ['CutGrade', 'Polish', 'Symmetry'];
+    if ($cpsSelected !== [] && count(array_intersect($cpsCols, $validCols)) === count($cpsCols)) {
+        $gradeWords = ['EX' => ['EX', 'EXCELLENT'], 'VG' => ['VG', 'VERY GOOD']];
+        $allThree = function (string $grade) use ($cpsCols, $gradeWords, &$params, &$pIndex): string {
+            $parts = [];
+            foreach ($cpsCols as $col) {
+                $keys = [];
+                foreach ($gradeWords[$grade] as $word) {
+                    $key = ':p' . $pIndex++;
+                    $keys[] = $key;
+                    $params[$key] = $word;
+                }
+                $parts[] = "UPPER(TRIM(`$col`)) IN (" . implode(', ', $keys) . ')';
+            }
+            return '(' . implode(' AND ', $parts) . ')';
+        };
+        $grades = [];
+        foreach ($cpsSelected as $sel) {
+            $grades = array_merge($grades, $sel === 'EXVG' ? ['EX', 'VG'] : [$sel]);
+        }
+        $grades = array_values(array_unique($grades));
+        $clauses[] = '(' . implode(' OR ', array_map($allThree, $grades)) . ')';
+    }
+
     // --- Manual Carat (Weight) From/To range, entered alongside the
     //     pill buckets above — applied as an additional AND constraint
     //     regardless of whether any pill is also checked. ---
@@ -786,6 +819,12 @@ function build_applied_filters_summary(array $filters): array
         if ($labels !== []) {
             $summary[] = ['label' => ds_format_label($section['label']), 'value' => implode(', ', $labels)];
         }
+    }
+
+    $cpsLabels = ['EX' => '3 EX', 'VG' => '3 VG', 'EXVG' => '3EX-VG'];
+    $cpsChosen = array_values(array_intersect_key($cpsLabels, array_flip(array_filter((array)($filters['CPS3'] ?? []), 'is_string'))));
+    if ($cpsChosen !== []) {
+        $summary[] = ['label' => 'Cut/Polish/Sym', 'value' => implode(', ', $cpsChosen)];
     }
 
     return $summary;

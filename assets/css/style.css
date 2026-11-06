@@ -1859,3 +1859,136 @@ body.ds-v2 .ds-update-band {
     display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 40px;
 }
 body.ds-v2 .ds-copyright { font-size: 14px; white-space: nowrap; }
+
+
+/* ============================================================
+   Results / View Cart / View (Selected) — bordered design
+   (body.rs-v2). Blue toolbar buttons, "Total Stones | Selected |
+   Total Weight | Total Amount" line, blue header row with white
+   text, grey cell borders, white / light-grey row banding, the four
+   media icons as their own columns, floating "View (Selected)".
+   ============================================================ */
+body.rs-v2 {
+    --rs-blue: #2468d8;
+    --rs-blue-hover: #1c58bb;
+    --rs-head: #1f6fd1;
+    --rs-border: #a7abb1;
+    --rs-band: #ebebeb;
+    --rs-text: #1b1b1b;
+    --results-table-font-size: 15px;
+    --results-table-font: Arial, Helvetica, sans-serif;
+    --checkbox-border: #6b6f76;
+    --checkbox-bg: #ffffff;
+    --checkbox-checked: #2468d8;
+    background: #ffffff;
+    color: var(--rs-text);
+    font-family: Arial, Helvetica, sans-serif;
+}
+body.rs-v2 .site-content { background: #ffffff; padding-top: 8px; }
+.rs-sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Toolbar */
+body.rs-v2 .rs-toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 12px 24px; padding: 4px 0 10px; border-bottom: 1px solid #e3e3e3; margin-bottom: 8px;
+}
+body.rs-v2 .rs-title { margin: 0; font-size: 22px; font-weight: 700; color: var(--rs-text); }
+body.rs-v2 .rs-customer { display: flex; flex-direction: column; gap: 6px; flex: 0 1 430px; min-width: 260px; }
+body.rs-v2 .rs-customer-search { position: relative; }
+body.rs-v2 .rs-customer input,
+body.rs-v2 .rs-customer select {
+    width: 100%; box-sizing: border-box; height: 32px; padding: 0 34px 0 8px;
+    border: 1px solid #c9c9c9; border-radius: 3px; background: #ffffff; color: var(--rs-text);
+    font: 16px Arial, Helvetica, sans-serif;
+}
+body.rs-v2 .rs-customer select { padding-right: 8px; }
+body.rs-v2 .rs-customer-search svg { position: absolute; right: 8px; top: 6px; fill: #111111; pointer-events: none; }
+body.rs-v2 .rs-buttons { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex: 1 1 600px; }
+body.rs-v2 .rs-btn-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px 14px; }
+body.rs-v2 .rs-btn {
+    display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px;
+    background: var(--rs-blue); color: #ffffff; border: 0; border-radius: 4px;
+    font: 700 18px Arial, Helvetica, sans-serif; letter-spacing: 0.3px; text-decoration: none;
+    cursor: pointer; white-space: nowrap;
+}
+body.rs-v2 .rs-btn:hover { background: var(--rs-blue-hover); color: #ffffff; }
+body.rs-v2 .rs-btn:focus-visible { outline: 2px solid #0b3c8c; outline-offset: 2px; }
+body.rs-v2 .rs-btn:disabled { opacity: 0.6; cursor: wait; }
+body.rs-v2 .rs-btn--big { height: 46px; font-size: 22px; }
+body.rs-v2 .rs-btn--danger { background: #c23b32; }
+body.rs-v2 .rs-btn--danger:hover { background: #a3302a; }
+body.rs-v2 .rs-btn-icon { fill: currentColor; flex: none; }
+body.rs-v2 .rs-inline-form { display: inline; margin: 0; }
+
+/* Summary + Select All */
+body.rs-v2 .rs-summary { font-size: 17px; margin: 2px 0 6px; color: var(--rs-text); }
+body.rs-v2 .rs-summary strong { font-weight: 700; }
+body.rs-v2 .rs-selectall-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-bottom: 8px; }
+body.rs-v2 .rs-selectall { display: inline-flex; align-items: center; gap: 6px; font-size: 19px; cursor: pointer; }
+body.rs-v2 .rs-link-btn {
+    background: none; border: 0; padding: 0; color: var(--rs-blue); font: 14px Arial, Helvetica, sans-serif;
+    text-decoration: underline; cursor: pointer;
+}
+body.rs-v2 .results-applied-filters { gap: 6px; }
+body.rs-v2 .filter-tag { font-size: 12px; padding: 2px 8px; }
+
+/* Table */
+body.rs-v2 .results-table-wrap { border: 0; border-radius: 0; }
+body.rs-v2 table.data-table.rs-table { border-collapse: collapse; border: 1px solid var(--rs-border); }
+body.rs-v2 table.data-table.rs-table th {
+    background: var(--rs-head); color: #ffffff; opacity: 1; font-weight: 700;
+    text-transform: none; letter-spacing: 0; text-align: center; vertical-align: middle;
+    border: 1px solid #ffffff; border-bottom: 1px solid var(--rs-border);
+}
+body.rs-v2 table.data-table.rs-table td {
+    border: 1px solid var(--rs-border); color: var(--rs-text); text-align: center;
+    vertical-align: middle; height: 2.9em;
+}
+body.rs-v2 table.data-table.rs-table tr:last-child td { border-bottom: 1px solid var(--rs-border); }
+body.rs-v2 table.rs-table tbody tr:nth-child(odd) td { background-color: #ffffff; }
+body.rs-v2 table.rs-table tbody tr:nth-child(even) td { background-color: var(--rs-band); }
+body.rs-v2 table.rs-table tbody tr:hover td { background-color: #dde8f8; }
+body.rs-v2 .rs-table .results-stockno-link { color: #000000; font-weight: 700; text-decoration: none; }
+body.rs-v2 .rs-table .results-stockno-link:hover { text-decoration: underline; }
+body.rs-v2 .rs-table .rs-cert-link { color: var(--rs-blue); text-decoration: none; }
+body.rs-v2 .rs-table .rs-cert-link:hover { text-decoration: underline; }
+body.rs-v2 .rs-table th.rs-media-col,
+body.rs-v2 .rs-table td.rs-media-col { width: 1%; padding-left: 4px; padding-right: 4px; }
+body.rs-v2 .rs-table th.rs-media-col .media-icon { color: #ffffff; opacity: 1; display: inline-block; }
+body.rs-v2 .rs-table td.rs-media-col a.media-icon { color: var(--rs-blue); display: inline-block; }
+body.rs-v2 .rs-table td.rs-media-col a.media-icon--cert { color: var(--rs-blue); }
+body.rs-v2 .rs-table .media-icon,
+body.rs-v2 .rs-table .media-icon svg { width: min(22px, 1.5em); height: min(22px, 1.5em); }
+body.rs-v2 .rs-table .loc-flag {
+    width: 3.3em; height: 2.4em; max-width: 50px; max-height: 36px; margin: 0 auto;
+}
+body.rs-v2 .rs-table .results-checkbox-col input { width: 16px; height: 16px; }
+
+/* Floating "View (Selected)" */
+body.rs-v2 .rs-float-btn {
+    position: fixed; right: 24px; bottom: 24px; z-index: 40;
+    background: var(--rs-blue); color: #ffffff; border: 0; border-radius: 4px;
+    padding: 12px 20px; font: 32px/1.35 Arial, Helvetica, sans-serif; text-align: center;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); cursor: pointer;
+}
+body.rs-v2 .rs-float-btn:hover { background: var(--rs-blue-hover); }
+body.rs-v2 .rs-float-btn:focus-visible { outline: 3px solid #0b3c8c; outline-offset: 2px; }
+
+@media (max-width: 1600px) {
+    body.rs-v2 .rs-float-btn { font-size: 24px; padding: 10px 16px; }
+}
+@media (max-width: 1200px) {
+    body.rs-v2 .rs-btn { font-size: 15px; height: 34px; padding: 0 12px; }
+    body.rs-v2 .rs-btn--big { font-size: 17px; height: 38px; }
+    body.rs-v2 .rs-float-btn { font-size: 22px; padding: 8px 14px; }
+}
+@media (max-width: 720px) {
+    body.rs-v2 .rs-buttons, body.rs-v2 .rs-btn-row { align-items: stretch; justify-content: flex-start; }
+    body.rs-v2 .rs-float-btn { right: 12px; bottom: 12px; font-size: 16px; }
+    body.rs-v2 table.data-table.rs-table td { text-align: left; height: auto; }
+    body.rs-v2 .rs-table td.rs-media-col--empty { display: none; }
+}
+body.rs-v2 [hidden] { display: none !important; }

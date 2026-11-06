@@ -215,7 +215,12 @@
                 showCopyStatus('Please select at least one row to export.', true);
                 return;
             }
-            window.location.href = '?export=xlsx&ids=' + encodeURIComponent(ids.join(','));
+            // Keep the page's own query (e.g. ?selected=1) so the export
+            // checks against the same rows the page is showing.
+            var params = new URLSearchParams(window.location.search);
+            params.set('export', 'xlsx');
+            params.set('ids', ids.join(','));
+            window.location.href = '?' + params.toString();
         });
     }
 

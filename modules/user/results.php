@@ -90,6 +90,35 @@ if (($_GET['export'] ?? '') === 'xlsx') {
     XlsxWriter::download('diamond-search-results-' . date('Ymd-His') . '.xlsx', $headers, $rows);
 }
 
+// ---- Complete Stock: every stone the viewer may see (no search
+//      filters; held stones stay hidden for plain users, exactly as in
+//      an unfiltered search), same columns as the table. ----
+if (($_GET['export'] ?? '') === 'xlsx_all') {
+    if ($resultsError !== '') {
+        http_response_code(400);
+        exit($resultsError);
+    }
+    if ($columns === []) {
+        http_response_code(400);
+        exit('No result columns are configured.');
+    }
+    [$allWhere, $allParams] = build_maindata_search_where([]);
+    $fieldList = implode(', ', array_map(fn($c) => "`{$c['field']}`", $columns));
+    $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE $allWhere ORDER BY " . build_rsetup_order_by());
+    $stmt->execute($allParams);
+    $headers = array_map(fn($c) => $c['label'], $columns);
+    $rows = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $rows[] = array_map(
+            fn($c) => $c['field'] === 'totamt'
+                ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
+                : (string)($row[$c['field']] ?? ''),
+            $columns
+        );
+    }
+    XlsxWriter::download('complete-stock-' . date('Ymd-His') . '.xlsx', $headers, $rows);
+}
+
 // ---- Excel-select: only the checked rows (ids from the Excel-select
 //      button's JS), ignoring the current search filters entirely —
 //      whatever the person selected is exactly what gets exported. ----
@@ -141,17 +170,12 @@ if ($columns !== []) {
     $total = (int)$countStmt->fetch()['c'];
 
     $fieldList = implode(', ', array_map(fn($c) => "`{$c['field']}`", $columns));
-    // Always fetch avail/notforweb (background color) and
-    // Lab/CertificateNo/StockNo (certificate hyperlink) and any
-    // column used as a {placeholder} in the `path` table too, even if
-    // not shown as visible columns.
-    $validColsForBg = get_maindata_columns();
-    $extraBgFields = array_diff(
-        array_intersect(array_unique(array_merge(['avail', 'notforweb', 'Lab', 'CertificateNo', 'StockNo'], media_placeholder_fields())), $validColsForBg),
-        array_column($columns, 'field')
-    );
-    if ($extraBgFields !== []) {
-        $fieldList .= ', ' . implode(', ', array_map(fn($f) => "`$f`", $extraBgFields));
+    // Also fetch the fields the table needs but may not show (StockNo
+    // colour, certificate link, media paths, Weight/Amount totals).
+    require_once __DIR__ . '/../../includes/partials/results_table.php';
+    $extraFields = results_table_extra_fields($columns);
+    if ($extraFields !== []) {
+        $fieldList .= ', ' . implode(', ', array_map(fn($f) => "`$f`", $extraFields));
     }
     $sql = "SELECT id, $fieldList FROM maindata WHERE $where ORDER BY " . build_rsetup_order_by() . " LIMIT :lim OFFSET :off";
     $stmt = get_db()->prepare($sql);
@@ -173,36 +197,67 @@ $pageSubtitle = '';
 $activeNav = 'diamond_search';
 $wideContent = true; // this table has many columns — use the full viewport width
 $compactTop = true;  // less space between the site header and the Results buttons
-$bodyClass = 'compact-footer no-footer-gap'; // tight footer, no band above it
+$bodyClass = 'compact-footer no-footer-gap rs-v2'; // tight footer; rs-v2 = bordered blue-header table design
+$rsCompany = (string)((get_setup() ?? [])['company'] ?? '');
+$copyLabel = (strtok(trim($rsCompany), ' ') ?: 'Copy') . '-Copy';  // e.g. "Veera-Copy"
 
 $rsetup = get_rsetup();
 
-require_once __DIR__ . '/../../includes/partials/media_icons.php';
+require_once __DIR__ . '/../../includes/partials/results_table.php';
 $mediaLinks = build_result_media_links_for_rows($rows);
 require_once __DIR__ . '/../../includes/header.php';
 ?>
-    <section class="ds-page">
-        <div class="ds-hero<?= $canMemo ? ' ds-hero--tight' : '' ?>">
-            <h1 class="ds-title">Results</h1>
-            <div class="ds-actions">
-                <a class="btn" href="<?= e(asset_url('/modules/user/diamond_search.php') . '?restore=1') ?>">&larr; Back to Search</a>
-                <?php if ($columns !== [] && $total > 0): ?>
-                    <a class="btn btn-accent" href="?export=xlsx">Export to Excel</a>
-                    <button type="button" class="btn" id="excelSelectBtn">Excel-select</button>
-                    <button type="button" class="btn" id="copyBtn">Copy</button>
-                    <?php if ($cartEnabled): ?>
-                        <button type="button" class="btn" id="addToCartBtn">Add to Cart (<span id="cartCountLabel"><?= (int)$cartCount ?></span>)</button>
-                    <?php else: ?>
-                        <button type="button" class="btn" id="viewSelectedBtn">View Selected</button>
+    <section class="ds-page rs-page">
+        <div class="rs-toolbar">
+            <?php if ($canMemo && $resultsError === ''): ?>
+                <div class="rs-customer">
+                    <div class="rs-customer-search">
+                        <input type="search" id="memoCustomerSearch" placeholder="Search Customer" aria-label="Search customer" autocomplete="off">
+                        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.7 4.7-1.4 1.4-4.7-4.7A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"/></svg>
+                    </div>
+                    <select id="memoCustomerSelect" aria-label="Select customer" data-add-url="<?= e(asset_url('/modules/user/customer_form.php?return=results')) ?>">
+                        <option value="">Select Customer</option>
+                        <?php foreach ($customers as $c): ?>
+                            <option value="<?= e((string)$c['custid']) ?>" <?= $newCustomerId === (string)$c['custid'] ? 'selected' : '' ?>><?= e($c['custnm']) ?></option>
+                        <?php endforeach; ?>
+                        <option value="__new__">+ Add New Customer…</option>
+                    </select>
+                </div>
+            <?php endif; ?>
+
+            <div class="rs-buttons">
+                <div class="rs-btn-row">
+                    <?php if ($columns !== [] && $total > 0): ?>
+                        <button type="button" class="rs-btn" id="excelSelectBtn"><?= rs_icon('xls') ?>Excel-Select</button>
                     <?php endif; ?>
-                    <button type="button" class="btn" id="clearSelectionBtn">Clear Selection</button>
-                <?php endif; ?>
-                <?php if ($cartEnabled): ?>
-                    <a class="btn" href="<?= e(asset_url('/modules/user/view_results.php')) ?>">View Cart</a>
-                <?php endif; ?>
+                    <a class="rs-btn" href="<?= e(asset_url('/modules/user/diamond_search.php')) ?>"><?= rs_icon('filter') ?>Blank Filter</a>
+                    <a class="rs-btn" href="<?= e(asset_url('/modules/user/diamond_search.php') . '?restore=1') ?>"><?= rs_icon('filter') ?>Modify Filter</a>
+                    <?php if ($canMemo): ?>
+                        <a class="rs-btn" href="<?= e(asset_url('/modules/user/customer_form.php?return=results')) ?>"><?= rs_icon('filter') ?>Add Customer</a>
+                    <?php endif; ?>
+                    <?php if ($columns !== []): ?>
+                        <a class="rs-btn" href="?export=xlsx_all"><?= rs_icon('xls') ?>Complete Stock</a>
+                    <?php endif; ?>
+                </div>
+                <div class="rs-btn-row">
+                    <?php if ($cartEnabled && $columns !== [] && $total > 0): ?>
+                        <button type="button" class="rs-btn rs-btn--big" id="addToCartBtn"><?= rs_icon('cart') ?><span>Add to cart-<span id="cartCountLabel"><?= (int)$cartCount ?></span></span></button>
+                    <?php endif; ?>
+                    <?php if ($cartEnabled): ?>
+                        <a class="rs-btn" href="<?= e(asset_url('/modules/user/view_results.php')) ?>"><?= rs_icon('cart') ?>View cart</a>
+                    <?php endif; ?>
+                    <?php if ($columns !== [] && $total > 0): ?>
+                        <button type="button" class="rs-btn" id="copyBtn"><?= rs_icon('copy') ?><?= e($copyLabel) ?></button>
+                    <?php endif; ?>
+                    <?php if ($canMemo && $resultsError === ''): ?>
+                        <button type="button" class="rs-btn" id="memo1Btn"><?= rs_icon('eye') ?>Memo-1</button>
+                        <button type="button" class="rs-btn" id="memo3Btn"><?= rs_icon('eye') ?>Memo-3</button>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
 
+        <div class="memo-error" id="memoError" hidden></div>
         <?php if ($columns !== [] && $total > 0): ?>
             <div class="copy-status" id="copyStatus" hidden></div>
             <div class="cart-status" id="cartStatus" hidden></div>
@@ -215,35 +270,15 @@ require_once __DIR__ . '/../../includes/header.php';
                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                     <input type="hidden" name="ids" id="cartFormIds">
                 </form>
-            <?php else: ?>
-                <form method="post" action="<?= e(asset_url('/modules/user/view_results.php')) ?>" id="viewSelectedForm" style="display:none;">
-                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                    <input type="hidden" name="action" value="view_selected">
-                    <input type="hidden" name="stocknos" id="viewSelectedStocknos">
-                </form>
             <?php endif; ?>
+            <form method="post" action="<?= e(asset_url('/modules/user/view_results.php')) ?>" id="viewSelectedForm" style="display:none;">
+                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                <input type="hidden" name="action" value="view_selected">
+                <input type="hidden" name="stocknos" id="viewSelectedStocknos">
+            </form>
         <?php endif; ?>
 
         <?php if ($canMemo && $resultsError === ''): ?>
-            <div class="memo-bar">
-                <div class="memo-error" id="memoError" hidden></div>
-                <div class="memo-bar-row">
-                    <div class="memo-field">
-                        <label for="memoCustomerSelect">Customer</label>
-                        <select id="memoCustomerSelect" data-add-url="<?= e(asset_url('/modules/user/customer_form.php?return=results')) ?>">
-                            <option value="">— Select Customer —</option>
-                            <?php foreach ($customers as $c): ?>
-                                <option value="<?= e((string)$c['custid']) ?>" <?= $newCustomerId === (string)$c['custid'] ? 'selected' : '' ?>><?= e($c['custnm']) ?></option>
-                            <?php endforeach; ?>
-                            <option value="__new__">+ Add New Customer…</option>
-                        </select>
-                    </div>
-                    <a class="btn" href="<?= e(asset_url('/modules/user/customer_list.php')) ?>">Customer</a>
-                    <div class="memo-bar-spacer"></div>
-                    <button type="button" class="btn btn-accent" id="memo1Btn">Memo-1</button>
-                    <button type="button" class="btn btn-accent" id="memo3Btn">Memo-3</button>
-                </div>
-            </div>
             <form method="post" action="<?= e(asset_url('/modules/user/memo_print.php')) ?>" id="memoForm" target="_blank">
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                 <input type="hidden" name="customer_id" id="memoFormCustomerId">
@@ -259,81 +294,22 @@ require_once __DIR__ . '/../../includes/header.php';
                 <p class="panel-desc">No result columns are configured yet. An administrator can enable columns in the Results table (active = yes) to control what appears here.</p>
             </div>
         <?php else: ?>
-            <div class="results-summary-row">
-                <p class="results-count"><?= number_format($total) ?> diamond<?= $total === 1 ? '' : 's' ?> found</p>
-                <?php if ($appliedFilters !== []): ?>
-                    <div class="results-applied-filters">
-                        <?php foreach ($appliedFilters as $af): ?>
-                            <span class="filter-tag"><strong><?= e($af['label']) ?>:</strong> <?= e($af['value']) ?></span>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <div class="results-table-wrap">
-                <table class="data-table results-table" data-persist-selection="1"<?= $resetSelection ? ' data-reset-selection="1"' : '' ?>>
-                    <thead>
-                        <tr>
-                            <th class="results-checkbox-col"><input type="checkbox" id="memoSelectAll" title="Select all"></th>
-                            <?php foreach ($columns as $col): ?>
-                                <th><?= e($col['label']) ?></th>
-                                <?php if ($col['field'] === 'StockNo'): ?>
-                                    <th class="results-media-col"><?= render_media_icons(null) ?></th>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($rows === []): ?>
-                            <tr><td colspan="<?= count($columns) + 2 ?>" class="results-empty">No diamonds match your criteria.</td></tr>
-                        <?php endif; ?>
-                        <?php foreach ($rows as $row): ?>
-                            <tr>
-                                <td class="results-checkbox-col" data-label="Select"><input type="checkbox" class="memo-row-select" value="<?= e((string)$row['id']) ?>" data-stockno="<?= e((string)($row['StockNo'] ?? '')) ?>"></td>
-                                <?php
-                                $stockNoBg = get_stockno_bg_color($row['avail'] ?? null, $row['notforweb'] ?? null);
-                                $rowMedia = $mediaLinks[(string)$row['id']] ?? ['video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
-                                $rowCertUrl = $rowMedia['cert'];
-                                ?>
-                                <?php foreach ($columns as $col): ?>
-                                    <?php if ($col['field'] === 'StockNo'): ?>
-                                        <td data-label="<?= e($col['label']) ?>"<?= $stockNoBg !== null ? ' style="background-color:' . e($stockNoBg) . ';"' : '' ?>>
-                                            <a class="results-stockno-link" href="<?= e(asset_url('/modules/user/diamond_details.php?id=' . urlencode((string)$row['id']))) ?>"><?= e((string)($row[$col['field']] ?? '')) ?></a>
-                                        </td>
-                                        <td class="results-media-col" data-label="Media"><?= render_media_icons($rowMedia) ?></td>
-                                    <?php elseif ($col['field'] === 'CertificateNo'):
-                                        $certDisplay = format_certificate_no_display($row['CertificateNo'] ?? null);
-                                    ?>
-                                        <td data-label="<?= e($col['label']) ?>">
-                                            <?php if ($certDisplay !== '' && $rowCertUrl !== null): ?>
-                                                <a href="<?= e($rowCertUrl) ?>" target="_blank" rel="noopener" title="View certificate"><?= e($certDisplay) ?></a>
-                                            <?php else: ?>
-                                                <?= e($certDisplay) ?>
-                                            <?php endif; ?>
-                                        </td>
-                                    <?php elseif ($col['field'] === 'Measurements'): ?>
-                                        <td data-label="<?= e($col['label']) ?>">
-                                            <?= e(format_measurements_display($row['Measurements'] ?? null)) ?>
-                                        </td>
-                                    <?php elseif (strcasecmp($col['field'], 'location') === 0): ?>
-                                        <td class="results-flag-col" data-label="<?= e($col['label']) ?>">
-                                            <?= render_location_flag(isset($row[$col['field']]) ? (string)$row[$col['field']] : null) ?>
-                                        </td>
-                                    <?php elseif ($col['field'] === 'totamt'): ?>
-                                        <td data-label="<?= e($col['label']) ?>">
-                                            <?= e(number_format(ds_display_amount($row['totamt'] ?? 0), 2)) ?>
-                                        </td>
-                                    <?php else: ?>
-                                        <td data-label="<?= e($col['label']) ?>">
-                                            <?= e((string)($row[$col['field']] ?? '')) ?>
-                                        </td>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
+            <?php
+            $filterTags = '';
+            if ($appliedFilters !== []) {
+                $filterTags = '<div class="results-applied-filters">';
+                foreach ($appliedFilters as $af) {
+                    $filterTags .= '<span class="filter-tag"><strong>' . e($af['label']) . ':</strong> ' . e($af['value']) . '</span>';
+                }
+                $filterTags .= '</div>';
+            }
+            render_results_table($columns, $rows, $mediaLinks, [
+                'total' => $total,
+                'persist' => true,
+                'reset' => $resetSelection,
+                'toolbarExtra' => '<button type="button" class="rs-link-btn" id="clearSelectionBtn">Clear selection</button>' . $filterTags,
+            ]);
+            ?>
 
             <div class="results-pagination-row">
                 <form class="rows-per-page" method="get" action="<?= e(asset_url('/modules/user/results.php')) ?>">
@@ -347,10 +323,15 @@ require_once __DIR__ . '/../../includes/header.php';
                 </form>
                 <?php render_pagination($page, $totalPages, fn($p) => '?page=' . $p); ?>
             </div>
+
+            <?php if ($total > 0): ?>
+                <button type="button" class="rs-float-btn" id="viewSelectedBtn">View<br>(Selected)</button>
+            <?php endif; ?>
         <?php endif; ?>
     </section>
 
     <script src="<?= e(asset_url_versioned('/assets/js/memo_actions.js')) ?>"></script>
     <script src="<?= e(asset_url_versioned('/assets/js/results_fit.js')) ?>"></script>
+    <script src="<?= e(asset_url_versioned('/assets/js/results_toolbar.js')) ?>"></script>
 <?php
 require_once __DIR__ . '/../../includes/footer.php';

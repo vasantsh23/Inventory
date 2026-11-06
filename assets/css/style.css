@@ -1917,8 +1917,6 @@ body.rs-v2 .rs-btn {
 body.rs-v2 .rs-btn:hover { background: var(--rs-blue-hover); color: #ffffff; }
 body.rs-v2 .rs-btn:focus-visible { outline: 2px solid #0b3c8c; outline-offset: 2px; }
 body.rs-v2 .rs-btn:disabled { opacity: 0.6; cursor: wait; }
-body.rs-v2 .rs-btn--big { height: 37px; font-size: 20px; padding: 0 15px; }
-body.rs-v2 .rs-btn.rs-btn--big .rs-btn-icon { width: 18px; height: 18px; }
 body.rs-v2 .rs-btn--danger { background: #c23b32; }
 body.rs-v2 .rs-btn--danger:hover { background: #a3302a; }
 body.rs-v2 .rs-btn-icon { fill: currentColor; flex: none; }
@@ -1983,7 +1981,6 @@ body.rs-v2 .rs-float-btn:focus-visible { outline: 3px solid #0b3c8c; outline-off
 }
 @media (max-width: 1200px) {
     body.rs-v2 .rs-btn { font-size: 14px; height: 28px; padding: 0 10px; }
-    body.rs-v2 .rs-btn--big { font-size: 17px; height: 32px; }
     body.rs-v2 .rs-float-btn { font-size: 20px; padding: 8px 14px; }
 }
 @media (max-width: 720px) {

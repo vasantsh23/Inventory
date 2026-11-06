@@ -89,20 +89,54 @@
     });
 
     // 3 EX / 3 VG / 3EX-VG (row under Symmetry, section "CPS3"): one at
-    // a time. The server applies them to Cut, Polish and Symmetry
-    // together, so choosing one puts those three back on "All", and
-    // choosing a specific Cut/Polish/Symmetry grade clears the shortcut.
+    // a time. Choosing one highlights the matching grade(s) in Cut,
+    // Polish and Symmetry (3 EX -> EX, 3 VG -> VG, 3EX-VG -> EX and VG);
+    // turning it off puts those three back on "All". Changing Cut,
+    // Polish or Symmetry by hand turns the shortcut off and keeps the
+    // hand-picked grades. (The server still applies the shortcut's own
+    // rule — all three EX, or all three VG, on the same stone — so the
+    // highlighted pills never widen the result.)
     var CPS_FIELDS = ['CutGrade', 'Polish', 'Symmetry'];
+    var PRESET_GRADES = { EX: ['EX'], VG: ['VG'], EXVG: ['EX', 'VG'] };
+    var GRADE_WORDS = { EX: ['EX', 'EXCELLENT'], VG: ['VG', 'VERY GOOD'] };
     var presetSection = form.querySelector('.ds-section[data-fldname="CPS3"]');
 
-    function setSectionToAll(fld) {
-        var section = form.querySelector('.ds-section[data-fldname="' + fld + '"]');
-        if (!section) {
-            return;
-        }
-        section.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
-            cb.checked = (cb.value === '__ALL__');
-            setSelectedClass(cb);
+    function norm(text) {
+        return String(text || '').replace(/\s+/g, ' ').trim().toUpperCase();
+    }
+
+    function optionGrade(cb) {
+        var label = cb.closest('.ds-pill');
+        var texts = [norm(cb.value), norm(label ? label.textContent : '')];
+        var found = null;
+        Object.keys(GRADE_WORDS).forEach(function (grade) {
+            if (texts.some(function (t) { return GRADE_WORDS[grade].indexOf(t) >= 0; })) {
+                found = grade;
+            }
+        });
+        return found;
+    }
+
+    function setCpsSections(grades) {
+        CPS_FIELDS.forEach(function (fld) {
+            var section = form.querySelector('.ds-section[data-fldname="' + fld + '"]');
+            if (!section) {
+                return;
+            }
+            var boxes = section.querySelectorAll('input[type=checkbox]');
+            var matched = 0;
+            boxes.forEach(function (cb) {
+                var on = grades !== null && cb.value !== '__ALL__' && grades.indexOf(optionGrade(cb)) >= 0;
+                cb.checked = on;
+                if (on) {
+                    matched++;
+                }
+            });
+            // No matching grade in this section (or shortcut cleared): fall back to "All".
+            if (matched === 0) {
+                boxes.forEach(function (cb) { cb.checked = (cb.value === '__ALL__'); });
+            }
+            boxes.forEach(setSelectedClass);
         });
     }
 
@@ -120,11 +154,15 @@
 
     function handlePresetRules(input, section) {
         var fld = section.getAttribute('data-fldname');
-        if (fld === 'CPS3' && input.checked) {
-            clearPresets(input);
-            CPS_FIELDS.forEach(setSectionToAll);
-        } else if (CPS_FIELDS.indexOf(fld) >= 0 && input.checked && input.value !== '__ALL__') {
-            clearPresets(null);
+        if (fld === 'CPS3') {
+            if (input.checked) {
+                clearPresets(input);
+                setCpsSections(PRESET_GRADES[input.value] || []);
+            } else {
+                setCpsSections(null); // shortcut switched off -> Cut/Polish/Sym back to All
+            }
+        } else if (CPS_FIELDS.indexOf(fld) >= 0) {
+            clearPresets(null); // any hand change to Cut/Polish/Sym ends the shortcut
         }
     }
 

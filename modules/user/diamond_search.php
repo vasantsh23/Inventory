@@ -273,11 +273,11 @@ require_once __DIR__ . '/../../includes/header.php';
                 </div>
             <?php endif; ?>
         </form>
-    </section>
 
-    <?php if ($dsUploadBand !== ''): ?>
-        <div class="ds-update-band"><?= e($dsUploadBand) ?></div>
-    <?php endif; ?>
+        <?php if ($dsUploadBand !== ''): ?>
+            <div class="ds-update-band"><?= e($dsUploadBand) ?></div>
+        <?php endif; ?>
+    </section>
 
     <script src="<?= e(asset_url_versioned('/assets/js/diamond_search.js')) ?>"></script>
 <?php

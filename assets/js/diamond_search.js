@@ -229,6 +229,56 @@
             advancedToggleBtn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
         });
     }
+
+    // One-screen fit (desktop/laptop): if the page is still taller than
+    // the window after the compact CSS, scale the search block down
+    // (CSS zoom, which reflows the layout) just enough to remove the
+    // vertical scrollbar — never below 70%, and never on phones, where
+    // normal scrolling is kinder than tiny buttons.
+    var fitTarget = document.querySelector('.ds-page');
+    var MIN_ZOOM = 0.7;
+    function pageOverflows() {
+        return document.documentElement.scrollHeight > window.innerHeight + 1;
+    }
+    function fitToWindow() {
+        if (!fitTarget) {
+            return;
+        }
+        fitTarget.style.zoom = '';
+        if (window.innerWidth <= 720 || !pageOverflows()) {
+            return;
+        }
+        var lo = MIN_ZOOM, hi = 1;
+        fitTarget.style.zoom = String(lo);
+        if (pageOverflows()) {
+            return; // even the minimum doesn't fit; keep it readable and let it scroll
+        }
+        for (var i = 0; i < 7; i++) {   // binary search for the largest zoom that fits
+            var mid = (lo + hi) / 2;
+            fitTarget.style.zoom = String(mid);
+            if (pageOverflows()) {
+                hi = mid;
+            } else {
+                lo = mid;
+            }
+        }
+        fitTarget.style.zoom = String(Math.floor(lo * 100) / 100);
+    }
+    var fitTimer = null;
+    function scheduleFit() {
+        clearTimeout(fitTimer);
+        fitTimer = setTimeout(fitToWindow, 100);
+    }
+    window.addEventListener('resize', scheduleFit);
+    window.addEventListener('load', fitToWindow);   // after shape images load
+    if (advancedToggleBtn) {
+        advancedToggleBtn.addEventListener('click', fitToWindow);
+    }
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () { setTimeout(fitToWindow, 0); });
+    }
+    fitToWindow();
+
     // Stepper +/- buttons next to range inputs (Price, Amount, Carat,
     // etc.) — nudge the adjacent number input up/down by its step.
     form.addEventListener('click', function (e) {

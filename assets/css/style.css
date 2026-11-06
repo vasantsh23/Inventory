@@ -1802,3 +1802,54 @@ body.ds-v2 .ds-update-band {
     body.ds-v2 .ds-shape-btn { width: 84px; height: 92px; }
     body.ds-v2 .ds-update-band { font-size: 15px; }
 }
+
+
+/* ------------------------------------------------------------
+   Diamond Search v2 — one-screen fit. Tighter spacing so the
+   whole form fits a laptop/desktop window; diamond_search.js
+   then scales the page down a little further (CSS zoom) if a
+   short window still needs it. Phones keep normal scrolling.
+   ------------------------------------------------------------ */
+body.ds-v2 .site-header { padding: 6px 20px; }
+body.ds-v2 .site-header .logo { height: 32px; }
+body.ds-v2 .site-content { padding-top: 0; padding-bottom: 0; }
+body.ds-v2 .ds-toolbar { margin-bottom: 4px; padding: 4px 0; gap: 10px 28px; }
+body.ds-v2 .ds-toolbar-email { font-size: 14px; }
+body.ds-v2 .ds-dark-btn { font-size: 15px; padding: 5px 12px; }
+body.ds-v2 .ds-card { padding: 2px 14px; }
+
+body.ds-v2 .ds-section.ds-row { padding: 3px 0; gap: 6px 14px; }
+body.ds-v2 .ds-section.ds-row--wide { padding: 5px 0; }
+body.ds-v2 .ds-row--shape { padding-top: 4px; padding-bottom: 6px; }
+body.ds-v2 .ds-row--carat { padding: 6px 0; }
+body.ds-v2 .ds-label-col { flex-basis: 190px; gap: 4px; }
+body.ds-v2 .ds-section-title { height: 28px; font-size: 15px; }
+body.ds-v2 .ds-section-reset-btn { height: 28px; font-size: 15px; }
+
+body.ds-v2 .ds-pill-row { gap: 5px; }
+body.ds-v2 .ds-pill { height: 26px; font-size: 14px; min-width: 58px; }
+body.ds-v2 .ds-row--wide .ds-pill { min-width: 72px; }
+body.ds-v2 .ds-preset-row { margin-top: 5px; }
+body.ds-v2 .ds-carat-grid { gap: 6px 12px; }
+body.ds-v2 .ds-pill.ds-pill--carat { height: 28px; width: 112px; font-size: 15px; }
+body.ds-v2 .ds-range-row.ds-carat-manual-range { padding-top: 34px; }
+
+body.ds-v2 .ds-shape-btn { width: 86px; height: 82px; }
+body.ds-v2 .ds-shape-btn--img .ds-shape-icon,
+body.ds-v2 .ds-shape-btn--img:hover .ds-shape-icon,
+body.ds-v2 .ds-shape-btn--img.ds-selected .ds-shape-icon,
+body.ds-v2 .ds-shape-btn--img .ds-shape-icon img { width: 74px; height: 74px; }
+body.ds-v2 .ds-shape-all-text { font-size: 32px; }
+
+body.ds-v2 .ds-range-input { height: 28px; font-size: 14px; }
+body.ds-v2 .ds-range-input.ds-text-input { height: 28px; }
+body.ds-v2 .ds-cols { padding: 3px 0; gap: 0 28px; }
+
+body.ds-v2 .ds-advanced-toggle-row { margin: 6px 0; }
+body.ds-v2 .ds-dark-btn#dsAdvancedToggleBtn { font-size: 14px; padding: 4px 12px; }
+body.ds-v2 .ds-bottom-actions { padding: 10px 0 8px; }
+body.ds-v2 .ds-submit-btn { height: 30px; }
+
+body.ds-v2 .ds-update-band { margin: 8px -20px 0; font-size: 16px; padding: 6px 16px; }
+body.ds-v2 .site-footer { margin-top: 0; padding: 6px 24px; font-size: 12px; }
+body.ds-v2 .site-footer .footer-inner { max-width: none; line-height: 1.35; }

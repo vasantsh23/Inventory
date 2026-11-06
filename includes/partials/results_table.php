@@ -136,3 +136,12 @@ function rs_icon(string $name): string
     ];
     return '<svg class="rs-btn-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' . ($paths[$name] ?? '') . '</svg>';
 }
+
+/** The footer line for Results / View Cart, e.g.
+ * "© 2026 Veera Dimon BV. All rights reserved. 06-Nov-26V1.25" —
+ * company from Site Setup, version from the deploy (APP_VERSION). */
+function render_rs_footer_band(): void
+{
+    $company = (string)((get_setup() ?? [])['company'] ?? APP_NAME);
+    echo '<footer class="rs-footer-band">&copy; ' . date('Y') . ' ' . e($company) . '. All rights reserved. ' . e(APP_VERSION) . '</footer>';
+}

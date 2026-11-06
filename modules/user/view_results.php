@@ -147,6 +147,7 @@ $pageTitle = $viewTitle;
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
 $wideContent = true; // this table can have many columns — use the full viewport width
+$hideFooterBar = true; // the copyright line is printed in the page's own blue footer band
 $bodyClass = 'compact-footer no-footer-gap rs-v2'; // tight footer; rs-v2 = bordered blue-header table design
 $copyLabel = (strtok(trim((string)((get_setup() ?? [])['company'] ?? '')), ' ') ?: 'Copy') . '-Copy';
 
@@ -224,6 +225,7 @@ require_once __DIR__ . '/../../includes/header.php';
             ]); ?>
         <?php endif; ?>
     </section>
+    <?php render_rs_footer_band(); ?>
 
     <script src="<?= e(asset_url_versioned('/assets/js/memo_actions.js')) ?>"></script>
     <script src="<?= e(asset_url_versioned('/assets/js/results_fit.js')) ?>"></script>

@@ -1896,38 +1896,39 @@ body.rs-v2 .rs-toolbar {
     gap: 12px 24px; padding: 4px 0 10px; border-bottom: 1px solid #e3e3e3; margin-bottom: 8px;
 }
 body.rs-v2 .rs-title { margin: 0; font-size: 22px; font-weight: 700; color: var(--rs-text); }
-body.rs-v2 .rs-customer { display: flex; flex-direction: column; gap: 6px; flex: 0 1 430px; min-width: 260px; }
+body.rs-v2 .rs-customer { display: flex; flex-direction: column; gap: 6px; flex: 0 1 426px; min-width: 260px; }
 body.rs-v2 .rs-customer-search { position: relative; }
 body.rs-v2 .rs-customer input,
 body.rs-v2 .rs-customer select {
-    width: 100%; box-sizing: border-box; height: 32px; padding: 0 34px 0 8px;
+    width: 100%; box-sizing: border-box; height: 30px; padding: 0 34px 0 6px;
     border: 1px solid #c9c9c9; border-radius: 3px; background: #ffffff; color: var(--rs-text);
-    font: 16px Arial, Helvetica, sans-serif;
+    font: 18px Arial, Helvetica, sans-serif;
 }
 body.rs-v2 .rs-customer select { padding-right: 8px; }
 body.rs-v2 .rs-customer-search svg { position: absolute; right: 8px; top: 6px; fill: #111111; pointer-events: none; }
-body.rs-v2 .rs-buttons { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex: 1 1 600px; }
-body.rs-v2 .rs-btn-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px 14px; }
+body.rs-v2 .rs-buttons { display: flex; flex-direction: column; align-items: flex-end; gap: 13px; flex: 1 1 600px; }
+body.rs-v2 .rs-btn-row { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 10px 13px; }
 body.rs-v2 .rs-btn {
-    display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px;
+    display: inline-flex; align-items: center; gap: 4px; height: 38px; padding: 0 18px;
     background: var(--rs-blue); color: #ffffff; border: 0; border-radius: 4px;
-    font: 700 18px Arial, Helvetica, sans-serif; letter-spacing: 0.3px; text-decoration: none;
-    cursor: pointer; white-space: nowrap;
+    font: 400 20px Arial, Helvetica, sans-serif; letter-spacing: 0.4px; text-decoration: none;
+    cursor: pointer; white-space: nowrap; box-sizing: border-box;
 }
 body.rs-v2 .rs-btn:hover { background: var(--rs-blue-hover); color: #ffffff; }
 body.rs-v2 .rs-btn:focus-visible { outline: 2px solid #0b3c8c; outline-offset: 2px; }
 body.rs-v2 .rs-btn:disabled { opacity: 0.6; cursor: wait; }
-body.rs-v2 .rs-btn--big { height: 46px; font-size: 22px; }
+body.rs-v2 .rs-btn--big { height: 46px; font-size: 25px; padding: 0 19px; }
+body.rs-v2 .rs-btn--big .rs-btn-icon { width: 22px; height: 22px; }
 body.rs-v2 .rs-btn--danger { background: #c23b32; }
 body.rs-v2 .rs-btn--danger:hover { background: #a3302a; }
 body.rs-v2 .rs-btn-icon { fill: currentColor; flex: none; }
 body.rs-v2 .rs-inline-form { display: inline; margin: 0; }
 
 /* Summary + Select All */
-body.rs-v2 .rs-summary { font-size: 17px; margin: 2px 0 6px; color: var(--rs-text); }
+body.rs-v2 .rs-summary { font-size: 18px; margin: 2px 0 6px; color: var(--rs-text); }
 body.rs-v2 .rs-summary strong { font-weight: 700; }
 body.rs-v2 .rs-selectall-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-bottom: 8px; }
-body.rs-v2 .rs-selectall { display: inline-flex; align-items: center; gap: 6px; font-size: 19px; cursor: pointer; }
+body.rs-v2 .rs-selectall { display: inline-flex; align-items: center; gap: 6px; font-size: 20px; cursor: pointer; }
 body.rs-v2 .rs-link-btn {
     background: none; border: 0; padding: 0; color: var(--rs-blue); font: 14px Arial, Helvetica, sans-serif;
     text-decoration: underline; cursor: pointer;
@@ -1981,8 +1982,8 @@ body.rs-v2 .rs-float-btn:focus-visible { outline: 3px solid #0b3c8c; outline-off
     body.rs-v2 .rs-float-btn { font-size: 24px; padding: 10px 16px; }
 }
 @media (max-width: 1200px) {
-    body.rs-v2 .rs-btn { font-size: 15px; height: 34px; padding: 0 12px; }
-    body.rs-v2 .rs-btn--big { font-size: 17px; height: 38px; }
+    body.rs-v2 .rs-btn { font-size: 16px; height: 34px; padding: 0 12px; }
+    body.rs-v2 .rs-btn--big { font-size: 19px; height: 38px; }
     body.rs-v2 .rs-float-btn { font-size: 22px; padding: 8px 14px; }
 }
 @media (max-width: 720px) {
@@ -1992,3 +1993,12 @@ body.rs-v2 .rs-float-btn:focus-visible { outline: 3px solid #0b3c8c; outline-off
     body.rs-v2 .rs-table td.rs-media-col--empty { display: none; }
 }
 body.rs-v2 [hidden] { display: none !important; }
+
+/* Footer band: "© 2026 Veera Dimon BV. All rights reserved. <version>" */
+body.rs-v2 .rs-footer-band {
+    margin: 24px -20px 0; background: #1f6fd1; color: #ffffff; text-align: center;
+    font: 16px Arial, Helvetica, sans-serif; padding: 8px 16px;
+}
+body.rs-v2 .rs-footer-band a { color: #ffffff; }
+body.rs-v2 .rs-btn .rs-btn-icon { width: 20px; height: 20px; }
+body.rs-v2 .rs-customer input::placeholder { color: #8a8f96; opacity: 1; }

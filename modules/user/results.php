@@ -197,6 +197,7 @@ $pageSubtitle = '';
 $activeNav = 'diamond_search';
 $wideContent = true; // this table has many columns — use the full viewport width
 $compactTop = true;  // less space between the site header and the Results buttons
+$hideFooterBar = true; // the copyright line is printed in the page's own blue footer band
 $bodyClass = 'compact-footer no-footer-gap rs-v2'; // tight footer; rs-v2 = bordered blue-header table design
 $rsCompany = (string)((get_setup() ?? [])['company'] ?? '');
 $copyLabel = (strtok(trim($rsCompany), ' ') ?: 'Copy') . '-Copy';  // e.g. "Veera-Copy"
@@ -329,6 +330,7 @@ require_once __DIR__ . '/../../includes/header.php';
             <?php endif; ?>
         <?php endif; ?>
     </section>
+    <?php render_rs_footer_band(); ?>
 
     <script src="<?= e(asset_url_versioned('/assets/js/memo_actions.js')) ?>"></script>
     <script src="<?= e(asset_url_versioned('/assets/js/results_fit.js')) ?>"></script>

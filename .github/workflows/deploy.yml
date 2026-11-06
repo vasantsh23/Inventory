@@ -55,7 +55,10 @@ jobs:
           # Verify: every tracked file in the repo must now be identical in DEST.
           MISMATCH=0
           while IFS= read -r f; do
-            case "$f" in .git*|.github/*|.cpanel.yml) continue ;; esac
+            case "$f" in
+              .htaccess) ;;          # copied explicitly above, so check it
+              .*) continue ;;        # other top-level dotfiles (.env.example, .gitignore, .github/, .cpanel.yml) are never deployed
+            esac
             if ! cmp -s "$REPO/$f" "$DEST/$f"; then
               echo "::warning::Not updated in deploy path: $f"
               MISMATCH=$((MISMATCH + 1))

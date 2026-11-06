@@ -25,6 +25,7 @@ jobs:
           set -euo pipefail
           REPO='${{ matrix.server.repo_path }}'
           DEST='${{ matrix.server.deploy_path }}'
+          EXPECTED='${{ github.sha }}'
           echo "Server:      $(hostname)"
           echo "Repo path:   $REPO"
           echo "Deploy path: $DEST"
@@ -32,13 +33,41 @@ jobs:
             echo "::error::Deploy path $DEST does not exist on this server - check deploy_path in the SERVERS variable"
             exit 1
           fi
+
           cd "$REPO"
+          echo "Repo remote: $(git remote get-url origin)"
           git fetch --force origin main
           git reset --hard origin/main
+          HEAD_SHA="$(git rev-parse HEAD)"
           echo "Deployed commit: $(git log -1 --format='%h  %s  (%ci)')"
+          # The server's checkout must be the commit that triggered this run
+          # (or a newer one pushed meanwhile) - otherwise origin points at the
+          # wrong repository/branch and nothing new would be copied.
+          if [ "$HEAD_SHA" != "$EXPECTED" ] && ! git merge-base --is-ancestor "$EXPECTED" "$HEAD_SHA" 2>/dev/null; then
+            echo "::error::Server repo is at $HEAD_SHA but this run is for $EXPECTED - check the 'origin' remote of $REPO"
+            exit 1
+          fi
+
           cp -R "$REPO"/* "$DEST"/
           # cp * skips dotfiles: copy .htaccess explicitly (never .git)
           if [ -f "$REPO/.htaccess" ]; then cp -f "$REPO/.htaccess" "$DEST/.htaccess"; fi
-          echo "Most recently changed files in $DEST:"
-          ls -lt "$DEST" | head -6
+
+          # Verify: every tracked file in the repo must now be identical in DEST.
+          MISMATCH=0
+          while IFS= read -r f; do
+            case "$f" in .git*|.github/*|.cpanel.yml) continue ;; esac
+            if ! cmp -s "$REPO/$f" "$DEST/$f"; then
+              echo "::warning::Not updated in deploy path: $f"
+              MISMATCH=$((MISMATCH + 1))
+            fi
+          done < <(git ls-files)
+          if [ "$MISMATCH" -gt 0 ]; then
+            echo "::error::$MISMATCH file(s) differ between $REPO and $DEST"
+            exit 1
+          fi
+          echo "All tracked files verified in $DEST"
+
+          # Clear PHP OPcache / LiteSpeed cache if present, so the site serves the new code
+          touch "$DEST/index.php" 2>/dev/null || true
+          if [ -d "$DEST/.lscache" ]; then rm -rf "$DEST/.lscache"/* || true; fi
           EOF

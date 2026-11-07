@@ -82,11 +82,51 @@
             });
         }
 
+        if (input.checked && section.getAttribute('data-range') === '1') {
+            fillRange(section);
+        }
         if (section.getAttribute('data-fldname') === 'Color') {
             applyColorFancyExclusivity(section);
         }
         handlePresetRules(input, section);
     });
+
+    // Range = yes (Diamond Search Fields / Advanced Filter table): when an
+    // option is ticked, every option between the first and last ticked
+    // ones is ticked too, in the order the pills are shown — e.g. Color
+    // D and G also ticks E and F. "All", "Others", "Fancy" and other
+    // catch-all pills are never part of a range. Unticking one in the
+    // middle afterwards is allowed (only ticking re-fills).
+    function isRangeOption(cb) {
+        if (cb.value === '__ALL__' || cb.hasAttribute('data-color-fancy') || cb.disabled) {
+            return false;
+        }
+        var label = cb.closest('.ds-pill, .ds-shape-btn');
+        var text = (label ? label.textContent : cb.value).replace(/\s+/g, ' ').trim().toUpperCase();
+        return text !== 'OTHERS' && text !== 'OTHER' && text !== 'ALL';
+    }
+
+    function fillRange(section) {
+        var options = Array.prototype.filter.call(section.querySelectorAll('input[type=checkbox]'), isRangeOption);
+        var first = -1, last = -1;
+        options.forEach(function (cb, i) {
+            if (cb.checked) {
+                if (first < 0) {
+                    first = i;
+                }
+                last = i;
+            }
+        });
+        if (first < 0 || last - first < 2) {
+            return;
+        }
+        for (var i = first + 1; i < last; i++) {
+            if (!options[i].checked) {
+                options[i].checked = true;
+                setSelectedClass(options[i]);
+            }
+        }
+    }
 
     // 3 EX / 3 VG / 3EX-VG (row under Symmetry, section "CPS3"): one at
     // a time. Choosing one highlights the matching grade(s) in Cut,

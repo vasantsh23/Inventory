@@ -395,8 +395,13 @@ function get_diamond_search_sections(string $sourceTable = 'diamond_search'): ar
     // which lookup table/rendering applies. Matching on colname would
     // silently break the moment an admin renames a label.
     $allFldnames = array_merge(array_keys($lookupMap), array_keys($checkboxMap), array_keys($rangeMap));
+    // `range` (yes/no, sql/migration_shade_range.sql) is read only if
+    // the column exists, so the page keeps working before the
+    // migration has been run. RANGE is a MySQL reserved word: always
+    // quote it.
+    $hasRangeCol = (bool)get_db()->query("SHOW COLUMNS FROM `$sourceTable` LIKE 'range'")->fetch();
     $stmt = get_db()->prepare(
-        "SELECT colname, fldname FROM `$sourceTable` WHERE active = 'yes' ORDER BY orderid ASC"
+        'SELECT colname, fldname' . ($hasRangeCol ? ', `range`' : '') . " FROM `$sourceTable` WHERE active = 'yes' ORDER BY orderid ASC"
     );
     $stmt->execute();
     $activeRows = $stmt->fetchAll();
@@ -456,6 +461,9 @@ function get_diamond_search_sections(string $sourceTable = 'diamond_search'): ar
                 'fldname' => $fldname,
                 'label'   => $displayLabel,
                 'options' => $options,
+                // Range = yes: ticking two options also ticks the ones
+                // between them (handled in assets/js/diamond_search.js).
+                'range'   => strcasecmp(trim((string)($activeRow['range'] ?? 'no')), 'yes') === 0,
             ];
         } elseif (isset($checkboxMap[$fldname])) {
             $sections[] = [

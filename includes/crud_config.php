@@ -161,6 +161,8 @@ const CRUD_COLUMN_OVERRIDES = [
     'diamond_search' => [
         'id'     => ['type' => 'readonly'],
         'active' => ['type' => 'select', 'label' => 'Active', 'options' => ['yes', 'no']],
+        'range'  => ['type' => 'select', 'label' => 'Range', 'options' => ['no', 'yes'],
+                     'hint' => 'Yes = on Diamond Search, ticking two options also ticks every option between them (e.g. Color D and G also selects E and F). Uses the option order shown on the page.'],
         'orderid' => ['label' => 'Order Id', 'hint' => 'Controls display order — lower numbers appear first.'],
     ],
     'results' => [
@@ -182,6 +184,8 @@ const CRUD_COLUMN_OVERRIDES = [
     'adv_filter' => [
         'id'     => ['type' => 'readonly'],
         'active' => ['type' => 'select', 'label' => 'Active', 'options' => ['yes', 'no']],
+        'range'  => ['type' => 'select', 'label' => 'Range', 'options' => ['no', 'yes'],
+                     'hint' => 'Yes = on Diamond Search, ticking two options also ticks every option between them (e.g. Color D and G also selects E and F). Uses the option order shown on the page.'],
         'orderid' => ['label' => 'Order Id', 'hint' => 'Controls display order — lower numbers appear first.'],
     ],
     'customer' => [
@@ -369,10 +373,10 @@ const CRUD_LIST_COLUMNS = [
     'timings'        => ['id', 'Day', 'start time1', 'end time1', 'holiday'],
     'upload'         => ['id', 'API', 'API link', 'Excel', 'CSV'],
     'maindata'       => ['id', 'StockNo', 'Shape', 'Weight', 'Color', 'Clarity', 'CutGrade', 'Price', 'avail'],
-    'diamond_search' => ['id', 'colname', 'fldname', 'active', 'orderid'],
+    'diamond_search' => ['id', 'colname', 'fldname', 'active', 'range', 'orderid'],
     'results'        => ['id', 'usertype', 'colname', 'fldname', 'active', 'extract', 'orderid'],
     'diamond_details' => ['id', 'colname', 'fldname', 'data_type', 'active', 'orderid'],
-    'adv_filter'      => ['id', 'colname', 'fldname', 'active', 'orderid'],
+    'adv_filter'      => ['id', 'colname', 'fldname', 'active', 'range', 'orderid'],
     'customer'        => ['custid', 'custnm', 'shortnm', 'email', 'address'],
     'rsetup'          => ['id', 'sortfld1', 'sortorder1', 'sortfld2', 'sortorder2'],
     'memo'            => ['id', 'company', 'address', 'telno', 'email'],

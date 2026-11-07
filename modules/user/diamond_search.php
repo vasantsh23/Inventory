@@ -117,7 +117,7 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
     $label = ds_format_label($section['label']);
     $wide = ds_section_is_wide($section);
     ?>
-    <div class="ds-section ds-row<?= $wide ? ' ds-row--wide' : '' ?><?= $fld === 'Weight' ? ' ds-row--carat' : '' ?><?= $section['kind'] === 'shape' ? ' ds-row--shape' : '' ?>" data-fldname="<?= e($fld) ?>">
+    <div class="ds-section ds-row<?= $wide ? ' ds-row--wide' : '' ?><?= $fld === 'Weight' ? ' ds-row--carat' : '' ?><?= $section['kind'] === 'shape' ? ' ds-row--shape' : '' ?>" data-fldname="<?= e($fld) ?>"<?= !empty($section['range']) ? ' data-range="1"' : '' ?>>
         <div class="ds-label-col">
             <h2 class="ds-section-title"><?= e($label) ?></h2>
             <?php if ($fld === 'Weight'): ?>

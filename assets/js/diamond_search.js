@@ -49,6 +49,48 @@
         });
     }
 
+    // Stand-alone options (data-exclusive, e.g. Lab "OTH" and "NOCERT"):
+    // while one is ticked, every other option in that section — "All"
+    // and the other stand-alone one included — is unticked and
+    // disabled; untick it to enable them again.
+    function applyExclusiveOptions(section) {
+        var exclusives = section.querySelectorAll('input[data-exclusive]');
+        if (!exclusives.length) {
+            return;
+        }
+        var active = null;
+        exclusives.forEach(function (cb) {
+            if (cb.checked && !active) {
+                active = cb;
+            }
+        });
+        section.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+            if (cb === active) {
+                cb.disabled = false;
+            } else if (active) {
+                if (cb.checked) {
+                    cb.checked = false;
+                    setSelectedClass(cb);
+                }
+                cb.disabled = true;
+            } else {
+                cb.disabled = false;
+            }
+            var label = cb.closest('.ds-pill');
+            if (label) {
+                label.classList.toggle('ds-pill-disabled', cb.disabled);
+            }
+        });
+        // Nothing left ticked (the stand-alone option was unticked): back to "All".
+        if (!active && !section.querySelector('input[type=checkbox]:checked')) {
+            var all = section.querySelector('input[value="__ALL__"]');
+            if (all) {
+                all.checked = true;
+                setSelectedClass(all);
+            }
+        }
+    }
+
     form.addEventListener('change', function (e) {
         var input = e.target;
         if (!(input.matches('.ds-pill input[type=checkbox], .ds-shape-btn input[type=checkbox]'))) {
@@ -88,6 +130,7 @@
         if (section.getAttribute('data-fldname') === 'Color') {
             applyColorFancyExclusivity(section);
         }
+        applyExclusiveOptions(section);
         handlePresetRules(input, section);
     });
 
@@ -98,7 +141,7 @@
     // catch-all pills are never part of a range. Unticking one in the
     // middle afterwards is allowed (only ticking re-fills).
     function isRangeOption(cb) {
-        if (cb.value === '__ALL__' || cb.hasAttribute('data-color-fancy') || cb.disabled) {
+        if (cb.value === '__ALL__' || cb.hasAttribute('data-color-fancy') || cb.hasAttribute('data-exclusive') || cb.disabled) {
             return false;
         }
         var label = cb.closest('.ds-pill, .ds-shape-btn');
@@ -210,6 +253,8 @@
     // — e.g. after "Back to Search" restores a prior search that had
     // Fancy checked, the other Color pills must start disabled, not
     // just after the next click.
+    // Restore the disabled state for a restored "Back to Search" form.
+    form.querySelectorAll('.ds-section').forEach(applyExclusiveOptions);
     var colorSection = form.querySelector('.ds-section[data-fldname="Color"]');
     if (colorSection) {
         applyColorFancyExclusivity(colorSection);
@@ -232,6 +277,7 @@
             form.querySelectorAll('input[type=number], input[type=text]').forEach(function (inp) {
                 inp.value = '';
             });
+            form.querySelectorAll('.ds-section').forEach(applyExclusiveOptions);
             if (colorSection) {
                 applyColorFancyExclusivity(colorSection);
             }
@@ -285,7 +331,8 @@
     // (CSS zoom, which reflows the layout) just enough to remove the
     // vertical scrollbar — never below 70%, and never on phones, where
     // normal scrolling is kinder than tiny buttons.
-    var fitTarget = document.querySelector('.ds-page');
+    // Only the Solitaire Station template is laid out to fit one screen.
+    var fitTarget = document.body.classList.contains('ds-v2') ? document.querySelector('.ds-page') : null;
     var MIN_ZOOM = 0.7;
     function pageOverflows() {
         return document.documentElement.scrollHeight > window.innerHeight;

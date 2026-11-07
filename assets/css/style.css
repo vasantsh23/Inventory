@@ -1993,7 +1993,7 @@ body.rs-v2 [hidden] { display: none !important; }
 
 /* Footer band: "© 2026 Veera Dimon BV. All rights reserved. <version>" */
 body.rs-v2 .rs-footer-band {
-    margin: 24px -20px 0; background: #1f6fd1; color: #ffffff; text-align: center;
+    margin: 24px -20px 0; background: var(--rs-footband, #1f6fd1); color: #ffffff; text-align: center;
     font: 16px Arial, Helvetica, sans-serif; padding: 8px 16px;
 }
 body.rs-v2 .rs-footer-band a { color: #ffffff; }

@@ -147,89 +147,11 @@ $pageTitle = $viewTitle;
 $pageSubtitle = '';
 $activeNav = 'diamond_search';
 $wideContent = true; // this table can have many columns — use the full viewport width
-$hideFooterBar = true; // the copyright line is printed in the page's own blue footer band
-$bodyClass = 'compact-footer no-footer-gap rs-v2'; // tight footer; rs-v2 = bordered blue-header table design
-$copyLabel = (strtok(trim((string)((get_setup() ?? [])['company'] ?? '')), ' ') ?: 'Copy') . '-Copy';
 
 $rsetup = get_rsetup();
-
 require_once __DIR__ . '/../../includes/partials/results_table.php';
 $mediaLinks = build_result_media_links_for_rows($rows);
-require_once __DIR__ . '/../../includes/header.php';
-?>
-    <section class="ds-page rs-page">
-        <div class="rs-toolbar">
-            <h1 class="rs-title"><?= e($viewTitle) ?></h1>
-            <div class="rs-buttons">
-                <div class="rs-btn-row">
-                    <a class="rs-btn" href="<?= e(asset_url('/modules/user/results.php')) ?>"><?= rs_icon('back') ?>Back to Results</a>
-                    <?php if ($total > 0): ?>
-                        <button type="button" class="rs-btn" id="exportExcelBtn"><?= rs_icon('xls') ?>Excel-Select</button>
-                        <button type="button" class="rs-btn" id="copyBtn"><?= rs_icon('copy') ?><?= e($copyLabel) ?></button>
-                        <button type="button" class="rs-btn" id="markupCopyBtn"><?= rs_icon('copy') ?>Markup Copy</button>
-                        <?php if (!$showSelected): ?>
-                            <form method="post" action="<?= e(asset_url('/modules/user/view_results.php')) ?>" class="rs-inline-form"
-                                  data-confirm="Clear your entire cart? This cannot be undone.">
-                                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                                <input type="hidden" name="action" value="clear_cart">
-                                <button type="submit" class="rs-btn rs-btn--danger"><?= rs_icon('trash') ?>Clear Cart</button>
-                            </form>
-                        <?php endif; ?>
-                    <?php endif; ?>
-                    <?php if ($cartEnabled && $showSelected): ?>
-                        <a class="rs-btn" href="<?= e(asset_url('/modules/user/view_results.php')) ?>"><?= rs_icon('cart') ?>View cart</a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
 
-        <?php if ($total > 0): ?>
-            <div class="copy-status" id="copyStatus" hidden></div>
-            <div class="copy-markup-row" id="markupCopyRow" hidden>
-                <label class="copy-markup-field">
-                    Markup %
-                    <input type="number" step="any" id="markupCopyInput" placeholder="e.g. 5" style="width:80px;">
-                </label>
-                <button type="button" class="rs-btn" id="markupCopyConfirmBtn">Copy</button>
-            </div>
-            <form method="post" action="<?= e(asset_url('/modules/user/copy_generate.php')) ?>" id="copyForm" style="display:none;">
-                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                <input type="hidden" name="ids" id="copyFormIds">
-                <input type="hidden" name="mk" id="copyFormMk">
-                <input type="hidden" name="mv" id="copyFormMv">
-            </form>
-        <?php endif; ?>
-
-        <?php if (($_GET['cleared'] ?? '') === '1'): ?>
-            <div class="alert alert-success" style="margin-bottom:18px;">Your cart has been cleared.</div>
-        <?php endif; ?>
-
-        <?php if ($resultsError !== ''): ?>
-            <div class="alert alert-error" role="alert"><?= e($resultsError) ?></div>
-        <?php elseif ($columns === []): ?>
-            <div class="panel">
-                <p class="panel-desc">No result columns are configured yet. An administrator can enable columns in the Results table (active = yes) to control what appears here.</p>
-            </div>
-        <?php elseif ($total === 0): ?>
-            <div class="panel">
-                <?php if (!$showSelected): ?>
-                    <p class="panel-desc">Your cart is empty. Go to Results, select some rows, and click "Add to cart".</p>
-                <?php else: ?>
-                    <p class="panel-desc">No diamonds selected. Go to Results, tick some rows, and click "View (Selected)".</p>
-                <?php endif; ?>
-            </div>
-        <?php else: ?>
-            <?php render_results_table($columns, $rows, $mediaLinks, [
-                'total' => $total,
-                'toolbarExtra' => '<button type="button" class="rs-link-btn" id="clearSelectionBtn">Clear selection</button>',
-            ]); ?>
-        <?php endif; ?>
-    </section>
-    <?php render_rs_footer_band(); ?>
-
-    <script src="<?= e(asset_url_versioned('/assets/js/memo_actions.js')) ?>"></script>
-    <script src="<?= e(asset_url_versioned('/assets/js/results_fit.js')) ?>"></script>
-    <script src="<?= e(asset_url_versioned('/assets/js/results_toolbar.js')) ?>"></script>
-    <script src="<?= e(asset_url_versioned('/assets/js/confirm_submit.js')) ?>"></script>
-<?php
-require_once __DIR__ . '/../../includes/footer.php';
+// ---- Page markup comes from the live template (Admin → Search Templates) ----
+require_once __DIR__ . '/../../includes/search_templates.php';
+require search_template_view('view_results');

@@ -30,7 +30,10 @@ $logoUrl = preg_match('#^https?://#i', $logoPath) ? $logoPath : asset_url($logoP
           // default theme (default_value) instead. ?>
     <?= theme_head_tags(false, !empty($useDefaultTheme)) ?>
     <link rel="stylesheet" href="<?= e(asset_url_versioned('/assets/css/style.css')) ?>">
+    <?php // Diamond Search / Results / View Cart: colours of the live search template ?>
+    <?= !empty($searchTemplatePage) && function_exists('search_template_head_html') ? search_template_head_html() : '' ?>
 </head>
 <body<?= !empty($bodyClass) ? ' class="' . e($bodyClass) . '"' : '' ?>>
 <?php require __DIR__ . '/partials/header_bar.php'; ?>
+<?= !empty($searchTemplatePage) && function_exists('search_template_preview_bar') ? search_template_preview_bar() : '' ?>
 <main class="site-content<?= !empty($wideContent) ? ' site-content--wide' : '' ?><?= !empty($compactTop) ? ' site-content--compact' : '' ?>">

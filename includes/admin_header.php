@@ -75,6 +75,7 @@ $pageSubtitle = $pageSubtitle ?? '';
         <div class="sidebar-section">Appearance</div>
         <a href="<?= e(asset_url('/modules/admin/theme_settings.php')) ?>" class="<?= $activeNav === 'theme_settings' ? 'active' : '' ?>">Theme Settings</a>
         <a href="<?= e(asset_url('/modules/admin/theme_sections.php')) ?>" class="<?= $activeNav === 'theme_sections' ? 'active' : '' ?>">Theme Sections</a>
+        <a href="<?= e(asset_url('/modules/admin/search_templates.php')) ?>" class="<?= $activeNav === 'search_templates' ? 'active' : '' ?>">Search Templates</a>
 
         <?php // Public website (site/ folder) — templates, page content, contact-form enquiries ?>
         <div class="sidebar-section">Website</div>

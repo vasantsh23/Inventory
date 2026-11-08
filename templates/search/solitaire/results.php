@@ -56,6 +56,7 @@ require_once __DIR__ . '/../../../includes/header.php';
                         <a class="rs-btn" href="<?= e(asset_url('/modules/user/view_results.php')) ?>"><?= rs_icon('cart') ?>View cart</a>
                     <?php endif; ?>
                     <?php if ($columns !== [] && $total > 0): ?>
+                        <button type="button" class="rs-btn" id="viewSelectedBtn"><?= rs_icon('eye') ?>View (Selected)</button>
                         <button type="button" class="rs-btn" id="copyBtn"><?= rs_icon('copy') ?><?= e($copyLabel) ?></button>
                     <?php endif; ?>
                     <?php if ($canMemo && $resultsError === ''): ?>
@@ -133,9 +134,6 @@ require_once __DIR__ . '/../../../includes/header.php';
                 <?php render_pagination($page, $totalPages, fn($p) => '?page=' . $p); ?>
             </div>
 
-            <?php if ($total > 0): ?>
-                <button type="button" class="rs-float-btn" id="viewSelectedBtn">View<br>(Selected)</button>
-            <?php endif; ?>
         <?php endif; ?>
     </section>
     <?php render_rs_footer_band(); ?>

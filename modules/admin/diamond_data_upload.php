@@ -21,6 +21,16 @@ require_module_access('admin');
  * feed Diamond Search's Nat Fancy Color / Nat Fancy Color Intensity
  * sections and the Color "Fancy" pill — see includes/diamond_search_query.php.
  */
+/**
+ * Header-name key used to match CSV headers with Upload Field Mapping's
+ * "CSV Header Name": case-insensitive and ignoring all spaces, so
+ * "Depth %", "Depth%", "depth  %" and " DEPTH % " all match each other.
+ */
+function upload_header_key(string $header): string
+{
+    return strtolower((string)preg_replace('/\s+/u', '', $header));
+}
+
 function process_diamond_upload(string $csvPath, string $mode): array
 {
     set_time_limit(0); // large CSVs can take a while; don't let PHP's default timeout cut the import short
@@ -32,7 +42,7 @@ function process_diamond_upload(string $csvPath, string $mode): array
     $headerToCol = [];
     foreach ($mapStmt->fetchAll() as $row) {
         if (in_array($row['colname'], $validCols, true)) {
-            $headerToCol[strtolower(trim((string)$row['excolname']))] = $row['colname'];
+            $headerToCol[upload_header_key((string)$row['excolname'])] = $row['colname'];
         }
     }
     if ($headerToCol === []) {
@@ -62,10 +72,13 @@ function process_diamond_upload(string $csvPath, string $mode): array
     // CSV column index => maindata column name (only for headers that
     // matched an active mapping; everything else is ignored).
     $indexToCol = [];
+    $unmappedHeaders = [];
     foreach ($headerRow as $idx => $header) {
-        $key = strtolower(trim((string)$header));
+        $key = upload_header_key((string)$header);
         if (isset($headerToCol[$key])) {
             $indexToCol[$idx] = $headerToCol[$key];
+        } elseif (trim((string)$header) !== '') {
+            $unmappedHeaders[] = trim((string)$header);
         }
     }
     if ($indexToCol === []) {
@@ -208,6 +221,7 @@ function process_diamond_upload(string $csvPath, string $mode): array
     return [
         'mode' => $mode,
         'mapped_columns' => $mappedCols,
+        'unmapped_headers' => $unmappedHeaders,
         'inserted' => $inserted,
         'fancy_colored' => $fancyCount,
         'skipped_errors' => $skippedErrors,
@@ -392,6 +406,12 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             Mode: <strong><?= $stats['mode'] === 'replace' ? 'Replace data (existing rows were deleted first)' : 'Add data (appended to existing rows)' ?></strong><br>
             Columns populated from this file: <?= e(implode(', ', $stats['mapped_columns'])) ?>
         </p>
+        <?php if (!empty($stats['unmapped_headers'])): ?>
+            <p class="panel-desc">
+                <strong>File columns not imported</strong> (no active Upload Field Mapping has this CSV Header Name):
+                <?= e(implode(', ', $stats['unmapped_headers'])) ?>
+            </p>
+        <?php endif; ?>
         <?php if ($stats['errors'] !== []): ?>
             <div class="alert alert-error">
                 <strong>First <?= count($stats['errors']) ?> row error<?= count($stats['errors']) === 1 ? '' : 's' ?>:</strong>

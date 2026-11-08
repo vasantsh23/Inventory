@@ -75,8 +75,9 @@ function mlc_probe(string $url): array
 
 if ($row !== null) {
     $links = build_result_media_links($row['StockNo'] ?? null, $row['Lab'] ?? null, $row['CertificateNo'] ?? null, $row);
-    $names = ['cert' => 'Certificate (icon + Cert no. link)', 'infovideo' => 'Video', 'video' => '360', 'handvideo' => 'Hand video'];
+    $names = ['image' => 'Image', 'cert' => 'Certificate (icon + Cert no. link)', 'infovideo' => 'Video', 'video' => '360', 'handvideo' => 'Hand video'];
     $sources = [
+        'image' => media_path_override('image') !== null ? 'File Paths row "image"' : 'Built-in address (no "image" row)',
         'cert' => media_path_override('cert') !== null ? 'File Paths row "cert"' : 'Built-in rule by Lab (no "cert" row in File Paths)',
         'infovideo' => media_path_override('video') !== null ? 'File Paths row "video"' : 'Built-in address (no "video" row)',
         'video' => media_path_override('360view') !== null ? 'File Paths row "360view"' : 'Built-in address (no "360view" row)',

@@ -206,7 +206,7 @@ function media_urls_reachable(array $urls): array
  *
  * @param array<int,array<string,mixed>> $rows rows with id, StockNo, Lab, CertificateNo
  *        and the media_placeholder_fields() columns
- * @return array<string,array{video:?string,handvideo:?string,infovideo:?string,cert:?string}> keyed by row id
+ * @return array<string,array{image:?string,video:?string,handvideo:?string,infovideo:?string,cert:?string}> keyed by row id
  */
 function build_result_media_links_for_rows(array $rows): array
 {
@@ -244,6 +244,25 @@ function build_result_media_links_for_rows(array $rows): array
         }
     }
     $ok = media_urls_reachable($all);
+
+    // Image saved as .jpeg instead of .jpg (Diamond Details tries both): check the .jpeg twin.
+    $jpeg = [];
+    foreach ($probe as $id => $byKey) {
+        $u = $byKey['image'] ?? null;
+        if ($u !== null && empty($ok[$u]) && preg_match('/\.jpg(\?|$)/i', $u)) {
+            $jpeg[$id] = (string)preg_replace('/\.jpg(\?|$)/i', '.jpeg$1', $u, 1);
+        }
+    }
+    if ($jpeg !== []) {
+        $ok += media_urls_reachable(array_values($jpeg));
+        foreach ($jpeg as $id => $u) {
+            if (!empty($ok[$u])) {
+                $links[$id]['image'] = $u;
+                $probe[$id]['image'] = $u;
+            }
+        }
+    }
+
     foreach ($probe as $id => $byKey) {
         foreach ($byKey as $key => $u) {
             if (empty($ok[$u])) {

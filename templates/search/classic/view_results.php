@@ -97,7 +97,7 @@ require_once __DIR__ . '/../../../includes/header.php';
                                 <td class="results-checkbox-col" data-label="Select"><input type="checkbox" class="memo-row-select" value="<?= e((string)$row['id']) ?>"></td>
                                 <?php
                                 $stockNoBg = get_stockno_bg_color($row['avail'] ?? null, $row['notforweb'] ?? null);
-                                $rowMedia = $mediaLinks[(string)$row['id']] ?? ['video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
+                                $rowMedia = $mediaLinks[(string)$row['id']] ?? ['image' => null, 'video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
                                 $rowCertUrl = $rowMedia['cert'];
                                 ?>
                                 <?php foreach ($columns as $col): ?>

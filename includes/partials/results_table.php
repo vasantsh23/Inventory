@@ -41,8 +41,8 @@ function render_results_table(array $columns, array $rows, array $mediaLinks, ar
     $total = (int)($opts['total'] ?? count($rows));
     $persist = !empty($opts['persist']);
     $reset = !empty($opts['reset']);
-    $emptyRow = ['video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
-    $colCount = 1 + count($columns) + (in_array('StockNo', array_column($columns, 'field'), true) ? 4 : 0);
+    $emptyRow = ['image' => null, 'video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
+    $colCount = 1 + count($columns) + (in_array('StockNo', array_column($columns, 'field'), true) ? count(media_icon_defs()) : 0);
     ?>
     <div class="rs-summary" aria-live="polite">
         Total Stones : <strong><?= number_format($total) ?></strong>

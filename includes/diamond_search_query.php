@@ -935,7 +935,7 @@ function is_valid_media_url(?string $url): bool
 function build_result_media_links(?string $stockNo, ?string $lab, ?string $certNo, array $row = []): array
 {
     $stockNo = trim((string)$stockNo);
-    $out = ['video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
+    $out = ['image' => null, 'video' => null, 'handvideo' => null, 'infovideo' => null, 'cert' => null];
     if ($stockNo === '') {
         return $out;
     }
@@ -946,6 +946,14 @@ function build_result_media_links(?string $stockNo, ?string $lab, ?string $certN
         'Lab'           => strtoupper(trim((string)$lab)),
     ]);
     $enc = urlencode($stockNo);
+
+    // Image: same rule as Diamond Details — File Paths row 'image'
+    // (folder form -> {StockNo}.jpg; .jpeg is tried too when checking),
+    // otherwise the V360 still.
+    $o = media_path_override('image');
+    $out['image'] = $o === null
+        ? 'https://v3601425.v360.in/imaged/' . $enc . '/still.jpg'
+        : expand_media_path($o, '.jpg', $vars);
 
     $o = media_path_override('360view');
     $out['video'] = $o === null

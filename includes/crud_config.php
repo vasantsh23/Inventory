@@ -135,6 +135,8 @@ const CRUD_COLUMN_OVERRIDES = [
     ],
     'path' => [
         'id'     => ['type' => 'readonly'],
+        'path'   => [
+                     'hint' => 'For media links you can leave out "https://", e.g. diamondsbuysell.com/dataupload/images/{StockNo}.jpg — it is added automatically. Use this if saving a full https:// link is refused with "Not Acceptable" (the host\'s ModSecurity firewall).'],
         'active' => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No'],
                      'hint' => "For the image / 360view / video / handvideo / cert rows: Yes shows that item on Diamond Details (when Path is filled in); No hides it. If there's no row at all, the built-in URL is used."],
     ],

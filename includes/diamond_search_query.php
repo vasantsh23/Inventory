@@ -14,6 +14,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/functions.php'; // get_maindata_columns(), get_maindata_column_types(), etc.
 require_once __DIR__ . '/ThemeSettings.php'; // stockno-notforweb-bg
 
+
 /**
  * Build [whereSql, params] for maindata from the Diamond Search
  * form's submitted filters ($filters = $_GET['f'] ?? []).
@@ -85,7 +86,33 @@ function build_maindata_search_where(array $filters): array
             $specificValues = array_filter($specificValues, fn($v) => strcasecmp((string)$v, 'Fancy') !== 0);
         }
 
+        // Lab: two special pills from the `lab` table —
+        //   OTH    -> Lab is filled in but is none of the other lab
+        //             names in the `lab` table (any row, active or not)
+        //   NOCERT -> Lab is blank
+        // Compared ignoring case and surrounding spaces.
+        $labOth = $labNoCert = false;
+        if ($fldname === 'Lab') {
+            foreach ($specificValues as $i => $v) {
+                $u = strtoupper(trim((string)$v));
+                if ($u === 'OTH') {
+                    $labOth = true;
+                    unset($specificValues[$i]);
+                } elseif ($u === 'NOCERT') {
+                    $labNoCert = true;
+                    unset($specificValues[$i]);
+                }
+            }
+        }
+
         $orParts = [];
+        if ($labOth) {
+            $orParts[] = "(TRIM(COALESCE(`Lab`, '')) <> '' AND UPPER(TRIM(`Lab`)) NOT IN ("
+                . "SELECT UPPER(TRIM(`lab`)) FROM `lab` WHERE `lab` IS NOT NULL AND UPPER(TRIM(`lab`)) NOT IN ('OTH', 'NOCERT', '')))";
+        }
+        if ($labNoCert) {
+            $orParts[] = "TRIM(COALESCE(`Lab`, '')) = ''";
+        }
         if ($specificValues !== []) {
             $inKeys = [];
             foreach (array_values($specificValues) as $val) {
@@ -375,10 +402,34 @@ function media_path_override(string $description): ?string
         } else {
             $active = !array_key_exists('active', $row)
                 || strtolower(trim((string)$row['active'])) === 'yes';
-            $cache[$description] = $active ? trim((string)$row['path']) : '';
+            $cache[$description] = $active ? media_path_add_scheme(trim((string)$row['path'])) : '';
         }
     }
     return $cache[$description];
+}
+
+/**
+ * A path may be saved WITHOUT "https://", e.g.
+ *   diamondsbuysell.com/dataupload/videos/{StockNo}.jpg
+ * Some hosts' firewall (ModSecurity) rejects any form that submits a
+ * full "https://…" link, so this lets admins enter the address without
+ * it; "https://" is added here. Paths starting with "/" (this site),
+ * "{" (a column holding the link) or already having a scheme are left
+ * as they are. "http//" or "https//" (colon dropped to get past the
+ * firewall) are repaired too.
+ */
+function media_path_add_scheme(string $path): string
+{
+    if ($path === '' || $path[0] === '/' || $path[0] === '{' || preg_match('#^[a-z][a-z0-9+.-]*://#i', $path)) {
+        return $path;
+    }
+    if (preg_match('#^(https?)//#i', $path, $m)) {
+        return strtolower($m[1]) . '://' . substr($path, strlen($m[0]));
+    }
+    if (preg_match('#^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}(:\d+)?(/|$)#i', $path)) {
+        return 'https://' . $path;
+    }
+    return $path;
 }
 
 /** The `path` descriptions whose value can contain {placeholders}. */

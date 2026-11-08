@@ -31,7 +31,7 @@ if ($ready && $_SERVER['REQUEST_METHOD'] === 'POST') {
             theme_flash('success', 'Template created. Adjust its colours below, preview it, then make it live.');
             theme_redirect($self . '?edit=' . urlencode($new));
         } elseif ($action === 'save') {
-            search_template_update($key, (string)($_POST['name'] ?? ''), (string)($_POST['description'] ?? ''), (array)($_POST['settings'] ?? []));
+            search_template_update($key, (string)($_POST['name'] ?? ''), (string)($_POST['description'] ?? ''), search_template_posted_settings($_POST));
             theme_flash('success', 'Template saved.');
             theme_redirect($self . '?edit=' . urlencode($key));
         } elseif ($action === 'delete') {
@@ -141,10 +141,13 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                     <?php else: ?>
                         <label><?= e($slabel) ?>
                             <span class="stp-color">
-                                <input type="color" value="<?= e($editing['settings'][$sk]) ?>" aria-label="<?= e($slabel) ?> colour picker"
-                                       oninput="this.nextElementSibling.value=this.value">
-                                <input type="text" name="settings[<?= e($sk) ?>]" value="<?= e($editing['settings'][$sk]) ?>" pattern="#[0-9a-fA-F]{6}" maxlength="7" size="9"
-                                       oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))this.previousElementSibling.value=this.value">
+                                <?php // The picker itself is submitted, so a picked colour saves even if
+                                      // the browser runs no script; the hex box wins only when it was
+                                      // typed into (differs from the value the page loaded with). ?>
+                                <input type="color" name="settings[<?= e($sk) ?>]" value="<?= e($editing['settings'][$sk]) ?>" aria-label="<?= e($slabel) ?> colour picker" data-stp-picker>
+                                <input type="text" name="settings_hex[<?= e($sk) ?>]" value="<?= e($editing['settings'][$sk]) ?>" pattern="#[0-9a-fA-F]{6}" maxlength="7" size="9"
+                                       aria-label="<?= e($slabel) ?> hex code" data-stp-hex>
+                                <input type="hidden" name="settings_orig[<?= e($sk) ?>]" value="<?= e($editing['settings'][$sk]) ?>">
                             </span>
                         </label>
                     <?php endif; ?>
@@ -213,5 +216,8 @@ require_once __DIR__ . '/../../includes/admin_header.php';
 
 <p class="stp-note" style="margin-top:16px;">Preview opens Diamond Search with that template for you only; Results and View Cart follow while you browse. A yellow bar at the top lets you exit the preview.</p>
 <?php endif; ?>
+<?php // Picker <-> hex box syncing. External file: the site's Content-Security-Policy
+      // (script-src 'self') blocks inline oninput handlers. ?>
+<script src="<?= e(asset_url_versioned('/assets/js/search_templates_admin.js')) ?>"></script>
 <?php
 require_once __DIR__ . '/../../includes/admin_footer.php';

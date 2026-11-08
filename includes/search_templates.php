@@ -258,6 +258,32 @@ function search_template_create(string $fromKey, string $name, string $descripti
     return $key;
 }
 
+/**
+ * Colour settings from the edit form. Each colour has a picker
+ * (settings[k]), a hex box (settings_hex[k]) and the value the page
+ * loaded with (settings_orig[k]). A hex box that was typed into wins;
+ * otherwise the picker's value is used — so picking a colour saves
+ * correctly whether or not the page's script ran.
+ */
+function search_template_posted_settings(array $post): array
+{
+    $picked = (array)($post['settings'] ?? []);
+    $typed = (array)($post['settings_hex'] ?? []);
+    $orig = (array)($post['settings_orig'] ?? []);
+    $out = [];
+    foreach ($picked as $k => $v) {
+        $k = (string)$k;
+        $v = trim((string)$v);
+        $t = trim((string)($typed[$k] ?? ''));
+        $o = trim((string)($orig[$k] ?? ''));
+        if (preg_match('/^#[0-9a-fA-F]{6}$/', $t) && strcasecmp($t, $o) !== 0) {
+            $v = $t;
+        }
+        $out[$k] = $v;
+    }
+    return $out;
+}
+
 /** Save name/description/settings. Built-in templates keep their name and layout but colours can't change. */
 function search_template_update(string $key, string $name, string $description, array $settings): void
 {

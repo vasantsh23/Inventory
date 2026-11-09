@@ -10,9 +10,9 @@
  * standard on virtually every PHP install) are enough to read and
  * write simple, single-sheet tabular spreadsheets.
  *
- * Scope: flat data tables (strings/numbers), one sheet. No styling,
- * formulas, multiple sheets, or rich formatting — which is all this
- * app's import/export needs.
+ * Scope: flat data tables (strings/numbers), one sheet, optional
+ * clickable links. No formulas, multiple sheets, or rich formatting —
+ * which is all this app's import/export needs.
  */
 
 declare(strict_types=1);
@@ -24,8 +24,12 @@ final class XlsxWriter
      * @param string $filename e.g. "users-export.xlsx"
      * @param string[] $headers column headers
      * @param array<int, array<int, string>> $rows row data, same column count as $headers
+     * @param array{text_cols?: int[], links?: array<int, array<int, string>>} $opts
+     *        text_cols: column indexes always written as text (e.g. certificate
+     *        numbers, so Excel never shows 2.2E+11); links: [rowIndex][colIndex]
+     *        => absolute URL, written as a clickable hyperlink (blue, underlined)
      */
-    public static function download(string $filename, array $headers, array $rows): void
+    public static function download(string $filename, array $headers, array $rows, array $opts = []): void
     {
         if (!class_exists('ZipArchive')) {
             http_response_code(500);
@@ -50,7 +54,12 @@ final class XlsxWriter
         $zip->addFromString('xl/workbook.xml', self::workbookXml());
         $zip->addFromString('xl/_rels/workbook.xml.rels', self::workbookRelsXml());
         $zip->addFromString('xl/styles.xml', self::stylesXml());
-        $zip->addFromString('xl/worksheets/sheet1.xml', self::sheetXml($headers, $rows));
+        [$sheet, $sheetRels] = self::sheetXml($headers, $rows, $opts);
+        $zip->addFromString('xl/worksheets/sheet1.xml', $sheet);
+        if ($sheetRels !== null) {
+            $zip->addEmptyDir('xl/worksheets/_rels');
+            $zip->addFromString('xl/worksheets/_rels/sheet1.xml.rels', $sheetRels);
+        }
 
         $zip->close();
 
@@ -86,10 +95,17 @@ final class XlsxWriter
         return htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 
-    private static function sheetXml(array $headers, array $rows): string
+    /** @return array{0: string, 1: ?string} [sheet XML, sheet relationships XML or null] */
+    private static function sheetXml(array $headers, array $rows, array $opts = []): array
     {
+        $textCols = array_flip(array_map('intval', $opts['text_cols'] ?? []));
+        $links = $opts['links'] ?? [];
+        $hyperlinks = [];
+        $rels = [];
+
         $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-        $xml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+        $xml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+            . 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
         $xml .= '<sheetData>';
 
         $xml .= '<row r="1">';
@@ -106,18 +122,42 @@ final class XlsxWriter
             foreach ($row as $i => $val) {
                 $ref = self::colLetter($i) . $rowNum;
                 $val = (string)$val;
-                if ($val !== '' && is_numeric($val) && !preg_match('/^0\d/', $val)) {
-                    $xml .= '<c r="' . $ref . '"><v>' . self::xmlEscape($val) . '</v></c>';
+                $url = $links[$r][$i] ?? null;
+                $style = '';
+                if ($url !== null && $url !== '' && $val !== '' && count($hyperlinks) < 65000) {
+                    $rid = 'rId' . (count($rels) + 1);
+                    $rels[] = '<Relationship Id="' . $rid . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" '
+                        . 'Target="' . self::xmlEscape($url) . '" TargetMode="External"/>';
+                    $hyperlinks[] = '<hyperlink ref="' . $ref . '" r:id="' . $rid . '"/>';
+                    $style = ' s="2"';
+                }
+                // Numbers stay numbers, except: forced-text columns, leading
+                // zeros, and whole numbers of 12+ digits (certificate numbers
+                // and the like), which Excel would otherwise show as 2.2E+11
+                // and round past 15 digits.
+                $isNumber = $val !== '' && is_numeric($val) && !isset($textCols[$i])
+                    && !preg_match('/^0\d/', $val) && !preg_match('/^-?\d{12,}$/', $val);
+                if ($isNumber) {
+                    $xml .= '<c r="' . $ref . '"' . $style . '><v>' . self::xmlEscape($val) . '</v></c>';
                 } else {
-                    $xml .= '<c r="' . $ref . '" t="inlineStr"><is><t xml:space="preserve">'
+                    $xml .= '<c r="' . $ref . '"' . $style . ' t="inlineStr"><is><t xml:space="preserve">'
                         . self::xmlEscape($val) . '</t></is></c>';
                 }
             }
             $xml .= '</row>';
         }
 
-        $xml .= '</sheetData></worksheet>';
-        return $xml;
+        $xml .= '</sheetData>';
+        if ($hyperlinks !== []) {
+            $xml .= '<hyperlinks>' . implode('', $hyperlinks) . '</hyperlinks>';
+        }
+        $xml .= '</worksheet>';
+
+        $relsXml = $rels === [] ? null
+            : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+              . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+              . implode('', $rels) . '</Relationships>';
+        return [$xml, $relsXml];
     }
 
     private static function contentTypesXml(): string
@@ -160,17 +200,19 @@ final class XlsxWriter
 
     private static function stylesXml(): string
     {
-        // Two cell formats: 0 = default, 1 = bold (used for the header row).
+        // Cell formats: 0 = default, 1 = bold (header row), 2 = hyperlink (blue, underlined).
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font>'
-            . '<font><sz val="11"/><name val="Calibri"/><b/></font></fonts>'
+            . '<fonts count="3"><font><sz val="11"/><name val="Calibri"/></font>'
+            . '<font><b/><sz val="11"/><name val="Calibri"/></font>'
+            . '<font><u/><sz val="11"/><color rgb="FF0563C1"/><name val="Calibri"/></font></fonts>'
             . '<fills count="1"><fill><patternFill patternType="none"/></fill></fills>'
             . '<borders count="1"><border/></borders>'
             . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0"/></cellStyleXfs>'
-            . '<cellXfs count="2">'
+            . '<cellXfs count="3">'
             . '<xf numFmtId="0" fontId="0" xfId="0"/>'
             . '<xf numFmtId="0" fontId="1" xfId="0" applyFont="1"/>'
+            . '<xf numFmtId="0" fontId="2" xfId="0" applyFont="1"/>'
             . '</cellXfs>'
             . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
             . '</styleSheet>';

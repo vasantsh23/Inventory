@@ -74,20 +74,12 @@ if (($_GET['export'] ?? '') === 'xlsx') {
         http_response_code(400);
         exit('No result columns are configured.');
     }
-    $fieldList = implode(', ', array_map(fn($c) => "`{$c['field']}`", $columns));
+    $fieldList = results_export_select_list($columns);
     $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE $where ORDER BY " . build_rsetup_order_by());
     $stmt->execute($params);
-    $headers = array_map(fn($c) => $c['label'], $columns);
-    $rows = [];
-    foreach ($stmt->fetchAll() as $row) {
-        $rows[] = array_map(
-            fn($c) => $c['field'] === 'totamt'
-                ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
-                : (string)($row[$c['field']] ?? ''),
-            $columns
-        );
-    }
-    XlsxWriter::download('diamond-search-results-' . date('Ymd-His') . '.xlsx', $headers, $rows);
+    // Stock no. -> Diamond Details link, Cert no. -> certificate link, both as text.
+    [$headers, $rows, $xlsxOpts] = results_export_sheet($columns, $stmt->fetchAll());
+    XlsxWriter::download('diamond-search-results-' . date('Ymd-His') . '.xlsx', $headers, $rows, $xlsxOpts);
 }
 
 // ---- Complete Stock: every stone the viewer may see (no search
@@ -103,20 +95,12 @@ if (($_GET['export'] ?? '') === 'xlsx_all') {
         exit('No result columns are configured.');
     }
     [$allWhere, $allParams] = build_maindata_search_where([]);
-    $fieldList = implode(', ', array_map(fn($c) => "`{$c['field']}`", $columns));
+    $fieldList = results_export_select_list($columns);
     $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE $allWhere ORDER BY " . build_rsetup_order_by());
     $stmt->execute($allParams);
-    $headers = array_map(fn($c) => $c['label'], $columns);
-    $rows = [];
-    foreach ($stmt->fetchAll() as $row) {
-        $rows[] = array_map(
-            fn($c) => $c['field'] === 'totamt'
-                ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
-                : (string)($row[$c['field']] ?? ''),
-            $columns
-        );
-    }
-    XlsxWriter::download('complete-stock-' . date('Ymd-His') . '.xlsx', $headers, $rows);
+    // Stock no. -> Diamond Details link, Cert no. -> certificate link, both as text.
+    [$headers, $rows, $xlsxOpts] = results_export_sheet($columns, $stmt->fetchAll());
+    XlsxWriter::download('complete-stock-' . date('Ymd-His') . '.xlsx', $headers, $rows, $xlsxOpts);
 }
 
 // ---- Excel-select: only the checked rows (ids from the Excel-select
@@ -140,21 +124,13 @@ if (($_GET['export'] ?? '') === 'xlsx_selected') {
         http_response_code(400);
         exit('Please select at least one row to export.');
     }
-    $fieldList = implode(', ', array_map(fn($c) => "`{$c['field']}`", $columns));
+    $fieldList = results_export_select_list($columns);
     $selPlaceholders = implode(',', array_fill(0, count($selectedIds), '?'));
     $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE id IN ($selPlaceholders) ORDER BY " . build_rsetup_order_by());
     $stmt->execute($selectedIds);
-    $headers = array_map(fn($c) => $c['label'], $columns);
-    $rows = [];
-    foreach ($stmt->fetchAll() as $row) {
-        $rows[] = array_map(
-            fn($c) => $c['field'] === 'totamt'
-                ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
-                : (string)($row[$c['field']] ?? ''),
-            $columns
-        );
-    }
-    XlsxWriter::download('diamond-search-selected-' . date('Ymd-His') . '.xlsx', $headers, $rows);
+    // Stock no. -> Diamond Details link, Cert no. -> certificate link, both as text.
+    [$headers, $rows, $xlsxOpts] = results_export_sheet($columns, $stmt->fetchAll());
+    XlsxWriter::download('diamond-search-selected-' . date('Ymd-His') . '.xlsx', $headers, $rows, $xlsxOpts);
 }
 
 // ---- Normal paginated HTML view ----

@@ -121,19 +121,11 @@ if ($stockNos !== []) {
         }
 
         $verifiedPlaceholders = implode(',', array_fill(0, count($verifiedIds), '?'));
-        $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE id IN ($verifiedPlaceholders) ORDER BY " . build_rsetup_order_by());
+        $stmt = get_db()->prepare('SELECT ' . results_export_select_list($columns) . " FROM maindata WHERE id IN ($verifiedPlaceholders) ORDER BY " . build_rsetup_order_by());
         $stmt->execute($verifiedIds);
-        $headers = array_map(fn($c) => $c['label'], $columns);
-        $exportRows = [];
-        foreach ($stmt->fetchAll() as $row) {
-            $exportRows[] = array_map(
-                fn($c) => $c['field'] === 'totamt'
-                    ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
-                    : (string)($row[$c['field']] ?? ''),
-                $columns
-            );
-        }
-        XlsxWriter::download(($showSelected ? 'selected-' : 'cart-') . date('Ymd-His') . '.xlsx', $headers, $exportRows);
+        // Stock no. -> Diamond Details link, Cert no. -> certificate link, both as text.
+        [$headers, $exportRows, $xlsxOpts] = results_export_sheet($columns, $stmt->fetchAll());
+        XlsxWriter::download(($showSelected ? 'selected-' : 'cart-') . date('Ymd-His') . '.xlsx', $headers, $exportRows, $xlsxOpts);
     }
 
     $stmt = get_db()->prepare("SELECT id, $fieldList FROM maindata WHERE StockNo IN ($placeholders) ORDER BY " . build_rsetup_order_by());

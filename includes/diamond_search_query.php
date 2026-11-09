@@ -409,6 +409,57 @@ function media_path_override(string $description): ?string
 }
 
 /**
+ * SELECT list for a Results / View Cart Excel export: id, the visible
+ * columns, plus what the links need (StockNo, Lab, CertificateNo and
+ * any {Column} used in the File Paths).
+ */
+function results_export_select_list(array $columns): string
+{
+    $valid = get_maindata_columns();
+    $fields = array_column($columns, 'field');
+    $extra = array_diff(
+        array_intersect(array_unique(array_merge(['StockNo', 'Lab', 'CertificateNo'], media_placeholder_fields())), $valid),
+        $fields
+    );
+    return implode(', ', array_map(fn($f) => "`$f`", array_merge(['id'], $fields, array_values($extra))));
+}
+
+/**
+ * Excel sheet for exported stones: [headers, rows, writer options].
+ * Stock numbers link to Diamond Details and certificate numbers to the
+ * certificate file (same address as on Results; not re-checked here,
+ * since exports can hold thousands of stones). Both are written as
+ * text, so certificate numbers never turn into 2.2E+11.
+ */
+function results_export_sheet(array $columns, array $dbRows): array
+{
+    $headers = array_map(fn($c) => $c['label'], $columns);
+    $fieldIdx = array_flip(array_column($columns, 'field'));
+    $stockIdx = $fieldIdx['StockNo'] ?? null;
+    $certIdx = $fieldIdx['CertificateNo'] ?? null;
+    $rows = [];
+    $links = [];
+    foreach (array_values($dbRows) as $r => $row) {
+        $rows[] = array_map(
+            fn($c) => $c['field'] === 'totamt'
+                ? number_format(ds_display_amount($row['totamt'] ?? 0), 2, '.', '')
+                : (string)($row[$c['field']] ?? ''),
+            $columns
+        );
+        if ($stockIdx !== null && isset($row['id'])) {
+            $links[$r][$stockIdx] = full_url('/modules/user/diamond_details.php?id=' . urlencode((string)$row['id']));
+        }
+        if ($certIdx !== null) {
+            $cert = build_certificate_url($row['Lab'] ?? null, $row['CertificateNo'] ?? null, $row['StockNo'] ?? null, $row);
+            if ($cert !== null && $cert !== '') {
+                $links[$r][$certIdx] = str_starts_with($cert, '/') ? full_url($cert) : $cert;
+            }
+        }
+    }
+    return [$headers, $rows, ['text_cols' => array_values(array_filter([$stockIdx, $certIdx], fn($v) => $v !== null)), 'links' => $links]];
+}
+
+/**
  * A path may be saved WITHOUT "https://", e.g.
  *   diamondsbuysell.com/dataupload/videos/{StockNo}.jpg
  * Some hosts' firewall (ModSecurity) rejects any form that submits a

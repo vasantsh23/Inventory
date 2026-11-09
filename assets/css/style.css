@@ -1999,3 +1999,15 @@ body.rs-v2 .rs-footer-band {
 body.rs-v2 .rs-footer-band a { color: #ffffff; }
 body.rs-v2 .rs-btn .rs-btn-icon { width: 16px; height: 16px; }
 body.rs-v2 .rs-customer input::placeholder { color: #8a8f96; opacity: 1; }
+
+/* View Cart / View (Selected): Markup % box. The site theme's input
+   colours are meant for dark backgrounds (light text), which made the
+   typed markup invisible on this white page — use fixed dark-on-white. */
+body.rs-v2 .copy-markup-field { display: inline-flex; align-items: center; gap: 8px; color: var(--rs-text); font-size: 16px; }
+body.rs-v2 #markupCopyInput {
+    width: 100px !important; height: 32px; box-sizing: border-box; padding: 0 8px;
+    background: #ffffff; color: #1b1b1b; -webkit-text-fill-color: #1b1b1b; caret-color: #1b1b1b;
+    border: 1px solid #9aa0a8; border-radius: 4px; font: 16px Arial, Helvetica, sans-serif; box-shadow: none;
+}
+body.rs-v2 #markupCopyInput::placeholder { color: #8a8f96; -webkit-text-fill-color: #8a8f96; opacity: 1; }
+body.rs-v2 #markupCopyInput:focus { outline: 2px solid var(--rs-blue); outline-offset: 1px; border-color: var(--rs-blue); }

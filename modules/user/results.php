@@ -77,7 +77,7 @@ if (($_GET['export'] ?? '') === 'xlsx') {
     $fieldList = results_export_select_list($columns);
     $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE $where ORDER BY " . build_rsetup_order_by());
     $stmt->execute($params);
-    // Stock no. -> Diamond Details link, Cert no. -> certificate link, both as text.
+    // Cert no. -> certificate link; stock and cert numbers written as text.
     [$headers, $rows, $xlsxOpts] = results_export_sheet($columns, $stmt->fetchAll());
     XlsxWriter::download('diamond-search-results-' . date('Ymd-His') . '.xlsx', $headers, $rows, $xlsxOpts);
 }
@@ -98,7 +98,7 @@ if (($_GET['export'] ?? '') === 'xlsx_all') {
     $fieldList = results_export_select_list($columns);
     $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE $allWhere ORDER BY " . build_rsetup_order_by());
     $stmt->execute($allParams);
-    // Stock no. -> Diamond Details link, Cert no. -> certificate link, both as text.
+    // Cert no. -> certificate link; stock and cert numbers written as text.
     [$headers, $rows, $xlsxOpts] = results_export_sheet($columns, $stmt->fetchAll());
     XlsxWriter::download('complete-stock-' . date('Ymd-His') . '.xlsx', $headers, $rows, $xlsxOpts);
 }
@@ -128,7 +128,7 @@ if (($_GET['export'] ?? '') === 'xlsx_selected') {
     $selPlaceholders = implode(',', array_fill(0, count($selectedIds), '?'));
     $stmt = get_db()->prepare("SELECT $fieldList FROM maindata WHERE id IN ($selPlaceholders) ORDER BY " . build_rsetup_order_by());
     $stmt->execute($selectedIds);
-    // Stock no. -> Diamond Details link, Cert no. -> certificate link, both as text.
+    // Cert no. -> certificate link; stock and cert numbers written as text.
     [$headers, $rows, $xlsxOpts] = results_export_sheet($columns, $stmt->fetchAll());
     XlsxWriter::download('diamond-search-selected-' . date('Ymd-His') . '.xlsx', $headers, $rows, $xlsxOpts);
 }

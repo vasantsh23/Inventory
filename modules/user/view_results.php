@@ -123,7 +123,7 @@ if ($stockNos !== []) {
         $verifiedPlaceholders = implode(',', array_fill(0, count($verifiedIds), '?'));
         $stmt = get_db()->prepare('SELECT ' . results_export_select_list($columns) . " FROM maindata WHERE id IN ($verifiedPlaceholders) ORDER BY " . build_rsetup_order_by());
         $stmt->execute($verifiedIds);
-        // Stock no. -> Diamond Details link, Cert no. -> certificate link, both as text.
+        // Cert no. -> certificate link; stock and cert numbers written as text.
         [$headers, $exportRows, $xlsxOpts] = results_export_sheet($columns, $stmt->fetchAll());
         XlsxWriter::download(($showSelected ? 'selected-' : 'cart-') . date('Ymd-His') . '.xlsx', $headers, $exportRows, $xlsxOpts);
     }

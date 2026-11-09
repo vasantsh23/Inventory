@@ -426,10 +426,11 @@ function results_export_select_list(array $columns): string
 
 /**
  * Excel sheet for exported stones: [headers, rows, writer options].
- * Stock numbers link to Diamond Details and certificate numbers to the
- * certificate file (same address as on Results; not re-checked here,
- * since exports can hold thousands of stones). Both are written as
- * text, so certificate numbers never turn into 2.2E+11.
+ * Certificate numbers link to the certificate file (same address as on
+ * Results; not re-checked here, since exports can hold thousands of
+ * stones). Stock and certificate numbers are written as text, so
+ * certificate numbers never turn into 2.2E+11. Stock numbers are plain
+ * text, not links.
  */
 function results_export_sheet(array $columns, array $dbRows): array
 {
@@ -446,9 +447,6 @@ function results_export_sheet(array $columns, array $dbRows): array
                 : (string)($row[$c['field']] ?? ''),
             $columns
         );
-        if ($stockIdx !== null && isset($row['id'])) {
-            $links[$r][$stockIdx] = full_url('/modules/user/diamond_details.php?id=' . urlencode((string)$row['id']));
-        }
         if ($certIdx !== null) {
             $cert = build_certificate_url($row['Lab'] ?? null, $row['CertificateNo'] ?? null, $row['StockNo'] ?? null, $row);
             if ($cert !== null && $cert !== '') {

@@ -2,7 +2,8 @@
 declare(strict_types=1);
 
 // ---- Force HTTPS in production -------------------------------------------
-if ((getenv('APP_ENV') ?: 'production') === 'production') {
+// (Not for command-line runs such as cron jobs: there is no request to redirect.)
+if (PHP_SAPI !== 'cli' && (getenv('APP_ENV') ?: 'production') === 'production') {
     if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off') {
         $redirect = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
         header('Location: ' . $redirect, true, 301);

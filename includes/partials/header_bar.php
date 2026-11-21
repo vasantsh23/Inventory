@@ -1,8 +1,8 @@
 <?php
 /**
  * includes/partials/header_bar.php
- * The site header bar (logo, company name, Home / About Us / Inventory /
- * Contact Us, signed-in user). Shared by every inventory page (via
+ * The site header bar (logo, company name, the header buttons from the
+ * `buttons` table, signed-in user). Shared by every inventory page (via
  * includes/header.php) and the website pages — Home, About, Contact —
  * (via site/bootstrap.php), so both always look the same.
  */
@@ -22,10 +22,8 @@ $hbLogoUrl = preg_match('#^https?://#i', $hbLogoPath) ? $hbLogoPath : asset_url(
     </div>
     <nav class="main-nav">
         <ul>
-            <li><a href="<?= e(asset_url('/index.php')) ?>">Home</a></li>
-            <li><a href="<?= e(asset_url('/about.php')) ?>">About Us</a></li>
-            <li><a href="<?= e(asset_url('/inventory.php')) ?>">Inventory</a></li>
-            <li><a href="<?= e(asset_url('/contact.php')) ?>">Contact Us</a></li>
+            <?php // Buttons come from the `buttons` table (Admin → Manage Tables → Header Buttons) ?>
+            <?= render_header_buttons() ?>
             <?php if (is_logged_in()): ?>
                 <li class="nav-account">
                     Signed in as <?= e(current_user()['username']) ?>

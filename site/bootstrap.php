@@ -73,7 +73,7 @@ function site_head_tags(string $template): string
            . '<style>' . Site::tokenCss($template) . '</style>' . "\n"
            . '<link rel="stylesheet" href="' . e(Site::asset('/assets/site/css/base.css')) . '">' . "\n";
     foreach (Site::familiesUsed($template) as $family) {
-        $html .= '<link rel="stylesheet" href="' . e(Site::asset('/assets/site/css/' . $family . '.css')) . '">' . "\n";
+        $html .= '<link rel="stylesheet" href="' . e(Site::familyCss($family)) . '">' . "\n";
     }
     return $html;
 }
@@ -154,13 +154,20 @@ function site_render(string $page): void
 <body class="site tpl-<?= e($template) ?> hdr-<?= e($headerFamily) ?> hero-<?= e($heroFamily) ?> page-<?= e($page) ?><?= Site::isDarkColor(Site::paletteValues($template)['bg']) ? ' is-dark' : '' ?><?= $startsWithHero ? ' starts-with-hero' : '' ?>">
 <a class="skip-link" href="#main">Skip to content</a>
 <?php
-    // Header and footer: the same bars as the inventory pages (Results,
-    // View Cart…), not the template's own — see includes/partials/.
-    // Run in their own scope so they can't overwrite this function's
-    // variables.
-    echo '<div class="inv-chrome">';
-    (static function (): void { require __DIR__ . '/../includes/partials/header_bar.php'; })();
-    echo '</div>';
+    // Header and footer: by default the same bars as the inventory pages
+    // (Results, View Cart…) — see includes/partials/. An uploaded design
+    // whose design.json sets "own_header" / "own_footer" uses its own
+    // header.php / footer.php instead. Either way the header buttons come
+    // from the `buttons` table (render_header_buttons()).
+    // The shared bars run in their own scope so they can't overwrite this
+    // function's variables.
+    if (Site::usesOwnHeader($headerFamily)) {
+        site_include(__DIR__ . "/templates/$headerFamily/header.php", $vars + ['family' => $headerFamily]);
+    } else {
+        echo '<div class="inv-chrome">';
+        (static function (): void { require __DIR__ . '/../includes/partials/header_bar.php'; })();
+        echo '</div>';
+    }
     echo '<main id="main" class="site-main">';
     foreach ($blocks as [$b, $family, $file]) {
         echo '<div class="part part--' . e($family) . ' part-' . e($b->type) . '">';
@@ -168,9 +175,13 @@ function site_render(string $page): void
         echo '</div>';
     }
     echo '</main>';
-    echo '<div class="inv-chrome">';
-    (static function (): void { require __DIR__ . '/../includes/partials/footer_bar.php'; })();
-    echo '</div>';
+    if (Site::usesOwnFooter($footerFamily)) {
+        site_include(__DIR__ . "/templates/$footerFamily/footer.php", $vars + ['family' => $footerFamily]);
+    } else {
+        echo '<div class="inv-chrome">';
+        (static function (): void { require __DIR__ . '/../includes/partials/footer_bar.php'; })();
+        echo '</div>';
+    }
 
     if (Site::previewTemplate() !== null) {
         site_include(__DIR__ . '/templates/_shared/preview_bar.php', $vars);

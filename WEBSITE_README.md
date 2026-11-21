@@ -83,6 +83,11 @@ server can send mail.
 - **Contact form protection**: security token, hidden spam field, minimum
   fill time, and a limit of 5 messages per hour per visitor.
 
+## Header buttons and uploaded designs
+
+The header buttons come from the `buttons` table, and new designs can be
+uploaded as a folder without code changes — see `DESIGN_UPLOAD_GUIDE.md`.
+
 ## For developers: adding a new style family
 
 A *template* is a record in `site_templates` that picks a *family* for each

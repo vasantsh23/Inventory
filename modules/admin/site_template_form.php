@@ -102,7 +102,7 @@ echo site_admin_css();
 /** One radio card group for header / hero / footer */
 $partPicker = function (string $part, string $title, string $current) use ($editable): string {
     $h = '<fieldset class="sf-part"><legend>' . e($title) . '</legend><div class="sf-options">';
-    foreach (Site::FAMILIES as $fam => $info) {
+    foreach (Site::families() as $fam => $info) {
         $id = 'p-' . $part . '-' . $fam;
         $h .= '<label class="sf-option" for="' . $id . '"><input type="radio" id="' . $id . '" name="' . e($part) . '" value="' . e($fam) . '"'
             . ($current === $fam ? ' checked' : '') . ($editable ? '' : ' disabled') . '>'
@@ -175,7 +175,7 @@ $partPicker = function (string $part, string $title, string $current) use ($edit
                                 <img src="<?= e(asset_url($tpl['thumbnail'])) ?>" alt="" class="sf-thumb__img">
                                 <div class="sf-thumb__controls">
                                     <select name="thumbnail" aria-label="Choose an existing image">
-                                        <option value="">Same as <?= e(Site::FAMILIES[$tpl['base']]['name']) ?></option>
+                                        <option value="">Same as <?= e(Site::families()[$tpl['base']]['name']) ?></option>
                                         <?php foreach (site_image_library() as $path => $label): ?>
                                             <option value="<?= e($path) ?>" <?= $ownThumb === $path ? 'selected' : '' ?>><?= e($label) ?></option>
                                         <?php endforeach; ?>
@@ -204,12 +204,12 @@ $partPicker = function (string $part, string $title, string $current) use ($edit
                     <a href="<?= e(site_admin_url('site_content.php', ['template' => $key])) ?>">Page layouts</a>.</p>
                 <div class="table-wrap">
                     <table class="data-table sf-sections">
-                        <thead><tr><th scope="col">Section</th><?php foreach (Site::FAMILIES as $info): ?><th scope="col"><?= e($info['name']) ?></th><?php endforeach; ?></tr></thead>
+                        <thead><tr><th scope="col">Section</th><?php foreach (Site::families() as $info): ?><th scope="col"><?= e($info['name']) ?></th><?php endforeach; ?></tr></thead>
                         <tbody>
                         <?php foreach (Site::SECTION_TYPES as $type => $label): ?>
                             <tr>
                                 <th scope="row"><?= e($label) ?></th>
-                                <?php foreach (Site::FAMILIES as $fam => $info): ?>
+                                <?php foreach (Site::families() as $fam => $info): ?>
                                     <td><label class="sf-cell"><input type="radio" name="sections[<?= e($type) ?>]" value="<?= e($fam) ?>" <?= $parts['sections'][$type] === $fam ? 'checked' : '' ?><?= $editable ? '' : ' disabled' ?>><span class="ts-visually-hidden"><?= e($label . ': ' . $info['name']) ?></span></label></td>
                                 <?php endforeach; ?>
                             </tr>

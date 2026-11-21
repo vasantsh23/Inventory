@@ -16,7 +16,7 @@
         </div>
     </div>
     <nav class="at-nav" id="site-menu" aria-label="Main">
-        <?= site_menu($nav, 'menu wrap') ?>
+        <?= site_header_buttons('menu wrap') ?>
         <?= site_header_button('btn btn--primary at-nav__cta') ?>
     </nav>
 </header>

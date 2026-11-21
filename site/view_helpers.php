@@ -155,7 +155,19 @@ function site_header_button(string $class = 'btn btn--primary'): string
     return ($label !== '' && $url !== '') ? '<a class="' . e($class) . '" href="' . e($url) . '">' . e($label) . '</a>' : '';
 }
 
-/** Main menu <ul> */
+/**
+ * The header buttons (table `buttons`, Admin → Manage Tables → Header
+ * Buttons) as a <ul>. Every design's header.php should print this where
+ * its menu goes, so the buttons stay the same whichever design is live.
+ * $extraItems: optional pre-escaped <li> items appended after the buttons.
+ */
+function site_header_buttons(string $class = 'menu', string $linkClass = '', string $extraItems = ''): string
+{
+    $items = render_header_buttons($linkClass) . $extraItems;
+    return $items === '' ? '' : '<ul class="' . e($class) . '">' . $items . '</ul>';
+}
+
+/** Main menu <ul> (pages named in Page Content → Site-wide → Menu) — footers use it */
 function site_menu(array $nav, string $class = 'menu'): string
 {
     $html = '<ul class="' . e($class) . '">';

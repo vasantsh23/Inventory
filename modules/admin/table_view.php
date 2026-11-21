@@ -27,7 +27,10 @@ $activeNav = 'table:' . $table;
 $dashActionsHtml =
     '<a class="btn" href="' . e(asset_url('/modules/admin/table_export.php?table=' . urlencode($table))) . '">Export to Excel</a>'
     . '<a class="btn" href="#import-panel">Import from Excel</a>'
-    . '<a class="btn btn-accent" href="' . e(asset_url('/modules/admin/table_form.php?table=' . urlencode($table) . $filterQuery)) . '">+ Add New</a>';
+    // Fixed-size tables (e.g. the 10 Header Buttons) lose "+ Add New" when full.
+    . (isset(CRUD_MAX_ROWS[$table]) && crud_row_count($table) >= CRUD_MAX_ROWS[$table]
+        ? ''
+        : '<a class="btn btn-accent" href="' . e(asset_url('/modules/admin/table_form.php?table=' . urlencode($table) . $filterQuery)) . '">+ Add New</a>');
 
 require_once __DIR__ . '/../../includes/admin_header.php';
 

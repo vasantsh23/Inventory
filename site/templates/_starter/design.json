@@ -1,0 +1,9 @@
+{
+    "name": "My Design",
+    "about": "Describe the look in one sentence. Shown in Admin → Website → Templates.",
+    "header": "Logo left, header buttons right",
+    "hero": "Large photograph with the title over it",
+    "footer": "Three columns on the dark colour",
+    "own_header": true,
+    "own_footer": true
+}

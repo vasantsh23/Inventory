@@ -4,9 +4,19 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/registration.php'; // registration_enabled()
 
+// ?next=/some/page.php (e.g. from the Diamond Jewellery pages in
+// sample-module/): go back there after signing in. Only a path on this
+// site is accepted, never another website.
+$next = (string)($_GET['next'] ?? '');
+$nextOk = $next !== '' && $next[0] === '/' && !str_starts_with($next, '//')
+    && !preg_match('/[\s\\\\]/', $next) && strlen($next) <= 500;
+
 if (is_logged_in()) {
-    header('Location: ' . asset_url('/inventory.php'));
+    header('Location: ' . ($nextOk ? $next : asset_url('/inventory.php')));
     exit;
+}
+if ($nextOk) {
+    $_SESSION['redirect_after_login'] = $next;
 }
 
 $error = '';

@@ -16,7 +16,7 @@ $addr = format_address($setup); ?>
     <div class="wrap no-header__bar">
         <?= site_brand(true) ?>
         <nav class="no-nav" id="site-menu" aria-label="Main">
-            <?= site_menu($nav, 'menu') ?>
+            <?= site_header_buttons('menu') ?>
             <?= site_header_button('no-nav__cta') ?>
         </nav>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" data-menu-toggle>

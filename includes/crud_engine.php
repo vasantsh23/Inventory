@@ -533,6 +533,26 @@ function crud_save(string $table, int|string|null $id, array $input): string
         }
     }
 
+    // buttons table (header buttons): an active button needs a label
+    // and a URL the header can actually link to.
+    if ($table === 'buttons') {
+        $current = $id !== null ? (crud_get($table, $id) ?? []) : [];
+        $pick = fn(string $c) => trim((string)(array_key_exists($c, $values) ? $values[$c] : ($current[$c] ?? '')));
+        $url = $pick('URL');
+        if (!header_button_url_is_valid($url)) {
+            throw new InvalidArgumentException('URL "' . $url . '" can\'t be used. Use a page on this site such as /about.php, a full https:// link, mailto:, tel: or #section.');
+        }
+        if (strcasecmp($pick('active'), 'yes') === 0 && ($pick('button_label') === '' || $url === '')) {
+            throw new InvalidArgumentException('An active button needs both a Button Label and a URL. Fill them in, or set Active to No.');
+        }
+    }
+
+    // Fixed-size tables (CRUD_MAX_ROWS): refuse a row beyond the limit.
+    if ($id === null && isset(CRUD_MAX_ROWS[$table]) && crud_row_count($table) >= CRUD_MAX_ROWS[$table]) {
+        throw new InvalidArgumentException(CRUD_TABLES[$table] . ' has room for ' . CRUD_MAX_ROWS[$table]
+            . ' rows and all of them exist. Edit an existing row instead (set Active to No to hide one).');
+    }
+
     if ($id === null) {
         if ($values === []) {
             throw new InvalidArgumentException('Nothing to save.');
@@ -589,6 +609,13 @@ function crud_save(string $table, int|string|null $id, array $input): string
         }
     }
     return $id;
+}
+
+/** Number of rows in an allowlisted table. */
+function crud_row_count(string $table): int
+{
+    crud_assert_table($table);
+    return (int) get_db()->query("SELECT COUNT(*) FROM `$table`")->fetchColumn();
 }
 
 function crud_delete(string $table, int|string $id): void

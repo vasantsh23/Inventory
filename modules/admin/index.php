@@ -41,7 +41,11 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                 <a class="table-picker-card" href="<?= e(asset_url('/modules/admin/table_view.php?table=' . urlencode($tableKey))) ?>">
                     <div class="tpc-icon"><?= e(strtoupper(substr($label, 0, 1))) ?></div>
                     <h3><?= e($label) ?></h3>
-                    <p><?= number_format($stats[$tableKey]['count']) ?> records</p>
+                    <?php if (isset($stats[$tableKey])): ?>
+                        <p><?= number_format($stats[$tableKey]['count']) ?> records</p>
+                    <?php else: ?>
+                        <p class="hint">Not installed yet — run its file in sql/</p>
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
         </div>

@@ -123,6 +123,76 @@ final class Site
     private static ?array $content = null;
     private static ?array $dbTemplates = null;
     private static ?array $setup = null;
+    private static ?array $families = null;
+
+    // ------------------------------------------------------------- designs
+
+    /**
+     * Every style family ("design"): the built-in ones in FAMILIES plus
+     * every uploaded design — a folder site/templates/<key>/ holding a
+     * design.json (see site/templates/_starter/ and DESIGN_UPLOAD_GUIDE.md).
+     * <key> is the folder name: lower-case letters, digits and hyphens,
+     * starting with a letter (folders starting with "_" are ignored).
+     *
+     * key => [name, about, header, hero, footer, own_header, own_footer, uploaded]
+     */
+    public static function families(): array
+    {
+        if (self::$families !== null) {
+            return self::$families;
+        }
+        $out = [];
+        foreach (self::FAMILIES as $key => $info) {
+            $out[$key] = $info + ['own_header' => false, 'own_footer' => false, 'uploaded' => false];
+        }
+        foreach (glob(__DIR__ . '/templates/*/design.json') ?: [] as $file) {
+            $dir = dirname($file);
+            $key = basename($dir);
+            if (isset($out[$key]) || !preg_match('/^[a-z][a-z0-9-]{1,29}$/', $key)) {
+                continue;
+            }
+            $d = json_decode((string) @file_get_contents($file), true);
+            $name = is_array($d) ? trim((string) ($d['name'] ?? '')) : '';
+            if ($name === '') {
+                continue; // unreadable design.json: ignore the folder rather than break the site
+            }
+            $str = fn (string $k, string $fallback) => trim((string) ($d[$k] ?? '')) ?: $fallback;
+            $out[$key] = [
+                'name'   => function_exists('mb_substr') ? mb_substr($name, 0, 60) : substr($name, 0, 60),
+                'about'  => $str('about', 'Uploaded design.'),
+                'header' => $str('header', $name . ' header'),
+                'hero'   => $str('hero', $name . ' hero banner'),
+                'footer' => $str('footer', $name . ' footer'),
+                // own_header / own_footer: use this design's header.php / footer.php
+                // instead of the shared header and footer bars.
+                'own_header' => !empty($d['own_header']) && is_file($dir . '/header.php'),
+                'own_footer' => !empty($d['own_footer']) && is_file($dir . '/footer.php'),
+                'uploaded'   => true,
+            ];
+        }
+        return self::$families = $out;
+    }
+
+    /** true when the family renders its own header.php (else the shared header bar is used) */
+    public static function usesOwnHeader(string $family): bool
+    {
+        return !empty(self::families()[$family]['own_header']);
+    }
+
+    /** true when the family renders its own footer.php (else the shared footer bar is used) */
+    public static function usesOwnFooter(string $family): bool
+    {
+        return !empty(self::families()[$family]['own_footer']);
+    }
+
+    /** Stylesheet of a family: an uploaded design's own design.css, else assets/site/css/<family>.css */
+    public static function familyCss(string $family): string
+    {
+        if (is_file(__DIR__ . '/templates/' . $family . '/design.css')) {
+            return self::asset('/site/templates/' . $family . '/design.css');
+        }
+        return self::asset('/assets/site/css/' . $family . '.css');
+    }
 
     // ------------------------------------------------------------ defaults
 
@@ -218,7 +288,7 @@ final class Site
     public static function normaliseParts(mixed $parts, string $fallback = self::DEFAULT_TEMPLATE): array
     {
         $parts = is_array($parts) ? $parts : [];
-        $ok = fn ($v) => is_string($v) && isset(self::FAMILIES[$v]) ? $v : $fallback;
+        $ok = fn ($v) => is_string($v) && isset(self::families()[$v]) ? $v : $fallback;
         $out = ['header' => $ok($parts['header'] ?? null), 'hero' => $ok($parts['hero'] ?? null),
                 'footer' => $ok($parts['footer'] ?? null), 'sections' => []];
         foreach (array_keys(self::SECTION_TYPES) as $t) {

@@ -1157,3 +1157,29 @@ INSERT IGNORE INTO `flags` (`id`, `location`, `image`) VALUES
 (7, 'Angola', 'img/flags/angola.svg'),
 (8, 'USA', 'img/flags/usa.svg'),
 (9, 'Hong Kong', 'img/flags/hk.svg');
+
+
+-- ------------------------------------------------------------
+-- buttons: the 10 header buttons (label, active, URL)
+-- (see migration_buttons.sql)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `buttons` (
+  `id`           INT          NOT NULL AUTO_INCREMENT,
+  `button_label` VARCHAR(40)  NOT NULL DEFAULT '',
+  `active`       VARCHAR(3)   NOT NULL DEFAULT 'no' COMMENT 'yes / no',
+  `URL`          VARCHAR(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `buttons` (`id`, `button_label`, `active`, `URL`) VALUES
+(1,  'Home',       'yes', '/index.php'),
+(2,  'About Us',   'yes', '/about.php'),
+(3,  'Inventory',  'yes', '/inventory.php'),
+(4,  'Contact Us', 'yes', '/contact.php'),
+(5,  '',           'no',  ''),
+(6,  '',           'no',  ''),
+(7,  '',           'no',  ''),
+(8,  '',           'no',  ''),
+(9,  '',           'no',  ''),
+(10, '',           'no',  '');
+

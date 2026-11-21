@@ -697,3 +697,120 @@ function render_location_flag(?string $location): string
     }
     return '<img class="loc-flag" src="' . e($url) . '" alt="' . e($name) . '" title="' . e($name) . '" width="30" height="20" loading="lazy" decoding="async">';
 }
+
+/* ------------------------------------------------------------------
+ * Header buttons — table `buttons` (sql/migration_buttons.sql),
+ * edited in Admin → Manage Tables → Header Buttons.
+ *
+ * Every header calls render_header_buttons(): the shared header bar
+ * (includes/partials/header_bar.php — website pages, Diamond Search,
+ * Results, View Cart) and the header.php of every website design in
+ * site/templates/<design>/ (via site_header_buttons()). So a design
+ * you upload later picks the buttons up without any code change.
+ * ------------------------------------------------------------------ */
+
+/** Number of button slots in the `buttons` table. */
+const HEADER_BUTTON_SLOTS = 10;
+
+/** The header's buttons before the `buttons` table existed — used until the migration is run. */
+function header_buttons_default(): array
+{
+    return [
+        ['id' => 1, 'button_label' => 'Home',       'active' => 'yes', 'URL' => '/index.php'],
+        ['id' => 2, 'button_label' => 'About Us',   'active' => 'yes', 'URL' => '/about.php'],
+        ['id' => 3, 'button_label' => 'Inventory',  'active' => 'yes', 'URL' => '/inventory.php'],
+        ['id' => 4, 'button_label' => 'Contact Us', 'active' => 'yes', 'URL' => '/contact.php'],
+    ];
+}
+
+/**
+ * Turn a `buttons.URL` value into a safe href, or '' when it is not
+ * allowed (empty, javascript:, data:, protocol-relative "//host", "..").
+ *   /about.php, about.php, modules/user/x.php?a=1  -> this site
+ *   https://…, http://…, mailto:…, tel:…, #anchor  -> used as-is
+ */
+function header_button_href(string $url): string
+{
+    $v = trim($url);
+    if ($v === '' || str_contains($v, '..') || preg_match('/[\s<>"\'`\\\\]/', $v)) {
+        return '';
+    }
+    if (preg_match('#^(https?://[^/\s]+|mailto:|tel:)#i', $v)) {
+        return $v;
+    }
+    if ($v[0] === '#') {
+        return $v;
+    }
+    if (str_starts_with($v, '//')) {
+        return '';
+    }
+    // A path on this site, with or without the leading slash.
+    if (preg_match('#^/?[A-Za-z0-9._~/-]*(\?[A-Za-z0-9._~&=%+,;:@/-]*)?(\#[A-Za-z0-9._-]*)?$#', $v)) {
+        return asset_url('/' . ltrim($v, '/'));
+    }
+    return '';
+}
+
+/** true when a `buttons.URL` value is acceptable (used when saving in the admin). */
+function header_button_url_is_valid(string $url): bool
+{
+    return trim($url) === '' || header_button_href($url) !== '';
+}
+
+/**
+ * Active header buttons, in id order (max HEADER_BUTTON_SLOTS):
+ * [['id', 'label', 'url' (resolved href), 'current' (bool)], …].
+ * Rows with no label or an unusable URL are skipped.
+ */
+function get_header_buttons(): array
+{
+    static $buttons = null;
+    if ($buttons !== null) {
+        return $buttons;
+    }
+    try {
+        $rows = get_db()->query(
+            'SELECT `id`, `button_label`, `active`, `URL` FROM `buttons` ORDER BY `id` LIMIT ' . HEADER_BUTTON_SLOTS
+        )->fetchAll();
+    } catch (Throwable $e) {
+        $rows = header_buttons_default(); // table not created yet
+    }
+
+    $here = rtrim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/');
+    $home = rtrim(asset_url('/'), '/');
+    $buttons = [];
+    foreach ($rows as $r) {
+        $label = trim((string) ($r['button_label'] ?? ''));
+        $active = strtolower(trim((string) ($r['active'] ?? '')));
+        $href = header_button_href((string) ($r['URL'] ?? $r['url'] ?? ''));
+        if ($label === '' || $active !== 'yes' || $href === '') {
+            continue;
+        }
+        $path = rtrim((string) parse_url($href, PHP_URL_PATH), '/');
+        $isLocal = !preg_match('#^[a-z][a-z0-9+.-]*:#i', $href);
+        $current = $isLocal && $here !== '' && (
+            $path === $here
+            || ($path === $home . '/index.php' && $here === $home) // "/" is the home page
+        );
+        $buttons[] = ['id' => (int) $r['id'], 'label' => $label, 'url' => $href, 'current' => $current];
+    }
+    return $buttons;
+}
+
+/**
+ * The header buttons as <li><a> items (no surrounding <ul>, so each
+ * header can wrap them in its own list and add items of its own).
+ * Clicking a button sends the browser to its URL.
+ */
+function render_header_buttons(string $linkClass = ''): string
+{
+    $html = '';
+    foreach (get_header_buttons() as $b) {
+        $html .= '<li class="hdr-btn hdr-btn--' . $b['id'] . '"><a'
+            . ($linkClass !== '' ? ' class="' . e($linkClass) . '"' : '')
+            . ' href="' . e($b['url']) . '"'
+            . ($b['current'] ? ' aria-current="page"' : '')
+            . '>' . e($b['label']) . '</a></li>';
+    }
+    return $html;
+}

@@ -15,6 +15,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/functions.php'; // HEADER_BUTTON_SLOTS
+
 /** Tables editable from the admin dashboard. Acts as a hard allowlist. */
 const CRUD_TABLES = [
     'user'           => 'Users',
@@ -49,6 +51,15 @@ const CRUD_TABLES = [
     'clarity'        => 'Clarity',
     'color'          => 'Color',
     'availability'   => 'Availability',
+    'buttons'        => 'Header Buttons',
+];
+
+/**
+ * Tables with a fixed number of rows: "+ Add New" disappears and
+ * saving / importing a new row is refused once this many rows exist.
+ */
+const CRUD_MAX_ROWS = [
+    'buttons' => HEADER_BUTTON_SLOTS,
 ];
 
 /**
@@ -233,6 +244,15 @@ const CRUD_COLUMN_OVERRIDES = [
         'fncycolor' => ['label' => 'Fancy Color', 'hint' => 'e.g. Yellow, Orange, Pink — matched against maindata.NatFancyColor, which Diamond Data Upload derives automatically from the Color field.'],
         'active'    => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No']],
     ],
+    'buttons' => [
+        'id'           => ['type' => 'readonly', 'label' => 'Slot',
+                           'hint' => 'Buttons are shown left to right in this order, lowest first. The table holds 10 buttons.'],
+        'button_label' => ['label' => 'Button Label', 'hint' => 'Text on the button, e.g. Home, Diamonds, Contact Us. Max 40 characters.'],
+        'active'       => ['type' => 'select', 'label' => 'Active', 'options' => ['yes' => 'Yes', 'no' => 'No'],
+                           'hint' => 'Yes = shown in the header of every page and every design. No = hidden.'],
+        'URL'          => ['label' => 'URL',
+                           'hint' => 'Where the button goes when clicked. A page on this site: /about.php, /inventory.php, /modules/user/diamond_search.php. Another website: https://… . Also mailto:…, tel:… or #section.'],
+    ],
     'fancyint' => [
         'id'       => ['type' => 'readonly'],
         'fncyint'  => ['label' => 'Fancy Color Intensity', 'hint' => 'e.g. Light, Intense, Vivid, Dark, Deep — matched against maindata.NatFancyColorIntensity, which Diamond Data Upload derives automatically from the Color field.'],
@@ -350,6 +370,7 @@ const CRUD_LIST_FILTERS = [
  */
 const CRUD_LIST_ORDER = [
     'results' => '`usertype` ASC, `orderid` ASC, `id` ASC',
+    'buttons' => '`id` ASC',
 ];
 
 /** Columns of type 'forecolor-N' / 'backcolor-N' render as color pickers. */
@@ -395,5 +416,6 @@ const CRUD_LIST_COLUMNS = [
     'clarity'        => ['id', 'clarity', 'active'],
     'color'          => ['id', 'color', 'active'],
     'availability'   => ['id', 'avail', 'shortnm', 'color', 'active', 'order'],
+    'buttons'        => ['id', 'button_label', 'active', 'URL'],
 ];
 

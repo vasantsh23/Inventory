@@ -173,7 +173,7 @@ echo site_admin_css();
                                 <td><input type="checkbox" name="layout[<?= e($r['key']) ?>][enabled]" value="1" <?= $r['enabled'] ? 'checked' : '' ?> aria-label="Show <?= e($b['label']) ?>"></td>
                                 <td><input class="sc-order" type="number" min="0" max="9999" step="1" name="layout[<?= e($r['key']) ?>][sort]" value="<?= (int) $r['sort'] ?>" aria-label="Order of <?= e($b['label']) ?>"></td>
                                 <td><a href="#blk-<?= e($r['key']) ?>"><?= e($b['label']) ?></a></td>
-                                <td><?= e(Site::FAMILIES[$fam]['name']) ?> <span class="hint"><?= e(Site::SECTION_TYPES[$b['type']] ?? 'Banner') ?></span></td>
+                                <td><?= e(Site::families()[$fam]['name']) ?> <span class="hint"><?= e(Site::SECTION_TYPES[$b['type']] ?? 'Banner') ?></span></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>

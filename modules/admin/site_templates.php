@@ -86,12 +86,12 @@ echo site_admin_css();
                 </div>
                 <div class="st-body">
                     <h2 class="st-name"><?= e($t['name']) ?></h2>
-                    <p class="st-meta"><?= $t['builtin'] ? 'Built-in template' : 'Your template · based on ' . e(Site::FAMILIES[$t['base']]['name']) ?><?= $mixed ? ' · mixed styles' : '' ?></p>
+                    <p class="st-meta"><?= $t['builtin'] ? 'Built-in template' : 'Your template · based on ' . e(Site::families()[$t['base']]['name']) ?><?= $mixed ? ' · mixed styles' : '' ?></p>
                     <?php if ($t['description'] !== ''): ?><p class="panel-desc"><?= e($t['description']) ?></p><?php endif; ?>
                     <dl class="st-parts">
-                        <div><dt>Header</dt><dd><?= e(Site::FAMILIES[$parts['header']]['name']) ?></dd></div>
-                        <div><dt>Hero</dt><dd><?= e(Site::FAMILIES[$parts['hero']]['name']) ?></dd></div>
-                        <div><dt>Footer</dt><dd><?= e(Site::FAMILIES[$parts['footer']]['name']) ?></dd></div>
+                        <div><dt>Header</dt><dd><?= e(Site::families()[$parts['header']]['name']) ?></dd></div>
+                        <div><dt>Hero</dt><dd><?= e(Site::families()[$parts['hero']]['name']) ?></dd></div>
+                        <div><dt>Footer</dt><dd><?= e(Site::families()[$parts['footer']]['name']) ?></dd></div>
                     </dl>
                     <div class="st-actions">
                         <?php if (!$isLive): ?>

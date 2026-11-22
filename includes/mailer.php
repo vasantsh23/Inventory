@@ -143,7 +143,7 @@ function send_plain_mail(string $to, string $subject, string $body, string $from
  * message in mail_last_error() (e.g. sender not verified, account
  * pending approval, inactive recipient).
  */
-function send_via_postmark(string $to, string $subject, string $body, string $fromName = '', ?string $replyTo = null): bool
+function send_via_postmark(string $to, string $subject, string $body, string $fromName = '', ?string $replyTo = null, ?string $html = null): bool
 {
     $from = mail_from_address();
     $fromName = str_replace(['"', '<', '>'], '', mail_header_clean($fromName));
@@ -156,6 +156,9 @@ function send_via_postmark(string $to, string $subject, string $body, string $fr
     ];
     if ($replyTo !== null && filter_var(mail_header_clean($replyTo), FILTER_VALIDATE_EMAIL)) {
         $payload['ReplyTo'] = mail_header_clean($replyTo);
+    }
+    if ($html !== null && $html !== '') {
+        $payload['HtmlBody'] = $html; // only from send_html_mail(); plain-text mails are unchanged
     }
     $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $headers = [
@@ -220,4 +223,65 @@ function send_via_postmark(string $to, string $subject, string $body, string $fr
         . ($errorCode > 0 ? ', error ' . $errorCode : '') . '): ' . ($message !== '' ? $message : substr((string)$response, 0, 300));
     error_log('send_via_postmark: ' . $GLOBALS['__mail_last_error'] . ' (to ' . $to . ')');
     return false;
+}
+
+/**
+ * Send an HTML e-mail with a plain-text version for e-mail programs that
+ * don't show HTML (used by the Diamond Jewellery inquiry,
+ * sample-module/cat/inquiry_mail.php). Same transports, From address and
+ * error handling as send_plain_mail(): true when accepted, otherwise
+ * false with the reason in mail_last_error().
+ */
+function send_html_mail(string $to, string $subject, string $html, string $text, string $fromName = '', ?string $replyTo = null): bool
+{
+    $GLOBALS['__mail_last_error'] = '';
+    $to = mail_header_clean($to);
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        $GLOBALS['__mail_last_error'] = 'Invalid recipient address.';
+        return false;
+    }
+    if (mail_transport() === 'postmark') {
+        return send_via_postmark($to, $subject, $text, $fromName, $replyTo, $html);
+    }
+    if (!function_exists('mail')) {
+        $GLOBALS['__mail_last_error'] = 'PHP mail() is disabled on this server.';
+        error_log('send_html_mail: PHP mail() is disabled on this server');
+        return false;
+    }
+
+    $from = mail_from_address();
+    $fromName = mail_header_clean($fromName);
+    $boundary = 'b' . bin2hex(random_bytes(12));
+    $headers = [
+        'From: ' . ($fromName !== '' ? '=?UTF-8?B?' . base64_encode($fromName) . '?= ' : '') . '<' . $from . '>',
+        'MIME-Version: 1.0',
+        'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
+    ];
+    if ($replyTo !== null && filter_var(mail_header_clean($replyTo), FILTER_VALIDATE_EMAIL)) {
+        $headers[] = 'Reply-To: ' . mail_header_clean($replyTo);
+    }
+    $part = static fn (string $type, string $content): string =>
+        '--' . $boundary . "\r\n"
+        . 'Content-Type: ' . $type . '; charset=UTF-8' . "\r\n"
+        . 'Content-Transfer-Encoding: base64' . "\r\n\r\n"
+        . chunk_split(base64_encode($content)) . "\r\n";
+    $body = $part('text/plain', $text) . $part('text/html', $html) . '--' . $boundary . '--';
+    $encodedSubject = '=?UTF-8?B?' . base64_encode(mail_header_clean($subject)) . '?=';
+    $headerText = implode("\r\n", $headers);
+
+    try {
+        $ok = @mail($to, $encodedSubject, $body, $headerText, '-f' . $from)
+            || @mail($to, $encodedSubject, $body, $headerText);
+    } catch (Throwable $e) {
+        $GLOBALS['__mail_last_error'] = $e->getMessage();
+        error_log('send_html_mail failed: ' . $e->getMessage());
+        return false;
+    }
+    if (!$ok) {
+        $last = error_get_last();
+        $GLOBALS['__mail_last_error'] = 'The server\'s mail program refused the message'
+            . ($last !== null ? ': ' . $last['message'] : '.');
+        error_log('send_html_mail: ' . $GLOBALS['__mail_last_error'] . ' (to ' . $to . ')');
+    }
+    return $ok;
 }

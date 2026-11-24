@@ -1926,13 +1926,18 @@ body.rs-v2 .rs-inline-form { display: inline; margin: 0; }
 body.rs-v2 .rs-summary { font-size: 14.5px; margin: 2px 0 6px; color: var(--rs-text); }
 body.rs-v2 .rs-summary strong { font-weight: 700; }
 body.rs-v2 .rs-selectall-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-bottom: 8px; }
-body.rs-v2 .rs-selectall { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; cursor: pointer; }
+body.rs-v2 .rs-selectall { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; cursor: pointer; color: var(--rs-text); }
 body.rs-v2 .rs-link-btn {
     background: none; border: 0; padding: 0; color: var(--rs-blue); font: 14px Arial, Helvetica, sans-serif;
     text-decoration: underline; cursor: pointer;
 }
 body.rs-v2 .results-applied-filters { gap: 6px; }
-body.rs-v2 .filter-tag { font-size: 12px; padding: 2px 8px; }
+/* The results page has a white background, but the theme's text colour
+   (Theme Settings → text-color, default #eef2fb) is made for the dark
+   theme — so the filter values and "Select All" were near-white on white.
+   Use this page's own dark text and blue instead. */
+body.rs-v2 .filter-tag { font-size: 12px; padding: 2px 8px; color: var(--rs-text); background: #eef4fd; border-color: #b9cdee; }
+body.rs-v2 .filter-tag strong { color: var(--rs-blue); }
 
 /* Table */
 body.rs-v2 .results-table-wrap { border: 0; border-radius: 0; }

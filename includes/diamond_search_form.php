@@ -110,17 +110,36 @@ function ds_build_form_sections(): array
             }
         }
 
+        // Labels: the "colname" of these two rows in Admin > Manage Tables >
+        // Diamond Search Fields, like every other section's label (their
+        // Active setting is ignored — Site Setup's Fancy Filter decides
+        // whether they show). Falls back to the original wording.
+        $fancyLabels = ['NatFancyColor' => 'Nat Fancy Color', 'NatFancyColorIntensity' => 'Nat Fancy Color Intensity'];
+        try {
+            $labelRows = get_db()->query(
+                "SELECT fldname, colname FROM `diamond_search` WHERE fldname IN ('NatFancyColor', 'NatFancyColorIntensity')"
+            )->fetchAll();
+            foreach ($labelRows as $r) {
+                $colname = trim((string)$r['colname']);
+                if ($colname !== '') {
+                    $fancyLabels[$r['fldname']] = $colname;
+                }
+            }
+        } catch (Throwable $e) {
+            // diamond_search not reachable — keep the original wording.
+        }
+
         $fancyExtraSections = [
             [
                 'kind'    => 'pill',
                 'fldname' => 'NatFancyColor',
-                'label'   => 'Nat Fancy Color',
+                'label'   => $fancyLabels['NatFancyColor'],
                 'options' => array_map(fn($r) => ['id' => $r['id'], 'label' => (string)$r['fncycolor'], 'value' => (string)$r['fncycolor']], $natColorRows),
             ],
             [
                 'kind'    => 'pill',
                 'fldname' => 'NatFancyColorIntensity',
-                'label'   => 'Nat Fancy Color Intensity',
+                'label'   => $fancyLabels['NatFancyColorIntensity'],
                 'options' => array_map(fn($r) => ['id' => $r['id'], 'label' => (string)$r['fncyint'], 'value' => (string)$r['fncyint']], $natIntRows),
             ],
         ];

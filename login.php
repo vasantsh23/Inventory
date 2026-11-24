@@ -31,8 +31,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($username === '' || $password === '') {
             $error = 'Please enter both your login ID and password.';
         } elseif (attempt_login($username, $password, !empty($_POST['remember']))) {
-            $redirect = $_SESSION['redirect_after_login'] ?? asset_url('/inventory.php');
+            $redirect = (string)($_SESSION['redirect_after_login'] ?? '');
             unset($_SESSION['redirect_after_login']);
+            // Admins (and Super Admins) always start on their dashboard —
+            // unless the login interrupted them on an admin page (e.g. the
+            // session expired), in which case they go back to that page.
+            $level = (int)(current_user()['level'] ?? 0);
+            if ($level >= 8
+                && !str_starts_with($redirect, asset_url('/modules/admin/'))
+                && !str_starts_with($redirect, asset_url('/modules/superadmin/'))) {
+                $redirect = asset_url($level >= 9 ? '/modules/superadmin/index.php' : '/modules/admin/index.php');
+            }
+            if ($redirect === '') {
+                $redirect = asset_url('/inventory.php');
+            }
             header('Location: ' . $redirect);
             exit;
         } else {

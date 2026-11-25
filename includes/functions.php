@@ -320,14 +320,19 @@ function ds_format_label(string $colname): string
 function ds_lookup_map(): array
 {
     return [
-        'Shape'                 => ['table' => 'shape', 'label' => 'Display _nm', 'match' => 'shape', 'hasActive' => true, 'orderCol' => 'order', 'image' => 'imgpath'],
+        // idCol / srtCol (Shape, Cut, Polish, Symmetry, Fluorescence): the pill
+        // submits the lookup row's id (e.g. polish.pol_id) and the search
+        // matches maindata's numeric sort column (e.g. maindata.srtpol),
+        // which Diamond Data Upload fills from the same lookup table
+        // (update_id26.php) — not the text column (maindata.Polish).
+        'Shape'                 => ['table' => 'shape', 'label' => 'Display _nm', 'match' => 'shape', 'hasActive' => true, 'orderCol' => 'order', 'image' => 'imgpath', 'idCol' => 'shape_id', 'srtCol' => 'srtshp'],
         'Weight'                => ['table' => 'size', 'label' => 'sizedesc', 'hasActive' => false, 'orderCol' => 'sizefr'],
         'Color'                 => ['table' => 'color', 'label' => 'color', 'match' => 'color', 'hasActive' => true, 'orderCol' => 'id'],
         'Clarity'               => ['table' => 'clarity', 'label' => 'clarity', 'match' => 'clarity', 'hasActive' => true, 'orderCol' => 'id'],
-        'CutGrade'              => ['table' => 'cut', 'label' => 'cut', 'match' => 'cut', 'hasActive' => true, 'orderCol' => 'order'],
-        'Polish'                => ['table' => 'polish', 'label' => 'pol', 'match' => 'pol', 'hasActive' => true, 'orderCol' => 'order'],
-        'Symmetry'              => ['table' => 'symmetry', 'label' => 'sym', 'match' => 'sym', 'hasActive' => true, 'orderCol' => 'order'],
-        'FluorescenceIntensity' => ['table' => 'fluorescence', 'label' => 'flu', 'match' => 'flu', 'hasActive' => true, 'orderCol' => 'order'],
+        'CutGrade'              => ['table' => 'cut', 'label' => 'cut', 'match' => 'cut', 'hasActive' => true, 'orderCol' => 'order', 'idCol' => 'cut_id', 'srtCol' => 'srtcut'],
+        'Polish'                => ['table' => 'polish', 'label' => 'pol', 'match' => 'pol', 'hasActive' => true, 'orderCol' => 'order', 'idCol' => 'pol_id', 'srtCol' => 'srtpol'],
+        'Symmetry'              => ['table' => 'symmetry', 'label' => 'sym', 'match' => 'sym', 'hasActive' => true, 'orderCol' => 'order', 'idCol' => 'sym_id', 'srtCol' => 'srtsym'],
+        'FluorescenceIntensity' => ['table' => 'fluorescence', 'label' => 'flu', 'match' => 'flu', 'hasActive' => true, 'orderCol' => 'order', 'idCol' => 'flu_id', 'srtCol' => 'srtflu'],
         'Lab'                   => ['table' => 'lab', 'label' => 'lab', 'match' => 'lab', 'hasActive' => true, 'orderCol' => 'id'],
         'location'              => ['table' => 'location', 'label' => 'location', 'match' => 'location', 'hasActive' => true, 'orderCol' => 'order', 'style' => 'checkbox_grid'],
         'avail'                 => ['table' => 'availability', 'label' => 'avail', 'match' => 'avail', 'hasActive' => true, 'orderCol' => 'order', 'style' => 'checkbox_grid'],
@@ -436,6 +441,11 @@ function get_diamond_search_sections(string $sourceTable = 'diamond_search'): ar
                     // its short code, not the display name).
                     'value' => (string)($row[$def['match'] ?? $def['label']] ?? ''),
                 ];
+                // Shape / Cut / Polish / Symmetry / Fluorescence: submit the id
+                // (shape_id, pol_id, ...) — matched against maindata.srtshp, srtpol etc.
+                if (!empty($def['idCol']) && isset($row[$def['idCol']]) && $row[$def['idCol']] !== '') {
+                    $option['value'] = (string)$row[$def['idCol']];
+                }
                 if (!empty($def['image'])) {
                     $img = trim((string)($row[$def['image']] ?? ''));
                     $option['image'] = $img !== ''

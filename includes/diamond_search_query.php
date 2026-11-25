@@ -113,6 +113,25 @@ function build_maindata_search_where(array $filters): array
         if ($labNoCert) {
             $orParts[] = "TRIM(COALESCE(`Lab`, '')) = ''";
         }
+        // Shape / Cut / Polish / Symmetry / Fluorescence (ds_lookup_map
+        // idCol/srtCol): the pills submit lookup ids (shape.shape_id,
+        // polish.pol_id, ...), matched against maindata's numeric sort
+        // column (srtshp, srtpol, ...). A text value (e.g.
+        // "EX" from the API, or an old bookmarked search) still matches
+        // the text column as before.
+        if ($specificValues !== [] && !empty($def['srtCol']) && in_array($def['srtCol'], $validCols, true)) {
+            $idValues = array_filter($specificValues, fn($v) => preg_match('/^\d+$/', trim((string)$v)) === 1);
+            if ($idValues !== []) {
+                $inKeys = [];
+                foreach (array_values($idValues) as $val) {
+                    $key = ':p' . $pIndex++;
+                    $inKeys[] = $key;
+                    $params[$key] = (int)$val;
+                }
+                $orParts[] = "`{$def['srtCol']}` IN (" . implode(', ', $inKeys) . ')';
+                $specificValues = array_diff_key($specificValues, $idValues);
+            }
+        }
         if ($specificValues !== []) {
             $inKeys = [];
             foreach (array_values($specificValues) as $val) {
@@ -128,6 +147,11 @@ function build_maindata_search_where(array $filters): array
         if ($othersSelected) {
             if ($fldname === 'Color' && in_array('srtcol', $validCols, true) && in_array('fancy', $validCols, true)) {
                 $orParts[] = "(`srtcol` = 35 AND `fancy` = 'no')";
+            } elseif (!empty($def['srtCol']) && !empty($def['idCol']) && in_array($def['srtCol'], $validCols, true)) {
+                // Shape "Others" = srtshp matches no shape.shape_id (Diamond
+                // Data Upload sets srtshp to 0 when the stone's Shape isn't in
+                // the shape table).
+                $orParts[] = "(`{$def['srtCol']}` IS NULL OR `{$def['srtCol']}` NOT IN (SELECT `{$def['idCol']}` FROM `{$def['table']}` WHERE `{$def['idCol']}` IS NOT NULL))";
             } else {
                 // "Others" = not present in the corresponding lookup table
                 // (Shape -> shape.shape, Color -> color.color).

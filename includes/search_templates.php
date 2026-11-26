@@ -12,6 +12,9 @@
  * Built-in layouts:
  *   solitaire — the current design (dark label bars, blue pills,
  *               bordered blue-header results table)
+ *   prism     — colourful modern design (gradient hero, filter cards,
+ *               shape tiles, gradient table header); its own stylesheet
+ *               assets/css/search_prism.css
  *   classic   — the design the pages had before that redesign
  *
  * New templates are made from an existing one (same layout, own name
@@ -45,6 +48,23 @@ function search_template_layouts(): array
                 'border'       => ['Results table cell borders', '#a7abb1'],
                 'footer_band'  => ['Blue footer band', '#1f6fd1'],
                 'font'         => ['Font', 'Arial, Helvetica, sans-serif'],
+            ],
+        ],
+        'prism' => [
+            'name' => 'Prism',
+            // Colourful, modern layout: gradient hero, filter cards, shape
+            // tiles, gradient results table. The three gradient colours
+            // drive every accent; page/card/text colours make light or
+            // dark variants (built-ins: Prism, Lagoon, Midnight).
+            'settings' => [
+                'grad_from' => ['Gradient colour 1 (main accent)', '#7c3aed'],
+                'grad_via'  => ['Gradient colour 2', '#db2777'],
+                'grad_to'   => ['Gradient colour 3', '#f59e0b'],
+                'page_bg'   => ['Page background', '#f5f3ff'],
+                'card_bg'   => ['Cards and table background', '#ffffff'],
+                'text'      => ['Text colour', '#1e1b4b'],
+                'muted'     => ['Secondary text colour', '#6b6890'],
+                'font'      => ['Font', "'Poppins', 'Segoe UI', Arial, sans-serif"],
             ],
         ],
         'classic' => [
@@ -177,6 +197,26 @@ function search_template_darken(string $hex, float $pct = 0.14): string
     return sprintf('#%02x%02x%02x', ...$rgb);
 }
 
+/** true when a colour is dark (so light text and inverted shape icons are needed). */
+function search_template_is_dark(string $hex): bool
+{
+    $hex = ltrim($hex, '#');
+    [$r, $g, $b] = array_map(fn($i) => hexdec(substr($hex, $i, 2)), [0, 2, 4]);
+    return (0.299 * $r + 0.587 * $g + 0.114 * $b) < 128;
+}
+
+/** $hex mixed into $base: $amount 0 = $base, 1 = $hex (for soft tints and lines). */
+function search_template_mix(string $hex, string $base, float $amount): string
+{
+    $a = ltrim($hex, '#');
+    $b = ltrim($base, '#');
+    $out = '#';
+    foreach ([0, 2, 4] as $i) {
+        $out .= sprintf('%02x', (int)round(hexdec(substr($a, $i, 2)) * $amount + hexdec(substr($b, $i, 2)) * (1 - $amount)));
+    }
+    return $out;
+}
+
 /** <style> applying the template's settings (printed in <head> by
  *  includes/header.php), plus the admin preview notice styling. */
 function search_template_head_html(): string
@@ -196,9 +236,32 @@ function search_template_head_html(): string
         $css = "body.ds-v2{--dsv-blue:$accent;--dsv-blue-hover:" . search_template_darken($accent) . ";--dsv-slate:$label;--dsv-slate-hover:" . search_template_darken($label) . ";--dsv-band:$foot;font-family:$font}"
              . "body.rs-v2{--rs-blue:$accent;--rs-blue-hover:" . search_template_darken($accent) . ";--rs-head:$head;--rs-band:$band;--rs-border:$border;--rs-footband:$foot;--checkbox-checked:$accent;--results-table-font:$font;font-family:$font}";
     }
+    $link = '';
+    if ($t['layout'] === 'prism') {
+        $d = array_map(fn($s) => $s[1], search_template_layouts()['prism']['settings']);
+        $s = $t['settings'];
+        $c = [];
+        foreach (['grad_from', 'grad_via', 'grad_to', 'page_bg', 'card_bg', 'text', 'muted'] as $k) {
+            $c[$k] = search_template_hex($s[$k], $d[$k]);
+        }
+        $font = preg_replace('/[^A-Za-z0-9 ,\'"\-]/', '', $s['font']) ?: $d['font'];
+        $dark = search_template_is_dark($c['card_bg']);
+        $css = 'body.pz{'
+             . "--pz-1:{$c['grad_from']};--pz-2:{$c['grad_via']};--pz-3:{$c['grad_to']};"
+             . '--pz-1-hover:' . search_template_darken($c['grad_from']) . ';'
+             . "--pz-page:{$c['page_bg']};--pz-card:{$c['card_bg']};--pz-text:{$c['text']};--pz-muted:{$c['muted']};"
+             . '--pz-tint:' . search_template_mix($c['grad_from'], $c['card_bg'], $dark ? 0.22 : 0.10) . ';'
+             . '--pz-tint-2:' . search_template_mix($c['grad_via'], $c['card_bg'], $dark ? 0.18 : 0.08) . ';'
+             . '--pz-line:' . search_template_mix($c['text'], $c['card_bg'], $dark ? 0.22 : 0.12) . ';'
+             . '--pz-band:' . search_template_mix($c['grad_from'], $c['card_bg'], $dark ? 0.10 : 0.045) . ';'
+             . '--pz-icon-filter:' . ($dark ? 'invert(1) brightness(1.6)' : 'none') . ';'
+             . '--checkbox-checked:' . $c['grad_from'] . ';--checkbox-border:' . search_template_mix($c['text'], $c['card_bg'], 0.35) . ';--checkbox-bg:' . $c['card_bg'] . ';'
+             . "font-family:$font}";
+        $link = '<link rel="stylesheet" href="' . e(asset_url_versioned('/assets/css/search_prism.css')) . '">';
+    }
     $css .= '.tpl-preview-bar{background:#fff3cd;color:#5c4400;border-bottom:1px solid #e6d27a;padding:6px 16px;font:14px Arial,Helvetica,sans-serif;text-align:center}'
           . '.tpl-preview-bar a{color:#5c4400;font-weight:700}';
-    return '<style id="search-template-style">' . $css . '</style>';
+    return $link . '<style id="search-template-style">' . $css . '</style>';
 }
 
 /** Notice shown to an admin previewing a template that is not live. */

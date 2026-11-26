@@ -148,10 +148,10 @@ function build_maindata_search_where(array $filters): array
             if ($fldname === 'Color' && in_array('srtcol', $validCols, true) && in_array('fancy', $validCols, true)) {
                 $orParts[] = "(`srtcol` = 35 AND `fancy` = 'no')";
             } elseif (!empty($def['srtCol']) && !empty($def['idCol']) && in_array($def['srtCol'], $validCols, true)) {
-                // Shape "Others" = srtshp matches no shape.shape_id (Diamond
-                // Data Upload sets srtshp to 0 when the stone's Shape isn't in
-                // the shape table).
-                $orParts[] = "(`{$def['srtCol']}` IS NULL OR `{$def['srtCol']}` NOT IN (SELECT `{$def['idCol']}` FROM `{$def['table']}` WHERE `{$def['idCol']}` IS NOT NULL))";
+                // Shape "Others" = every stone with srtshp = 0 (Diamond Data
+                // Upload sets srtshp to 0 when the stone's Shape isn't in the
+                // shape table).
+                $orParts[] = "`{$def['srtCol']}` = 0";
             } else {
                 // "Others" = not present in the corresponding lookup table
                 // (Shape -> shape.shape, Color -> color.color).

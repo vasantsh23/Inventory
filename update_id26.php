@@ -139,6 +139,32 @@ function update_id26_log(PDO $db, string $program, string $status, int $reccnt =
 }
 
 /**
+ * Fill blank Measurements from length, width and height: every maindata
+ * row whose Measurements is empty and whose length, width and height are
+ * all greater than zero gets "length x width x height" with 2 decimals,
+ * e.g. "6.10 x 6.15 x 3.80" (the same format Diamond Data Upload uses).
+ * Rows that already have Measurements are never changed.
+ *
+ * @return int Number of rows filled.
+ */
+function update_id26_fill_measurements(PDO $db): int
+{
+    $cols = get_maindata_columns();
+    foreach (['Measurements', 'length', 'width', 'height'] as $c) {
+        if (!in_array($c, $cols, true)) {
+            return 0; // column missing on this database — nothing to do
+        }
+    }
+    $fmt = fn(string $c) => "REPLACE(FORMAT(`$c`, 2), ',', '')"; // 2 decimals, no thousands separator
+    return (int)$db->exec(
+        'UPDATE `maindata`
+            SET `Measurements` = CONCAT(' . $fmt('length') . ", ' x ', " . $fmt('width') . ", ' x ', " . $fmt('height') . ")
+          WHERE (`Measurements` IS NULL OR TRIM(`Measurements`) = '')
+            AND `length` > 0 AND `width` > 0 AND `height` > 0"
+    );
+}
+
+/**
  * "value => sort id" map built from one query, matched later by
  * uppercased/trimmed key so minor case differences in maindata
  * (e.g. "vvs2" vs the lookup's "VVS2") still resolve.
@@ -244,6 +270,9 @@ function update_id26_run(PDO $db, ?int $limit = null): int
             ]);
             $count++;
         }
+        // Blank Measurements -> "length x width x height" (see
+        // update_id26_fill_measurements()), in the same transaction.
+        update_id26_fill_measurements($db);
         $db->commit();
     } catch (Throwable $e) {
         if ($db->inTransaction()) {

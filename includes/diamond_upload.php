@@ -166,14 +166,16 @@ function process_diamond_upload(string $csvPath, string $mode, int $minRows = 1)
                 }
             }
 
-            // Measurements: if blank, derive "length x width x height"
-            // from those three fields — only when all three are mapped
-            // and numeric.
+            // Measurements: if blank, build "length x width x height"
+            // (e.g. "6.10 x 6.15 x 3.80") — only when length, width and
+            // height are all numbers greater than zero. update_id26_run()
+            // does the same for rows already in maindata after every upload.
             if (in_array('Measurements', $mappedCols, true)) {
                 $meas = $rowValues['Measurements'] ?? null;
                 if (($meas === null || trim((string)$meas) === '')
                     && isset($rowValues['length'], $rowValues['width'], $rowValues['height'])
                     && is_numeric($rowValues['length']) && is_numeric($rowValues['width']) && is_numeric($rowValues['height'])
+                    && (float)$rowValues['length'] > 0 && (float)$rowValues['width'] > 0 && (float)$rowValues['height'] > 0
                 ) {
                     $rowValues['Measurements'] = sprintf(
                         '%.2f x %.2f x %.2f',

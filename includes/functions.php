@@ -352,7 +352,7 @@ function ds_lookup_map(): array
         // as true would make the unrelated generic rendering path in
         // get_diamond_search_sections() assume it's always there and
         // fail outright if it isn't.
-        'NatFancyColor'         => ['table' => 'fancycolor', 'label' => 'fncycolor', 'match' => 'fncycolor', 'hasActive' => false, 'orderCol' => 'fncycolor'],
+        'NatFancyColor'         => ['table' => 'fancycolor', 'label' => 'fncycolor', 'match' => 'fncycolor', 'hasActive' => false, 'orderCol' => 'id'], // table order
         'NatFancyColorIntensity' => ['table' => 'fancyint', 'label' => 'fncyint', 'match' => 'fncyint', 'hasActive' => false, 'orderCol' => 'fncyint'],
     ];
 }

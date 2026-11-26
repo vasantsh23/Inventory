@@ -68,8 +68,8 @@ function ds_build_form_sections(): array
     // Fancy Filter (Site Setup): when on, Color loses its "Fancy" pill
     // and two dedicated sections — Nat Fancy Color, then Nat Fancy Color
     // Intensity — are inserted right after Color, sourced from the
-    // fancycolor / fancyint lookup tables (each ordered by its own value
-    // column, per spec, not a separate sort column).
+    // fancycolor / fancyint lookup tables (fancy colours in table order,
+    // intensities alphabetically).
     $fancyFilterOn = strcasecmp((string)((get_setup() ?? [])['Fancyfilter'] ?? 'no'), 'yes') === 0;
     if ($fancyFilterOn) {
         $colorIndex = null;
@@ -91,11 +91,21 @@ function ds_build_form_sections(): array
         // Prefer filtering out explicitly-inactive rows when the `active`
         // column exists (it's optional), falling back to every row when
         // it doesn't, rather than a fatal error either way.
+        // Fancy colours are shown in the order of the fancycolor table:
+        // its `order` column when it has one, otherwise the row order (id).
+        $natColorOrder = '`id` ASC';
         try {
-            $natColorRows = get_db()->query("SELECT id, fncycolor FROM `fancycolor` WHERE active IS NULL OR active = '' OR active = 'yes' ORDER BY `fncycolor` ASC")->fetchAll();
+            if (get_db()->query("SHOW COLUMNS FROM `fancycolor` LIKE 'order'")->fetch()) {
+                $natColorOrder = '`order` ASC, `id` ASC';
+            }
+        } catch (Throwable $e) {
+            // table missing — handled below
+        }
+        try {
+            $natColorRows = get_db()->query("SELECT id, fncycolor FROM `fancycolor` WHERE active IS NULL OR active = '' OR active = 'yes' ORDER BY $natColorOrder")->fetchAll();
         } catch (Throwable $e) {
             try {
-                $natColorRows = get_db()->query("SELECT id, fncycolor FROM `fancycolor` ORDER BY `fncycolor` ASC")->fetchAll();
+                $natColorRows = get_db()->query("SELECT id, fncycolor FROM `fancycolor` ORDER BY $natColorOrder")->fetchAll();
             } catch (Throwable $e2) {
                 // fancycolor table doesn't exist at all yet.
             }

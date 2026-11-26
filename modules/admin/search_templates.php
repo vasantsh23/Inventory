@@ -133,9 +133,9 @@ require_once __DIR__ . '/../../includes/admin_header.php';
                     <input type="text" name="description" maxlength="255" value="<?= e($editing['description']) ?>">
                 </label>
                 <?php foreach ($layouts[$editing['layout']]['settings'] as $sk => [$slabel, $sdefault]): ?>
-                    <?php if ($sk === 'font'): ?>
+                    <?php if (str_ends_with($sk, 'font')): /* font, heading_font */ ?>
                         <label><?= e($slabel) ?>
-                            <input type="text" name="settings[font]" maxlength="120" value="<?= e($editing['settings']['font']) ?>">
+                            <input type="text" name="settings[<?= e($sk) ?>]" maxlength="120" value="<?= e($editing['settings'][$sk]) ?>">
                             <span class="stp-note">e.g. Arial, Helvetica, sans-serif</span>
                         </label>
                     <?php else: ?>
@@ -177,7 +177,7 @@ require_once __DIR__ . '/../../includes/admin_header.php';
             <?php if ($t['description'] !== ''): ?>
                 <p class="stp-note"><?= e($t['description']) ?></p>
             <?php endif; ?>
-            <?php $colours = array_filter($t['settings'], fn($v, $k) => $k !== 'font', ARRAY_FILTER_USE_BOTH); ?>
+            <?php $colours = array_filter($t['settings'], fn($v, $k) => !str_ends_with($k, 'font'), ARRAY_FILTER_USE_BOTH); ?>
             <?php if ($colours !== []): ?>
                 <div class="stp-swatches" aria-label="Colours">
                     <?php foreach ($colours as $ck => $cv): ?>

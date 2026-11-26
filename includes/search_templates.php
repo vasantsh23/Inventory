@@ -15,6 +15,10 @@
  *   prism     — colourful modern design (gradient hero, filter cards,
  *               shape tiles, gradient table header); its own stylesheet
  *               assets/css/search_prism.css
+ *   luxe      — elegant ivory/black/gold, serif headings, sticky
+ *               "Your selection" panel (assets/css/search_luxe.css)
+ *   spectrum  — bold multi-colour cards, dark sidebar with jump links,
+ *               Table / Grid results (assets/css/search_spectrum.css)
  *   classic   — the design the pages had before that redesign
  *
  * New templates are made from an existing one (same layout, own name
@@ -65,6 +69,39 @@ function search_template_layouts(): array
                 'text'      => ['Text colour', '#1e1b4b'],
                 'muted'     => ['Secondary text colour', '#6b6890'],
                 'font'      => ['Font', "'Poppins', 'Segoe UI', Arial, sans-serif"],
+            ],
+        ],
+        'luxe' => [
+            'name' => 'Atelier Luxe',
+            // Elegant jewellery-house look: ivory page, black and gold,
+            // serif headings, editorial filter rows with a sticky "Your
+            // selection" panel; black-and-gold Results table.
+            'settings' => [
+                'accent'       => ['Accent (gold)', '#b08d57'],
+                'ink'          => ['Ink (headings, selected options, table header)', '#1a1a1a'],
+                'page_bg'      => ['Page background', '#faf7f2'],
+                'card_bg'      => ['Panels and table background', '#ffffff'],
+                'muted'        => ['Secondary text colour', '#7a7064'],
+                'heading_font' => ['Heading font', "'Playfair Display', Georgia, serif"],
+                'font'         => ['Text font', "'Mulish', 'Segoe UI', Arial, sans-serif"],
+            ],
+        ],
+        'spectrum' => [
+            'name' => 'Spectrum',
+            // Bold and playful: dark sidebar with jump links, every filter
+            // card in its own colour, round shape chips; Results with
+            // colourful summary and a Table / Grid view switch.
+            'settings' => [
+                'c1'         => ['Colour 1', '#ff5a5f'],
+                'c2'         => ['Colour 2', '#ffb400'],
+                'c3'         => ['Colour 3', '#00a699'],
+                'c4'         => ['Colour 4', '#7b61ff'],
+                'c5'         => ['Colour 5', '#2d9cdb'],
+                'sidebar_bg' => ['Sidebar and table header', '#16161d'],
+                'page_bg'    => ['Page background', '#fff8f1'],
+                'card_bg'    => ['Cards background', '#ffffff'],
+                'text'       => ['Text colour', '#16161d'],
+                'font'       => ['Font', "'Jost', 'Segoe UI', Arial, sans-serif"],
             ],
         ],
         'classic' => [
@@ -197,6 +234,30 @@ function search_template_darken(string $hex, float $pct = 0.14): string
     return sprintf('#%02x%02x%02x', ...$rgb);
 }
 
+/** A font setting cleaned for CSS (letters, digits, spaces, commas, quotes, hyphens). */
+function search_template_font(string $value, string $default): string
+{
+    return preg_replace('/[^A-Za-z0-9 ,\'"\-]/', '', $value) ?: $default;
+}
+
+/** Google Fonts <link> for the first family of each font stack (system fonts skipped). */
+function search_template_font_link(array $stacks): string
+{
+    $system = ['georgia', 'arial', 'helvetica', 'system-ui', 'serif', 'sans-serif', 'segoe ui', 'times new roman', 'verdana', 'tahoma'];
+    $families = [];
+    foreach ($stacks as $stack) {
+        $first = trim(explode(',', (string)$stack)[0], " '\"");
+        if ($first === '' || in_array(strtolower($first), $system, true) || !preg_match('/^[A-Za-z0-9 ]+$/', $first)) {
+            continue;
+        }
+        $families[$first] = 'family=' . str_replace(' ', '+', $first) . ':wght@400;500;600;700';
+    }
+    if ($families === []) {
+        return '';
+    }
+    return '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?' . e(implode('&', $families)) . '&amp;display=swap">';
+}
+
 /** true when a colour is dark (so light text and inverted shape icons are needed). */
 function search_template_is_dark(string $hex): bool
 {
@@ -244,7 +305,7 @@ function search_template_head_html(): string
         foreach (['grad_from', 'grad_via', 'grad_to', 'page_bg', 'card_bg', 'text', 'muted'] as $k) {
             $c[$k] = search_template_hex($s[$k], $d[$k]);
         }
-        $font = preg_replace('/[^A-Za-z0-9 ,\'"\-]/', '', $s['font']) ?: $d['font'];
+        $font = search_template_font($s['font'], $d['font']);
         $dark = search_template_is_dark($c['card_bg']);
         $css = 'body.pz{'
              . "--pz-1:{$c['grad_from']};--pz-2:{$c['grad_via']};--pz-3:{$c['grad_to']};"
@@ -257,7 +318,52 @@ function search_template_head_html(): string
              . '--pz-icon-filter:' . ($dark ? 'invert(1) brightness(1.6)' : 'none') . ';'
              . '--checkbox-checked:' . $c['grad_from'] . ';--checkbox-border:' . search_template_mix($c['text'], $c['card_bg'], 0.35) . ';--checkbox-bg:' . $c['card_bg'] . ';'
              . "font-family:$font}";
-        $link = '<link rel="stylesheet" href="' . e(asset_url_versioned('/assets/css/search_prism.css')) . '">';
+        $link = search_template_font_link([$font]) . '<link rel="stylesheet" href="' . e(asset_url_versioned('/assets/css/search_prism.css')) . '">';
+    } elseif ($t['layout'] === 'luxe') {
+        $d = array_map(fn($s) => $s[1], search_template_layouts()['luxe']['settings']);
+        $s = $t['settings'];
+        $c = [];
+        foreach (['accent', 'ink', 'page_bg', 'card_bg', 'muted'] as $k) {
+            $c[$k] = search_template_hex($s[$k], $d[$k]);
+        }
+        $font = search_template_font($s['font'], $d['font']);
+        $head = search_template_font($s['heading_font'], $d['heading_font']);
+        $dark = search_template_is_dark($c['card_bg']);
+        $css = 'body.lx{'
+             . "--lx-gold:{$c['accent']};--lx-ink:{$c['ink']};--lx-page:{$c['page_bg']};--lx-card:{$c['card_bg']};--lx-muted:{$c['muted']};"
+             . '--lx-gold-soft:' . search_template_mix($c['accent'], $c['card_bg'], 0.14) . ';'
+             . '--lx-line:' . search_template_mix($c['ink'], $c['card_bg'], 0.14) . ';'
+             . '--lx-band:' . search_template_mix($c['accent'], $c['card_bg'], 0.06) . ';'
+             . '--lx-on-ink:' . (search_template_is_dark($c['ink']) ? '#ffffff' : '#111111') . ';'
+             . '--lx-icon-filter:' . ($dark ? 'invert(1) brightness(1.6)' : 'none') . ';'
+             . "--lx-head-font:$head;"
+             . '--checkbox-checked:' . $c['ink'] . ';--checkbox-border:' . search_template_mix($c['ink'], $c['card_bg'], 0.4) . ';--checkbox-bg:' . $c['card_bg'] . ';'
+             . "font-family:$font}";
+        $link = search_template_font_link([$font, $head]) . '<link rel="stylesheet" href="' . e(asset_url_versioned('/assets/css/search_luxe.css')) . '">';
+    } elseif ($t['layout'] === 'spectrum') {
+        $d = array_map(fn($s) => $s[1], search_template_layouts()['spectrum']['settings']);
+        $s = $t['settings'];
+        $c = [];
+        foreach (['c1', 'c2', 'c3', 'c4', 'c5', 'sidebar_bg', 'page_bg', 'card_bg', 'text'] as $k) {
+            $c[$k] = search_template_hex($s[$k], $d[$k]);
+        }
+        $font = search_template_font($s['font'], $d['font']);
+        $dark = search_template_is_dark($c['card_bg']);
+        $css = 'body.sp{';
+        foreach (['c1', 'c2', 'c3', 'c4', 'c5'] as $k) {
+            // each colour, a pale tint of it, and the text colour that reads on it
+            $css .= "--sp-$k:{$c[$k]};--sp-$k-soft:" . search_template_mix($c[$k], $c['card_bg'], $dark ? 0.22 : 0.12)
+                  . ";--sp-$k-on:" . (search_template_is_dark($c[$k]) ? '#ffffff' : '#16161d') . ';';
+        }
+        $css .= "--sp-side:{$c['sidebar_bg']};--sp-side-text:" . (search_template_is_dark($c['sidebar_bg']) ? '#ffffff' : '#16161d') . ';'
+              . "--sp-page:{$c['page_bg']};--sp-card:{$c['card_bg']};--sp-text:{$c['text']};"
+              . '--sp-muted:' . search_template_mix($c['text'], $c['card_bg'], 0.62) . ';'
+              . '--sp-line:' . search_template_mix($c['text'], $c['card_bg'], 0.12) . ';'
+              . '--sp-band:' . search_template_mix($c['text'], $c['card_bg'], 0.035) . ';'
+              . '--sp-icon-filter:' . ($dark ? 'invert(1) brightness(1.6)' : 'none') . ';'
+              . '--checkbox-checked:' . $c['c4'] . ';--checkbox-border:' . search_template_mix($c['text'], $c['card_bg'], 0.35) . ';--checkbox-bg:' . $c['card_bg'] . ';'
+              . "font-family:$font}";
+        $link = search_template_font_link([$font]) . '<link rel="stylesheet" href="' . e(asset_url_versioned('/assets/css/search_spectrum.css')) . '">';
     }
     $css .= '.tpl-preview-bar{background:#fff3cd;color:#5c4400;border-bottom:1px solid #e6d27a;padding:6px 16px;font:14px Arial,Helvetica,sans-serif;text-align:center}'
           . '.tpl-preview-bar a{color:#5c4400;font-weight:700}';
@@ -364,7 +470,7 @@ function search_template_update(string $key, string $name, string $description, 
     $clean = [];
     foreach (search_template_layouts()[$t['layout']]['settings'] as $k => [$label, $default]) {
         $v = trim((string)($settings[$k] ?? ''));
-        $clean[$k] = $k === 'font'
+        $clean[$k] = str_ends_with($k, 'font') // font, heading_font
             ? (preg_replace('/[^A-Za-z0-9 ,\'"\-]/', '', $v) ?: $default)
             : search_template_hex($v, $default);
     }

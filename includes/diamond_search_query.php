@@ -132,10 +132,27 @@ function build_maindata_search_where(array $filters): array
                 $specificValues = array_diff_key($specificValues, $idValues);
             }
         }
+        // Nat Fancy Color with "Exact" ticked (default, or not sent at
+        // all): the colour must be exactly the chosen colour, with only
+        // "Fancy" and an intensity in front — "Green" finds "Fancy Green",
+        // "Fancy Vivid Green", "Fancy Very Light Green", but not "Fancy
+        // Intense Blue Green" or "Fancy Light Bluish Green".
+        if ($fldname === 'NatFancyColor' && $specificValues !== []
+            && (string)($filters['NatFancyColor_exact'] ?? '1') !== '0' && in_array('Color', $validCols, true)) {
+            $exactKeys = [];
+            foreach (array_values($specificValues) as $val) {
+                foreach (ds_fancy_exact_names(trim((string)$val)) as $name) {
+                    $key = ':p' . $pIndex++;
+                    $exactKeys[] = $key;
+                    $params[$key] = $name;
+                }
+            }
+            $orParts[] = 'UPPER(TRIM(`Color`)) IN (' . implode(', ', $exactKeys) . ')';
+            $specificValues = [];
+        }
         // Nat Fancy Color with "Exact" unticked (f[NatFancyColor_exact]
         // = 0): every fancy stone whose colour description contains the
         // chosen colour — "Green" also finds "Fancy Vivid Greenish Blue".
-        // Ticked (default, or not sent at all): NatFancyColor = value.
         if ($fldname === 'NatFancyColor' && $specificValues !== []
             && (string)($filters['NatFancyColor_exact'] ?? '1') === '0' && in_array('Color', $validCols, true)) {
             $likes = [];
@@ -1080,4 +1097,34 @@ function build_result_media_links(?string $stockNo, ?string $lab, ?string $certN
         }
     }
     return $out;
+}
+
+/**
+ * The full colour names that count as an EXACT match for a fancy colour
+ * (Nat Fancy Color with "Exact" ticked), upper-case: "FANCY GREEN" plus
+ * "FANCY <intensity> GREEN" for every intensity — the standard GIA
+ * grades plus every row of the fancyint table.
+ */
+function ds_fancy_exact_names(string $colour): array
+{
+    static $intensities = null;
+    if ($intensities === null) {
+        $intensities = ['FAINT', 'VERY LIGHT', 'LIGHT', 'INTENSE', 'VIVID', 'DEEP', 'DARK'];
+        try {
+            foreach (get_db()->query('SELECT fncyint FROM `fancyint`')->fetchAll(PDO::FETCH_COLUMN) as $i) {
+                $i = strtoupper(trim(preg_replace('/\s+/', ' ', (string)$i)));
+                if ($i !== '' && !in_array($i, $intensities, true)) {
+                    $intensities[] = $i;
+                }
+            }
+        } catch (Throwable $e) {
+            // fancyint table missing — the standard grades are enough
+        }
+    }
+    $c = strtoupper(trim(preg_replace('/\s+/', ' ', $colour)));
+    $names = ['FANCY ' . $c];
+    foreach ($intensities as $i) {
+        $names[] = 'FANCY ' . $i . ' ' . $c;
+    }
+    return $names;
 }

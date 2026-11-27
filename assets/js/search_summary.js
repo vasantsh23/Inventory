@@ -23,7 +23,7 @@
     function chosen(section) {
         var values = [];
         section.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
-            if (cb.value !== '__ALL__') { values.push(textOf(cb)); }
+            if (cb.value !== '__ALL__' && !cb.hasAttribute('data-flag')) { values.push(textOf(cb)); }
         });
         var nums = section.querySelectorAll('input[type=number]');
         for (var i = 0; i + 1 < nums.length; i += 2) {

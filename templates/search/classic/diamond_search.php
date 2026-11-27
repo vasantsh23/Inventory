@@ -99,6 +99,7 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
                     </label>
                 <?php endforeach; ?>
             </div>
+            <?= ds_section_extras($section, $priorFilters) /* e.g. Nat Fancy Color "Exact" */ ?>
             <?php if ($fld === 'Weight'): ?>
                 <div class="ds-range-row ds-stepper-row ds-carat-manual-range">
                     <div class="ds-stepper">

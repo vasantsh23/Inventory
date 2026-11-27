@@ -174,3 +174,32 @@ function ds_build_form_sections(): array
 
     return [$sections, $advancedSections];
 }
+
+/**
+ * Extra controls printed under a section's pills by every search
+ * template (<?= ds_section_extras($section, $priorFilters) ?>).
+ *
+ * Nat Fancy Color: an "Exact" tick box, on by default.
+ *   on  -> only stones whose fancy colour IS the chosen colour
+ *          (NatFancyColor = Pink)
+ *   off -> every fancy stone whose colour description CONTAINS the
+ *          chosen colour (Color LIKE '%Pink%': also "Pinkish Brown",
+ *          "Orangy Pink" …)
+ * Submitted as f[NatFancyColor_exact] = 1 / 0 (a hidden 0 comes first,
+ * so an unticked box still sends 0); applied in
+ * build_maindata_search_where().
+ */
+function ds_section_extras(array $section, array $priorFilters): string
+{
+    if (($section['fldname'] ?? '') !== 'NatFancyColor') {
+        return '';
+    }
+    $exact = (string)($priorFilters['NatFancyColor_exact'] ?? '1') !== '0';
+    return '<div class="ds-exact-row">'
+        . '<input type="hidden" name="f[NatFancyColor_exact]" value="0">'
+        . '<label class="ds-exact-toggle" title="Ticked: only the exact colour. Unticked: every fancy colour that contains it (e.g. Green also finds Greenish Blue).">'
+        . '<input type="checkbox" name="f[NatFancyColor_exact]" value="1" data-flag="1" data-default-checked="1"' . ($exact ? ' checked' : '') . '> Exact'
+        . '</label>'
+        . '<span class="ds-exact-hint">Untick to also find colours that contain it — e.g. Green → Greenish Blue</span>'
+        . '</div>';
+}

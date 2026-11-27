@@ -143,6 +143,7 @@ function render_ds_section(array $section, array $priorFilters, bool $hasPriorFi
                     </label>
                 <?php endforeach; ?>
             </div>
+            <?= ds_section_extras($section, $priorFilters) /* e.g. Nat Fancy Color "Exact" */ ?>
             <?php if ($fld === 'Weight'): ?>
                 <div class="ds-range-row ds-carat-manual-range">
                     <input type="number" step="0.01" min="0" placeholder="0.00" class="ds-range-input" aria-label="<?= e($label) ?> from" name="f[Weight_from]" value="<?= e((string)($priorFilters['Weight_from'] ?? '')) ?>">

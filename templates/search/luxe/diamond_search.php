@@ -91,6 +91,7 @@ function lx_render_section(array $section, array $priorFilters, bool $hasPriorFi
                     </label>
                 <?php endforeach; ?>
             </div>
+            <?= ds_section_extras($section, $priorFilters) /* e.g. Nat Fancy Color "Exact" */ ?>
             <?php if ($fld === 'Weight'): ?>
                 <div class="lx-range lx-range--carat">
                     <span class="lx-range-to">or exactly</span>

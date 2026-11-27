@@ -136,6 +136,7 @@ function pz_render_section(array $section, array $priorFilters, bool $hasPriorFi
                     </label>
                 <?php endforeach; ?>
             </div>
+            <?= ds_section_extras($section, $priorFilters) /* e.g. Nat Fancy Color "Exact" */ ?>
             <?php if ($fld === 'Weight'): ?>
                 <div class="pz-range pz-range--carat">
                     <span class="pz-range-caption">or enter carats</span>

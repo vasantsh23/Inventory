@@ -82,7 +82,7 @@
             }
         });
         // Nothing left ticked (the stand-alone option was unticked): back to "All".
-        if (!active && !section.querySelector('input[type=checkbox]:checked')) {
+        if (!active && !section.querySelector('input[type=checkbox]:checked:not([data-flag])')) {
             var all = section.querySelector('input[value="__ALL__"]');
             if (all) {
                 all.checked = true;
@@ -271,7 +271,8 @@
     if (resetBtn) {
         resetBtn.addEventListener('click', function () {
             form.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
-                cb.checked = (cb.value === '__ALL__');
+                // tick boxes with a default (e.g. Nat Fancy Color "Exact") go back to it
+                cb.checked = cb.hasAttribute('data-default-checked') || cb.value === '__ALL__';
                 setSelectedClass(cb);
             });
             form.querySelectorAll('input[type=number], input[type=text]').forEach(function (inp) {
@@ -324,7 +325,7 @@
 
     function resetSection(section) {
         section.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
-            cb.checked = (cb.value === '__ALL__');
+            cb.checked = cb.hasAttribute('data-default-checked') || cb.value === '__ALL__';
             cb.disabled = false;
             setSelectedClass(cb);
         });

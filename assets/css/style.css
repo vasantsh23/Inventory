@@ -2032,3 +2032,12 @@ body.ds-v2 .ds-section-reset-btn--auto:hover, body.ds-v2 .ds-section-reset-btn--
 body.ds-v2 .ds-label-col:has(.ds-section-reset-btn--auto) .ds-section-title { padding: 0 28px; }
 body.ds-v2 .ds-label-col { min-width: 0; }
 body.ds-v2 .ds-label-col:has(.ds-section-reset-btn--auto) .ds-section-title { padding: 0 24px 0 4px; font-size: 13.5px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Nat Fancy Color "Exact" tick box (ds_section_extras()) */
+.ds-exact-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 8px; font-size: 13px; }
+.ds-exact-toggle { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; cursor: pointer; }
+.ds-exact-hint { color: var(--text-muted); font-size: 12px; }
+body.ds-v2 .ds-exact-row { margin-top: 6px; font-family: Arial, Helvetica, sans-serif; color: #222; }
+body.ds-v2 .ds-exact-hint { color: #666; }
+body.ds-search-theme .ds-exact-row { color: var(--dsp-text); }
+body.ds-search-theme .ds-exact-hint { color: var(--dsp-muted); }

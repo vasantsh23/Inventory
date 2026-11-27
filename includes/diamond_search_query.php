@@ -132,6 +132,21 @@ function build_maindata_search_where(array $filters): array
                 $specificValues = array_diff_key($specificValues, $idValues);
             }
         }
+        // Nat Fancy Color with "Exact" unticked (f[NatFancyColor_exact]
+        // = 0): every fancy stone whose colour description contains the
+        // chosen colour — "Green" also finds "Fancy Vivid Greenish Blue".
+        // Ticked (default, or not sent at all): NatFancyColor = value.
+        if ($fldname === 'NatFancyColor' && $specificValues !== []
+            && (string)($filters['NatFancyColor_exact'] ?? '1') === '0' && in_array('Color', $validCols, true)) {
+            $likes = [];
+            foreach (array_values($specificValues) as $val) {
+                $key = ':p' . $pIndex++;
+                $likes[] = "`Color` LIKE $key";
+                $params[$key] = '%' . addcslashes(trim((string)$val), '%_\\') . '%';
+            }
+            $orParts[] = '(' . (in_array('fancy', $validCols, true) ? "`fancy` = 'yes' AND " : '') . '(' . implode(' OR ', $likes) . '))';
+            $specificValues = [];
+        }
         if ($specificValues !== []) {
             $inKeys = [];
             foreach (array_values($specificValues) as $val) {
@@ -875,6 +890,8 @@ function build_applied_filters_summary(array $filters): array
         }
     }
     $summary = [];
+    $nfcMode = (string)($filters['NatFancyColor_exact'] ?? '1') === '0' ? ' (contains)' : ' (exact)';
+    $nfcTagged = false;
 
     foreach ($sections as $section) {
         $fld = $section['fldname'];
@@ -941,8 +958,20 @@ function build_applied_filters_summary(array $filters): array
             }
         }
         if ($labels !== []) {
-            $summary[] = ['label' => ds_format_label($section['label']), 'value' => implode(', ', $labels)];
+            $value = implode(', ', $labels);
+            if ($fld === 'NatFancyColor') {
+                $value .= $nfcMode;
+                $nfcTagged = true;
+            }
+            $summary[] = ['label' => ds_format_label($section['label']), 'value' => $value];
         }
+    }
+
+    // Nat Fancy Color: say whether it was exact or "contains" (the
+    // tag is added here when the section isn't in diamond_search).
+    $nfc = array_values(array_filter((array)($filters['NatFancyColor'] ?? []), fn($v) => is_string($v) && $v !== '__ALL__'));
+    if ($nfc !== [] && !$nfcTagged) {
+        $summary[] = ['label' => 'Nat Fancy Color', 'value' => implode(', ', $nfc) . $nfcMode];
     }
 
     $cpsLabels = ['EX' => '3 EX', 'VG' => '3 VG', 'EXVG' => '3EX-VG'];

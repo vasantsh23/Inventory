@@ -46,7 +46,7 @@ function ds_build_form_sections(): array
     $advancedSections = get_diamond_search_sections('adv_filter');
     // NatFancyColor / NatFancyColorIntensity are never shown via the
     // generic active/orderid mechanism — they're only ever rendered by
-    // the bespoke block below (positioned right after Color, gated on
+    // the bespoke block below (positioned right after Clarity, gated on
     // Site Setup's Fancy Filter), so exclude them here regardless of
     // whatever "active" status they happen to have in the
     // diamond_search / adv_filter tables. Otherwise they could render
@@ -67,7 +67,7 @@ function ds_build_form_sections(): array
 
     // Fancy Filter (Site Setup): when on, Color loses its "Fancy" pill
     // and two dedicated sections — Nat Fancy Color, then Nat Fancy Color
-    // Intensity — are inserted right after Color, sourced from the
+    // Intensity — are inserted right after Clarity, sourced from the
     // fancycolor / fancyint lookup tables (fancy colours in table order,
     // intensities alphabetically).
     $fancyFilterOn = strcasecmp((string)((get_setup() ?? [])['Fancyfilter'] ?? 'no'), 'yes') === 0;
@@ -154,12 +154,20 @@ function ds_build_form_sections(): array
             ],
         ];
 
-        if ($colorIndex !== null) {
-            array_splice($sections, $colorIndex + 1, 0, [$fancyExtraSections[0]]);
-            array_splice($sections, $colorIndex + 2, 0, [$fancyExtraSections[1]]);
+        // Position: always right after Clarity (Nat Fancy Color, then
+        // Nat Fancy Color Intensity). If Clarity isn't active in the main
+        // search, right after Color; if neither is, at the end.
+        $anchorIndex = null;
+        foreach ($sections as $i => $sec) {
+            if ($sec['fldname'] === 'Clarity') {
+                $anchorIndex = $i;
+                break;
+            }
+        }
+        $anchorIndex ??= $colorIndex;
+        if ($anchorIndex !== null) {
+            array_splice($sections, $anchorIndex + 1, 0, $fancyExtraSections);
         } else {
-            // Color isn't active in the main search at all — still show
-            // both sections rather than silently dropping the feature.
             array_push($sections, ...$fancyExtraSections);
         }
     }

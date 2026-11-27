@@ -24,6 +24,7 @@
         var values = [];
         section.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
             if (cb.value !== '__ALL__' && !cb.hasAttribute('data-flag')) { values.push(textOf(cb)); }
+            else if (cb.value === '__ALL__' && section.getAttribute('data-fldname') === 'Color') { values.push('All (D to M)'); }
         });
         var nums = section.querySelectorAll('input[type=number]');
         for (var i = 0; i + 1 < nums.length; i += 2) {

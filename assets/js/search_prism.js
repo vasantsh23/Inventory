@@ -20,7 +20,7 @@
         form.querySelectorAll('.ds-section').forEach(function (section) {
             var used = false;
             section.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
-                if (cb.value !== '__ALL__' && !cb.hasAttribute('data-flag')) { used = true; }
+                if ((cb.value !== '__ALL__' || section.getAttribute('data-fldname') === 'Color') && !cb.hasAttribute('data-flag')) { used = true; }
             });
             section.querySelectorAll('input[type=number], input[type=text]').forEach(function (inp) {
                 if (inp.value.trim() !== '') { used = true; }

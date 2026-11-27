@@ -28,7 +28,10 @@ function ds_option_was_checked(array $section, array $opt, array $priorFilters, 
         $submitValue = ds_option_submit_value($section, $opt);
         return in_array($submitValue, (array)($priorFilters[$fld] ?? []), true);
     }
-    return strcasecmp($opt['label'], 'all') === 0;
+    // Fresh form: "All" is pre-ticked in every section except Color —
+    // there, "All" means "only the white colours D to M", so it is only
+    // applied when the user clicks it; untouched, Color searches all stock.
+    return strcasecmp($opt['label'], 'all') === 0 && $fld !== 'Color';
 }
 
 /** Whether any advanced-filter field currently has a restored value

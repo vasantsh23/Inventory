@@ -272,7 +272,7 @@
         resetBtn.addEventListener('click', function () {
             form.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
                 // tick boxes with a default (e.g. Nat Fancy Color "Exact") go back to it
-                cb.checked = cb.hasAttribute('data-default-checked') || cb.value === '__ALL__';
+                cb.checked = isDefaultChecked(cb);
                 setSelectedClass(cb);
             });
             form.querySelectorAll('input[type=number], input[type=text]').forEach(function (inp) {
@@ -289,6 +289,21 @@
                 advancedToggleBtn.setAttribute('aria-expanded', 'false');
             }
         });
+    }
+
+    // What a tick box goes back to on Reset: boxes with a default (e.g.
+    // Nat Fancy Color "Exact") are ticked; "All" is ticked in every
+    // section except Color (Color "All" = D to M only, so a reset Color
+    // has nothing ticked and searches every colour).
+    function isDefaultChecked(cb) {
+        if (cb.hasAttribute('data-default-checked')) {
+            return true;
+        }
+        if (cb.value !== '__ALL__') {
+            return false;
+        }
+        var sec = cb.closest('.ds-section');
+        return !(sec && sec.getAttribute('data-fldname') === 'Color');
     }
 
     // Per-section "Reset" button — every filter section gets one.
@@ -325,7 +340,7 @@
 
     function resetSection(section) {
         section.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
-            cb.checked = cb.hasAttribute('data-default-checked') || cb.value === '__ALL__';
+            cb.checked = isDefaultChecked(cb);
             cb.disabled = false;
             setSelectedClass(cb);
         });

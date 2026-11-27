@@ -958,10 +958,7 @@ function build_applied_filters_summary(array $filters): array
             continue;
         }
         if (in_array('__ALL__', $selected, true)) {
-            if ($fld === 'Color' && !ds_fancy_filter_used($filters)) {
-                $summary[] = ['label' => ds_format_label($section['label']), 'value' => 'All (D to M)'];
-            }
-            continue; // "All" = no real constraint, nothing to summarize
+            continue; // "All" — no filter box on Results (Color "All" still limits the search to D to M)
         }
 
         $labels = [];

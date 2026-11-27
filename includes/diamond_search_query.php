@@ -62,8 +62,15 @@ function build_maindata_search_where(array $filters): array
             continue;
         }
 
-        // "All" selected -> no filter at all for this criteria.
+        // "All" selected -> no filter at all for this criteria, except
+        // Color: "All" means the white colours D to M only — unless a
+        // fancy colour or intensity is chosen (Nat Fancy Color / Nat
+        // Fancy Color Intensity), when Color "All" is ignored so the
+        // fancy stones can be found.
         if (in_array('__ALL__', $selected, true)) {
+            if ($fldname === 'Color' && !ds_fancy_filter_used($filters)) {
+                $clauses[] = "UPPER(TRIM(`Color`)) IN ('" . implode("','", DS_COLOR_ALL_RANGE) . "')";
+            }
             continue;
         }
 
@@ -951,6 +958,9 @@ function build_applied_filters_summary(array $filters): array
             continue;
         }
         if (in_array('__ALL__', $selected, true)) {
+            if ($fld === 'Color' && !ds_fancy_filter_used($filters)) {
+                $summary[] = ['label' => ds_format_label($section['label']), 'value' => 'All (D to M)'];
+            }
             continue; // "All" = no real constraint, nothing to summarize
         }
 
@@ -1127,4 +1137,19 @@ function ds_fancy_exact_names(string $colour): array
         $names[] = 'FANCY ' . $i . ' ' . $c;
     }
     return $names;
+}
+
+/** Colours Color "All" stands for on Diamond Search: the white colours D to M. */
+const DS_COLOR_ALL_RANGE = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+
+/** true when the search picks a fancy colour or a fancy intensity. */
+function ds_fancy_filter_used(array $filters): bool
+{
+    foreach (['NatFancyColor', 'NatFancyColorIntensity'] as $f) {
+        $vals = array_filter((array)($filters[$f] ?? []), fn($v) => is_string($v) && $v !== '' && $v !== '__ALL__');
+        if ($vals !== []) {
+            return true;
+        }
+    }
+    return false;
 }

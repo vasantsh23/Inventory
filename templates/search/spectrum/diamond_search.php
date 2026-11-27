@@ -104,6 +104,7 @@ function sp_render_section(array $section, int $colour, array $priorFilters, boo
                     </label>
                 <?php endforeach; ?>
             </div>
+            <?= ds_section_extras($section, $priorFilters) /* e.g. Nat Fancy Color "Exact" */ ?>
             <?php if ($fld === 'Weight'): ?>
                 <div class="sp-range sp-range--carat">
                     <span class="sp-hint">exact carats</span>

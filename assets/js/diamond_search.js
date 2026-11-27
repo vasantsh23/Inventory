@@ -290,23 +290,71 @@
         });
     }
 
-    // Per-section "Reset" button (currently just Carat/Weight) —
-    // clears only that section's pill selections and manual From/To
-    // inputs, leaving every other filter on the page untouched.
-    document.querySelectorAll('.ds-section-reset-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var section = btn.closest('.ds-section');
-            if (!section) {
-                return;
-            }
-            section.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
-                cb.checked = false;
-                setSelectedClass(cb);
-            });
-            section.querySelectorAll('input[type=number]').forEach(function (inp) {
-                inp.value = '';
-            });
+    // Per-section "Reset" button — every filter section gets one.
+    // Templates may put their own .ds-section-reset-btn in a section
+    // (e.g. Carat); every other section gets one added here, in its
+    // heading, so all designs — including ones uploaded later — have
+    // it without template changes. A section can opt out with
+    // data-no-reset. Reset clears only that section: back to "All"
+    // (when it has an All option), every From/To and text box emptied.
+    var HEAD_SELECTORS = ['.ds-label-col', '.ds-section-header-row', '.pz-card-head', '.lx-row-label', '.sp-card-head', '.ds-section-head'];
+    form.querySelectorAll('.ds-section').forEach(function (section) {
+        if (section.hasAttribute('data-no-reset') || section.querySelector('.ds-section-reset-btn') || !section.querySelector('input')) {
+            return;
+        }
+        var head = null;
+        for (var i = 0; i < HEAD_SELECTORS.length && !head; i++) {
+            head = section.querySelector(HEAD_SELECTORS[i]);
+        }
+        var titleEl = section.querySelector('.ds-section-title, .pz-card-title, .lx-row-title, .sp-card-title, h2, h3');
+        var title = titleEl ? titleEl.textContent.replace(/\s+/g, ' ').trim() : (section.getAttribute('data-fldname') || '');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ds-section-reset-btn ds-section-reset-btn--auto';
+        btn.textContent = 'Reset';
+        btn.setAttribute('aria-label', 'Reset ' + title);
+        btn.title = 'Reset ' + title;
+        if (head) {
+            head.removeAttribute('aria-hidden'); // e.g. Solitaire's empty label column beside 3 EX / 3 VG
+            head.appendChild(btn);
+        } else {
+            section.insertBefore(btn, section.firstChild);
+        }
+    });
+
+    function resetSection(section) {
+        section.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+            cb.checked = (cb.value === '__ALL__');
+            cb.disabled = false;
+            setSelectedClass(cb);
         });
+        section.querySelectorAll('input[type=number], input[type=text]').forEach(function (inp) {
+            inp.value = '';
+        });
+        var fld = section.getAttribute('data-fldname');
+        if (fld === 'CPS3') {
+            setCpsSections(null);        // 3 EX / 3 VG cleared -> Cut / Polish / Sym back to All
+        } else if (CPS_FIELDS.indexOf(fld) >= 0) {
+            clearPresets(null);          // a reset Cut / Polish / Sym ends the shortcut
+        }
+        applyExclusiveOptions(section);
+        if (colorSection && section === colorSection) {
+            applyColorFancyExclusivity(colorSection);
+        }
+        // let other scripts on the page (filter summaries) know
+        form.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    form.addEventListener('click', function (e) {
+        var btn = e.target.closest('.ds-section-reset-btn');
+        if (!btn || !form.contains(btn)) {
+            return;
+        }
+        e.preventDefault();
+        var section = btn.closest('.ds-section');
+        if (section) {
+            resetSection(section);
+        }
     });
 
     // "Advanced Filter" reveals the extra sections sourced from

@@ -2016,3 +2016,19 @@ body.rs-v2 #markupCopyInput {
 }
 body.rs-v2 #markupCopyInput::placeholder { color: #8a8f96; -webkit-text-fill-color: #8a8f96; opacity: 1; }
 body.rs-v2 #markupCopyInput:focus { outline: 2px solid var(--rs-blue); outline-offset: 1px; border-color: var(--rs-blue); }
+
+/* ---- Per-section Reset buttons added by diamond_search.js
+   (.ds-section-reset-btn--auto) — one in every filter section's heading. */
+.ds-section-header-row .ds-section-reset-btn--auto { margin-left: auto; }
+/* Solitaire: a small ↺ inside the dark label bar, so rows keep their height */
+body.ds-v2 .ds-label-col { position: relative; }
+body.ds-v2 .ds-section-reset-btn--auto {
+    position: absolute; top: 0; right: 0; width: 30px; height: 34px; padding: 0; margin: 0;
+    background: transparent; color: rgba(255, 255, 255, .75); border-radius: 0 4px 4px 0;
+    font-size: 0; line-height: 0; display: flex; align-items: center; justify-content: center;
+}
+body.ds-v2 .ds-section-reset-btn--auto::before { content: "\21BA"; font-size: 17px; line-height: 1; }
+body.ds-v2 .ds-section-reset-btn--auto:hover, body.ds-v2 .ds-section-reset-btn--auto:focus-visible { background: rgba(255, 255, 255, .16); color: #fff; }
+body.ds-v2 .ds-label-col:has(.ds-section-reset-btn--auto) .ds-section-title { padding: 0 28px; }
+body.ds-v2 .ds-label-col { min-width: 0; }
+body.ds-v2 .ds-label-col:has(.ds-section-reset-btn--auto) .ds-section-title { padding: 0 24px 0 4px; font-size: 13.5px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }

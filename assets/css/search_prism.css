@@ -307,3 +307,13 @@ body.pz .rs-inline-form { display: inline; margin: 0; }
 body.pz .pagination .is-disabled { opacity: .4; }
 body.pz .pagination .pagination-ellipsis { border: 0; background: none; min-width: 0; padding: 0 4px; }
 body.pz .pz-hero--results .pz-hero-gem { display: none; }
+
+/* the site's base .ds-range-input stretches to fill the row — keep boxes compact */
+body.pz .ds-range-input { flex: 0 1 140px; min-width: 90px; }
+body.pz .ds-text-input { flex: 0 1 320px; }
+body.pz .pz-field .ds-range-input { flex: none; width: 100%; }
+
+/* Per-section Reset (added by diamond_search.js) */
+body.pz .ds-section-reset-btn { margin-left: auto; background: none; border: 0; padding: 2px 4px; color: var(--pz-muted); font: 600 12.5px inherit; font-family: inherit; text-decoration: none; text-transform: none; letter-spacing: 0; cursor: pointer; border-radius: 6px; }
+body.pz .ds-section-reset-btn:hover { color: var(--pz-1); background: var(--pz-tint); }
+body.pz .pz-card--active .ds-section-reset-btn { color: var(--pz-1); }

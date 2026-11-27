@@ -28,7 +28,7 @@ function lx_render_section(array $section, array $priorFilters, bool $hasPriorFi
             <h2 class="lx-row-title"><?= e($label) ?></h2>
             <?php if (!empty($section['range'])): ?><span class="lx-row-hint">Select two for a range</span><?php endif; ?>
             <?php if ($fld === 'Weight'): ?>
-                <button type="button" class="ds-section-reset-btn lx-text-btn" data-reset-section="Weight">Clear</button>
+                <button type="button" class="ds-section-reset-btn lx-text-btn" data-reset-section="Weight">Reset</button>
             <?php endif; ?>
         </div>
         <div class="lx-row-control">

@@ -269,3 +269,7 @@ body.sp .rs-inline-form { display: inline; margin: 0; }
 /* the site's base .ds-range-input stretches to fill the row — keep boxes compact */
 body.sp .ds-range-input { flex: 0 1 140px; min-width: 90px; }
 body.sp .ds-text-input { flex: 0 1 320px; }
+
+/* Per-section Reset (added by diamond_search.js) */
+body.sp .ds-section-reset-btn { margin-left: auto; background: none; border: 0; padding: 0; color: var(--sp-muted); font: 700 13px inherit; font-family: inherit; text-decoration: underline; text-transform: none; letter-spacing: 0; cursor: pointer; }
+body.sp .ds-section-reset-btn:hover, body.sp .sp-card.is-used .ds-section-reset-btn { color: var(--c); }
